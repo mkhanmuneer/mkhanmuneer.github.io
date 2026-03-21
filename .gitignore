@@ -1,43 +1,9 @@
-# --- WHITELIST & TRACKED ASSETS (KEEP THESE) ---
-# These are the files and folders Git MUST track for the website to function.
-!_quarto.yml
-!styles/
-!projects.yml
-!environment.yml
-!deploy.sh
-!/_site/
-!/_freeze/
+# ================================================================
+# PORTFOLIO .GITIGNORE - MUHAMMAD KHAN MUNEER
+# ================================================================
 
-# --- SOURCE CODE BLACKOUT (INTELLECTUAL PROPERTY) ---
-# All raw analysis and code scripts stay on your local machine.
-*.qmd
-*.Rmd
-*.ipynb
-*.py
-*.R
-
-# R-Specific Metadata & IDE files
-.Rproj.user
-*.Rproj
-*.Rhistory
-*.RData
-*.RDS
-
-# --- QUARTO INTERNAL & CACHE ---
-.quarto/
-**/*.quarto_ipynb
-.ipynb_checkpoints/
-__pycache__/
-
-# --- LOCAL WORKFLOW & LOGS ---
-# Keeps the deployment "flight logs" out of the repo
-logs/
-*.log
-.vscode/
-.DS_Store
-
-# --- DATA & ENVIRONMENT IRON DOME ---
-# Absolute protection against accidental data leaks
+# --- 1. THE "IRON DOME" (PROTECTED DATA & ENV) ---
+# Absolute protection against data leaks or local env clutter
 data/
 temp/
 dataco_env/
@@ -46,4 +12,41 @@ dataco_env/
 *.parquet
 *.xlsx
 *.pkl
+logs/
+*.log
+
+# --- 2. SOURCE CODE & IP PROTECTION ---
+# Keeps raw analysis scripts and notebooks out of the public repo
+*.qmd
+*.Rmd
+*.ipynb
+*.py
+*.R
+
+# --- 3. QUARTO INTERNALS & R METADATA ---
 /.quarto/
+**/*.quarto_ipynb
+.ipynb_checkpoints/
+__pycache__/
+.Rproj.user
+*.Rproj
+*.Rhistory
+*.RData
+*.RDS
+.vscode/
+.DS_Store
+
+# --- 4. GENERATED ASSETS (THE "GUTS") ---
+# This ignores the index_files and index_copy_files folders
+/*_files/
+
+# --- 5. WHITELISTED DEPLOYMENT ASSETS ---
+# We ignore the site by default, but explicitly track what's needed
+# Note: Only remove /_site/ from here if you deploy via a CI/CD tool
+!/_site/
+!/_freeze/
+!_quarto.yml
+!styles/
+!projects.yml
+!environment.yml
+!deploy.sh
