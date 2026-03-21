@@ -1,5 +1,5 @@
 - title: "Supply Chain and Customer Behaviour Analytics: End‑to‑End EDA, Data Quality Assessment, and Behavioural and Logistics Feature Engineering"
-  subtitle: "Comprehensive analytics and feature engineering for supply chain and customer behaviour insights."
+  subtitle: "A comprehensive, production‑aligned exploration of supply‑chain and customer behaviour data, tracing the full journey from raw source files to modelling‑ready feature layers."
   path: "projects/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering.html"
   image: "images/thumbnails/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering.png"
   description: "End‑to‑end exploratory analysis and data‑quality audit of the Supply Chain and Customer Behaviour dataset, built to mirror a real consulting engagement. This project performs raw‑layer ingestion, schema validation, naming‑standard audits, temporal alignment checks, and behavioural‑log diagnostics. It establishes a clean Bronze → Silver → Gold data pipeline, produces analysis‑ready tables, and identifies high‑value modelling opportunities across logistics, customer behaviour, and product analytics."
