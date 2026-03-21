@@ -1,0 +1,49 @@
+# --- WHITELIST & TRACKED ASSETS (KEEP THESE) ---
+# These are the files and folders Git MUST track for the website to function.
+!_quarto.yml
+!styles/
+!projects.yml
+!environment.yml
+!deploy.sh
+!/_site/
+!/_freeze/
+
+# --- SOURCE CODE BLACKOUT (INTELLECTUAL PROPERTY) ---
+# All raw analysis and code scripts stay on your local machine.
+*.qmd
+*.Rmd
+*.ipynb
+*.py
+*.R
+
+# R-Specific Metadata & IDE files
+.Rproj.user
+*.Rproj
+*.Rhistory
+*.RData
+*.RDS
+
+# --- QUARTO INTERNAL & CACHE ---
+.quarto/
+**/*.quarto_ipynb
+.ipynb_checkpoints/
+__pycache__/
+
+# --- LOCAL WORKFLOW & LOGS ---
+# Keeps the deployment "flight logs" out of the repo
+logs/
+*.log
+.vscode/
+.DS_Store
+
+# --- DATA & ENVIRONMENT IRON DOME ---
+# Absolute protection against accidental data leaks
+data/
+temp/
+dataco_env/
+.env
+*.csv
+*.parquet
+*.xlsx
+*.pkl
+/.quarto/
