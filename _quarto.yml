@@ -8,8 +8,9 @@ execute:
 
 website:
   title: "Muhammad Khan Muneer"
-  description: "Consulting‑grade Data Science, BI Engineering, and Operational Intelligence Portfolio."
   site-url: "https://mkhanmuneer.github.io/"
+  repo-url: "https://github.com/mkhanmuneer/mkhanmuneer.github.io"
+  description: "Consulting‑grade Data Science, BI Engineering, and Operational Intelligence Portfolio."
   
   # --- SEO & Social Metadata (Corrected) ---
   open-graph:

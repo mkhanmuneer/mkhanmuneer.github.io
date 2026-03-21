@@ -79,6 +79,9 @@ fi
 # 7. DEPLOYMENT & LOG ROTATION
 if [ $? -eq 0 ] && [ -d "docs" ]; then
     echo "📦 Step 7: Staging all authorized assets..."
+
+    # Copy SEO/Verification assets from root to docs
+    cp google*.html robots.txt sitemap.xml docs/ 2>/dev/null || :
     
     # Use '.' to catch all new projects/images automatically
     git add .
