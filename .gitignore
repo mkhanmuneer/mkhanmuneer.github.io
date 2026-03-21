@@ -6,6 +6,7 @@
 # Absolute protection against data leaks or local env clutter
 data/
 temp/
+projects/
 dataco_env/
 .env
 *.csv
@@ -43,10 +44,8 @@ __pycache__/
 # --- 5. WHITELISTED DEPLOYMENT ASSETS ---
 # We ignore the site by default, but explicitly track what's needed
 # Note: Only remove /_site/ from here if you deploy via a CI/CD tool
-!index.qmd
-!cv.qmd
-!projects/
-!projects/*.qmd
+# !index.qmd
+# !cv.qmd
 !docs/
 !/_freeze/
 !_quarto.yml

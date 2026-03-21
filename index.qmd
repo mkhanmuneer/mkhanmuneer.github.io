@@ -1,12 +1,11 @@
 ---
-title: "Welcome"
+title: "Muhammad Khan Muneer"
 page-layout: full
 toc: false
 listing:
   id: sample-listings
   contents: 
   - projects.yml
-  - "projects/*.qmd"
   type: default        
   categories: true
   sort: "date desc"
