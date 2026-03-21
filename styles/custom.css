@@ -1,0 +1,308 @@
+/* ================================================================
+   PORTFOLIO STYLESHEET - MUHAMMAD KHAN MUNEER
+   ================================================================ */
+
+/* --- 1. Global Layout (Landing Page ONLY) --- */
+/* Completely removes the TOC and its container on the landing page */
+body.quarto-listing #TOC,
+body.quarto-listing .quarto-margin-sidebar .on-this-page,
+body.quarto-listing nav[role="doc-toc"] {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Ensure the Categories list has the full sidebar width to itself */
+body.quarto-listing .quarto-margin-sidebar {
+  display: flex !important;
+  flex-direction: column !important;
+  padding-top: 2rem !important;
+}
+
+/* Forces the Categories container to start at the top of the sidebar */
+body.quarto-listing #quarto-margin-sidebar-tippy {
+  margin-top: 0 !important;
+}
+
+
+.hero-banner {
+  background: linear-gradient(135deg, #1a2a3a 0%, #0a0f14 100%);
+  color: white !important;
+  padding: 80px 40px;
+  border-radius: 12px;
+  margin-bottom: 4rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  text-align: center;
+  grid-column: body-start / body-end !important;
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 800;
+  margin-bottom: 12px;
+  letter-spacing: -1.5px;
+  color: #ffffff !important;
+}
+
+.hero-subtitle {
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  font-weight: 400;
+  color: #a0aec0 !important; /* Slate Blue-Grey */
+  margin-bottom: 25px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+.hero-hr {
+  width: 60px;
+  height: 4px;
+  background: #3182ce; /* Electric Blue Accent */
+  margin: 0 auto 30px;
+  border-radius: 2px;
+}
+
+.hero-description {
+  font-size: 1.25rem;
+  max-width: 900px;
+  margin: 0 auto;
+  line-height: 1.6;
+  color: #e2e8f0 !important;
+}
+
+.hero-subtext {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 0.95rem;      /* Slightly smaller than the main description */
+  line-height: 1.5;
+  color: #a0aec0;          /* Matches your professional slate/grey palette */
+  font-weight: 300;        /* Thinner weight helps differentiate from the bold line above */
+  opacity: 0.9;            /* Softens the text for better visual hierarchy */
+}
+
+/* --- 3. Project Cards (Updated Hover & Alignment) --- */
+.quarto-post {
+  display: flex !important;
+  flex-direction: row-reverse !important; 
+  align-items: flex-start !important;
+  position: relative !important;
+  width: 100% !important;
+  padding: 2rem; 
+  padding-bottom: 5.5rem; 
+  margin-bottom: 2.5rem;
+  border: 1px solid #eef0f2;
+  border-radius: 12px;
+  background-color: #ffffff;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  gap: 1.5rem !important;
+}
+
+/* Highlight cards with the same blue as the hero accent on hover */
+.quarto-post:hover {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border-color: #3182ce; 
+  transform: translateY(-2px);
+}
+
+.quarto-post .body {
+  flex: 1 1 auto !important;
+  display: block !important;
+}
+
+.quarto-post .title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1b263b;
+  margin-bottom: 0.3rem !important;
+  line-height: 1.25;
+  text-decoration: none;
+}
+
+.quarto-post .listing-subtitle {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #5d6d7e;
+  margin-bottom: 0.4rem !important; /* Tightened to sit near date */
+  display: block;
+}
+
+/* Date styling added here */
+.quarto-post .listing-date {
+  font-size: 0.85rem;
+  color: #8892b0; /* Subtle slate color */
+  font-weight: 400;
+  margin-bottom: 0.75rem !important;
+  display: block;
+  text-transform: uppercase; /* Optional: makes it look like a professional meta-tag */
+  letter-spacing: 0.5px;
+}
+
+.quarto-post .listing-categories {
+  display: flex !important;
+  gap: 6px;
+  margin-bottom: 1rem !important;
+}
+
+.quarto-post .listing-description {
+  font-size: 0.95rem;
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+.quarto-post .thumbnail {
+  flex: 0 0 200px !important;
+  width: 200px !important;
+  max-width: 200px !important;
+  margin: 0 !important;
+  order: 1;
+}
+
+.quarto-post .thumbnail img {
+  width: 100% !important;
+  height: 135px !important;
+  object-fit: cover !important;
+  border-radius: 6px;
+}
+
+/* --- 4. Category Badges --- */
+.quarto-categories .quarto-category {
+  padding: 5px 14px;
+  border-radius: 50px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.quarto-category[data-category^="PYTHON"] { background-color: #e3f2fd; color: #0d47a1; }
+.quarto-category[data-category^="SUPPLY CHAIN"] { background-color: #e8f5e9; color: #1b5e20; }
+.quarto-category[data-category^="ANALYTICS"] { background-color: #f3e5f5; color: #4a148c; }
+
+/* --- 5. "Read More" Button --- */
+.quarto-post::after {
+  content: "Read Full Project →";
+  position: absolute;
+  bottom: 1.5rem;
+  right: 2.25rem;
+  display: inline-block;
+  padding: 10px 22px;
+  background-color: #1b263b;
+  color: #ffffff !important;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* --- 6. Dark Mode Synchronization --- */
+body.quarto-dark .quarto-post {
+  background-color: #121212 !important; 
+  border: 1px solid #2d2d2d !important;
+}
+
+body.quarto-dark .quarto-post .title { color: #ffffff !important; }
+
+/* --- 10. Project Page (Responsive Grid & Protected Tags) --- */
+/* Uses flexible fractions to prevent the "crushed" overlap look */
+body:not(.quarto-listing) #quarto-content {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 1000px 300px !important;
+  gap: 2rem;
+}
+
+body:not(.quarto-listing) main.content {
+  grid-column: 2 !important;
+  width: 100% !important;
+  max-width: 1000px !important;
+}
+
+/* Stacks TOC on the right side of the project report */
+body:not(.quarto-listing) .quarto-margin-sidebar {
+  grid-column: 3 !important;
+  display: block !important;
+  padding-top: 2rem;
+}
+
+/* Forces project tags under the title to stay horizontal */
+.quarto-title-meta-category, 
+.quarto-categories {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+}
+
+#TOC {
+  position: sticky !important;
+  top: 5rem;
+  border-left: 1px solid #eef0f2;
+  padding-left: 1.5rem;
+  font-size: 0.85rem;
+}
+
+
+/* --- 11. Code & Data Visuals --- */
+div.sourceCode {
+  border-radius: 8px;
+  border: 1px solid #eef0f2;
+  margin: 2rem 0;
+}
+
+/* --- 12. Wide Content Management (Fix for Tables) --- */
+/* This forces large notebook tables to scroll horizontally instead of overlaying the TOC */
+.project-inner-content table, 
+.dataframe, 
+pre, 
+.cell-output-display {
+  max-width: 100% !important;
+  display: block !important;
+  overflow-x: auto !important;
+  border-collapse: collapse;
+}
+
+/* Styling the scrollbar for tables so it looks clean */
+.project-inner-content ::-webkit-scrollbar {
+  height: 6px;
+}
+.project-inner-content ::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 10px;
+}
+
+
+
+/* --- 13. Adjust Date Position --- */
+
+/* 1. Reset the listing item to a vertical flex container */
+.quarto-listing-default .quarto-post {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1rem;
+}
+
+/* 2. Make the metadata (date) sit at the bottom, below the body */
+.quarto-listing-default .metadata {
+  order: 10; /* Forces it to the very bottom */
+  width: 100% !important;
+  text-align: left !important;
+  margin-top: 5px;
+  padding-left: 0;
+}
+
+/* 3. Style the date text specifically */
+.quarto-listing-default .listing-date {
+  font-size: 0.85rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* 4. Ensure the body (Title/Description) stays above the date */
+.quarto-listing-default .body {
+  order: 1;
+  width: 100% !important;
+}
+
+/* 5. Keep the thumbnail at the top or side as per your preference */
+.quarto-listing-default .thumbnail {
+  order: 0;
+}

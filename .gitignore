@@ -43,6 +43,10 @@ __pycache__/
 # --- 5. WHITELISTED DEPLOYMENT ASSETS ---
 # We ignore the site by default, but explicitly track what's needed
 # Note: Only remove /_site/ from here if you deploy via a CI/CD tool
+!index.qmd
+!cv.qmd
+!projects/
+!projects/*.qmd
 !/_site/
 !/_freeze/
 !_quarto.yml

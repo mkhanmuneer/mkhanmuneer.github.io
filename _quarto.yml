@@ -1,0 +1,66 @@
+project: 
+  type: website
+  output-dir: _site
+
+# Freeze execution to ensure reproducibility and prevent unintended code runs during rendering 
+execute: 
+  freeze: true
+
+website:
+  title: "Muhammad Khan Muneer"
+  description: "Consulting‑grade Data Science, BI Engineering, and Operational Intelligence Portfolio."
+  site-url: "https://mkhanmuneer.github.io/"
+  
+  # --- SEO & Social Metadata (Corrected) ---
+  open-graph:
+    title: "Muhammad Khan Muneer — Data Science & BI Portfolio"
+    description: "Engineering ML-driven analytics and automated decision systems."
+    # For Facebook, Quarto handles this via generic Open Graph
+    # You can also add a site name here
+    site-name: "M. Khan Muneer Portfolio"
+
+  twitter-card:
+    site: "@iMKhanMuneer"
+    creator: "@iMKhanMuneer"
+    card-style: summary_large_image
+
+  # --- Search UX ---
+  search: 
+    location: navbar
+    type: overlay
+    copy-button: true
+
+  # --- Navigation ---
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: cv.qmd
+        text: CV
+    right:
+      - icon: linkedin
+        href: https://www.linkedin.com/in/mkmuneer
+      - icon: github
+        href: https://github.com/mkhanmuneer
+      - icon: twitter-x
+        href: https://x.com/iMKhanMuneer
+      - icon: facebook
+        href: https://www.facebook.com/mkmuneer1989
+      - icon: graph-up
+        href: https://www.kaggle.com/muhammadkhanmuneer
+
+  # --- Footer ---
+  page-footer:
+    center: "© 2026 Muhammad Khan Muneer"
+
+format:
+  html:
+    theme:
+      light: cosmo
+      dark: cyborg
+    toc: true
+    code-fold: true
+    smooth-scroll: true
+    css: styles/custom.css
+    mainfont: "Inter, sans-serif" # Cleaner, more modern than standard Cosmo
+    page-layout: article         # Ensures a standard starting point for all pages

@@ -1,0 +1,83 @@
+---
+title: "Welcome"
+page-layout: full
+toc: false
+listing:
+  id: sample-listings
+  contents: 
+  - projects.yml
+  - "projects/*.qmd"
+  type: default        
+  categories: true
+  sort: "date desc"
+  sort-ui: [title, date]
+  filter-ui: true
+  fields: [title, subtitle, description, categories, date]
+  date-format: "MMMM YYYY"
+  field-display-names:
+    date: "Date Published"
+  image-align: left   
+  image-height: "150px"
+---
+
+
+```{=html}
+<div id="custom-hero-banner" class="hero-banner">
+  <div class="hero-container">
+    <h1 class="hero-title">Muhammad Khan Muneer</h1>
+    <h2 class="hero-subtitle">Data Scientist • BI Engineer • Analytics Engineer</h2>
+    <div class="hero-hr"></div>
+    <p class="hero-description">
+  <strong>Engineering ML‑driven analytics and automated decision systems.</strong><br>
+  <span class="hero-subtext">
+    Transforming complex data into <strong>Operational Intelligence</strong> with statistical rigor and scalable architecture.
+  </span>
+</p>
+  </div>
+</div>
+
+```
+
+## Professional Profile {.unnumbered .unlisted}
+
+I am a Data Science and BI Consultant specializing in **ML-driven automation**, **Big Data engineering**, and **end-to-end decision systems**. With over 10 years of hands-on experience and a background in **Statistics (BSc)** and **Big Data Science & Technology (MSc)**, I design solutions that are mathematically sound, business-aligned, and built for long-term scalability.
+
+### 🧠 Core Expertise {.unnumbered .unlisted}
+* **Machine Learning Automation:** Designing end-to-end workflows from feature engineering to model deployment and monitoring (R, Python, MLflow).
+* **BI & Analytics Engineering:** Building automated reporting ecosystems, semantic models, and executive-ready KPI warehouses using the Power Platform and SQL.
+* **Operational Intelligence:** Specialized experience in healthcare operations, patient flow, logistics (UK-Nigeria routes), and public safety.
+* **Digital & Behavior Analytics:** Advanced funnel modeling and conversion optimization using GA4 and BigQuery.
+
+### 🛠️ Technical Stack {.unnumbered .unlisted}
+* **Programming:** R (Expert), Python, SQL, Spark (PySpark/SparkR).
+* **Cloud & Data:** Azure, GCP, BigQuery, Databricks.
+* **Visualization:** Power BI (Advanced DAX/Power Query), Looker Studio, Tableau.
+* **Workflow:** Git, Docker, Linux/WSL, Quarto.
+
+---
+
+## Featured Projects {.unnumbered .unlisted}
+*Explore a curated selection of analytics, BI engineering, and operational intelligence projects.*
+
+::: {#sample-listings}
+:::
+
+<br>
+
+---
+
+<hr>
+
+<div style="text-align: center; padding: 40px 0;">
+  <h3 style="margin-bottom: 25px; color: #333;">Let's Connect</h3>
+  <a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" style="margin: 10px; padding: 12px 30px;">
+    <i class="bi bi-linkedin"></i> LinkedIn
+  </a>
+  <a href="https://github.com/mkhanmuneer" class="btn btn-dark" style="margin: 10px; padding: 12px 30px;">
+    <i class="bi bi-github"></i> GitHub
+  </a>
+  <a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" style="color: white; margin: 10px; padding: 12px 30px;">
+    <i class="bi bi-graph-up"></i> Kaggle
+  </a>
+</div>
+
