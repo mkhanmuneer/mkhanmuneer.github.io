@@ -4,4 +4,4 @@
   image: "images/thumbnails/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering.png"
   description: "End‑to‑end exploratory analysis and data‑quality audit of the Supply Chain and Customer Behaviour dataset, built to mirror a real consulting engagement. This project performs raw‑layer ingestion, schema validation, naming‑standard audits, temporal alignment checks, and behavioural‑log diagnostics. It establishes a clean Bronze → Silver → Gold data pipeline, produces analysis‑ready tables, and identifies high‑value modelling opportunities across logistics, customer behaviour, and product analytics."
   categories: [supply chain, python, eda]
-  date: "2025-03-01"
+  date: "2026-03-01"
