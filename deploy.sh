@@ -47,7 +47,7 @@ echo "✅ Env: $ENV_NAME | Quarto: $quarto_ver"
 
 # 4. PRE-BUILD CLEANUP
 # Expanded to catch index_files, index_copy_files, etc.
-rm -rf _site/ .quarto/ *_files/ 
+rm -rf docs _site/ .quarto/ *_files/ 
 # Optional: Don't rm -rf _freeze/ here to keep the cache!
 echo "🧹 Build folders and root asset caches cleared."
 
@@ -77,7 +77,7 @@ else
 fi
 
 # 7. DEPLOYMENT & LOG ROTATION
-if [ $? -eq 0 ] && [ -d "_site" ]; then
+if [ $? -eq 0 ] && [ -d "docs" ]; then
     echo "📦 Step 7: Staging all authorized assets..."
     
     # Use '.' to catch all new projects/images automatically

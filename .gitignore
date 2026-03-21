@@ -47,7 +47,7 @@ __pycache__/
 !cv.qmd
 !projects/
 !projects/*.qmd
-!/_site/
+!docs/
 !/_freeze/
 !_quarto.yml
 !styles/
