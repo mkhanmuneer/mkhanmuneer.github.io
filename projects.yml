@@ -25,8 +25,8 @@
     Housing Records, 
     Analytical Depth
     ]
-  path: projects/automated-real-estate-intelligence-high-performance-market-valuation-engine/automated-real-estate-intelligence-high-performance-market-valuation-engine.qmd
-
+  path: projects/automated-real-estate-intelligence-high-performance-market-valuation-engine/index.qmd
+  
 
 - title: 'Unified Analytics Engine: Bridging Digital Intent & Global Logistics'
   subtitle: 'A 3-tier Medallion platform featuring automated Target Viability and Multi-domain Feature Engineering.'
@@ -57,7 +57,7 @@
     Python, 
     SQL
     ]
-  path: projects/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering.qmd
+  path: projects/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering/index.qmd
     
 
 
@@ -85,6 +85,6 @@
     Law Enforcement, 
     Data-Driven Decision Making
     ]
-  path: projects/citywide-crime-intelligence-analytics-dashboard/citywide-crime-intelligence-analytics-dashboard.html
+  path: projects/citywide-crime-intelligence-analytics-dashboard/index.qmd
 
 

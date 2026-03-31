@@ -118,13 +118,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link rel="stylesheet" href="../../styles/custom.css">
 <meta property="og:title" content="Muhammad Khan Muneer — Data Science &amp; BI Portfolio">
 <meta property="og:description" content="Engineering ML-driven analytics and automated decision systems.">
-<meta property="og:image" content="https://mkhanmuneer.github.io/projects/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-42-output-1.png">
+<meta property="og:image" content="https://mkhanmuneer.github.io/projects/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering/index_files/figure-html/cell-42-output-1.png">
 <meta property="og:site_name" content="M. Khan Muneer Portfolio">
 <meta property="og:image:height" content="929">
 <meta property="og:image:width" content="1889">
 <meta name="twitter:title" content="Unified Analytics Engine: Bridging Digital Intent &amp; Global Logistics – Muhammad Khan Muneer">
 <meta name="twitter:description" content="Architected an end-to-end ecosystem unifying 4.6M behavioral events and 180k logistics records. Full Sessionisation: Custom GA4-style scoring. Viability Scoring: A 0–100 audit for leakage/skew. Cross-Domain Integration: Aligning customer behavior with global fulfillment across 164 countries.">
-<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-42-output-1.png">
+<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering/index_files/figure-html/cell-42-output-1.png">
 <meta name="twitter:creator" content="@iMKhanMuneer">
 <meta name="twitter:site" content="@iMKhanMuneer">
 <meta name="twitter:card" content="summary_large_image">
@@ -578,7 +578,7 @@ Mendeley Data, V5. https://doi.org/10.17632/8gx2fvg2k6.5</p>
 <h3 class="anchored" data-anchor-id="structured-logistics-data-preview">Structured Logistics Data (Preview)</h3>
 <p>The <code>DataCoSupplyChainDataset.csv</code> file is a wide, denormalised table combining customer attributes, product metadata, order‑item facts, pricing fields, discount information, delivery status, and geographic attributes. The dataset is structured at the <strong>order‑item</strong> grain, meaning each row represents a single product within an order.</p>
 <p>A sample of the raw logistics data:</p>
-<div id="b710076b" class="cell" data-execution_count="3">
+<div id="d8753716" class="cell" data-execution_count="3">
 <div class="cell-output cell-output-display" data-execution_count="3">
 <div>
 
@@ -796,7 +796,7 @@ Mendeley Data, V5. https://doi.org/10.17632/8gx2fvg2k6.5</p>
 <li><strong>url</strong> — full URL path encoding department, category, product, and action</li>
 </ul>
 <p>A sample of the raw behavioural data:</p>
-<div id="5854edfe" class="cell" data-execution_count="4">
+<div id="96bca6ea" class="cell" data-execution_count="4">
 <div class="cell-output cell-output-display" data-execution_count="4">
 <div>
 
@@ -873,235 +873,235 @@ Mendeley Data, V5. https://doi.org/10.17632/8gx2fvg2k6.5</p>
 <li>cross‑reference the vendor’s schema with the actual raw data to detect inconsistencies or missing elements.</li>
 </ul>
 <p>This step establishes a clear reference point for the subsequent cleaning and canonical mapping stages, ensuring that all transformations remain faithful to the dataset’s documented structure.</p>
-<div id="0024c644" class="cell" data-execution_count="5">
+<div id="9e4ebdab" class="cell" data-execution_count="5">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== DATASET DESCRIPTION (RAW, UNMODIFIED) ===</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <style type="text/css">
-#T_4683b th.col_heading {
+#T_6cdee th.col_heading {
   text-align: left;
 }
-#T_4683b_row0_col0, #T_4683b_row0_col1, #T_4683b_row1_col0, #T_4683b_row1_col1, #T_4683b_row2_col0, #T_4683b_row2_col1, #T_4683b_row3_col0, #T_4683b_row3_col1, #T_4683b_row4_col0, #T_4683b_row4_col1, #T_4683b_row5_col0, #T_4683b_row5_col1, #T_4683b_row6_col0, #T_4683b_row6_col1, #T_4683b_row7_col0, #T_4683b_row7_col1, #T_4683b_row8_col0, #T_4683b_row8_col1, #T_4683b_row9_col0, #T_4683b_row9_col1, #T_4683b_row10_col0, #T_4683b_row10_col1, #T_4683b_row11_col0, #T_4683b_row11_col1, #T_4683b_row12_col0, #T_4683b_row12_col1, #T_4683b_row13_col0, #T_4683b_row13_col1, #T_4683b_row14_col0, #T_4683b_row14_col1, #T_4683b_row15_col0, #T_4683b_row15_col1, #T_4683b_row16_col0, #T_4683b_row16_col1, #T_4683b_row17_col0, #T_4683b_row17_col1, #T_4683b_row18_col0, #T_4683b_row18_col1, #T_4683b_row19_col0, #T_4683b_row19_col1, #T_4683b_row20_col0, #T_4683b_row20_col1, #T_4683b_row21_col0, #T_4683b_row21_col1, #T_4683b_row22_col0, #T_4683b_row22_col1, #T_4683b_row23_col0, #T_4683b_row23_col1, #T_4683b_row24_col0, #T_4683b_row24_col1, #T_4683b_row25_col0, #T_4683b_row25_col1, #T_4683b_row26_col0, #T_4683b_row26_col1, #T_4683b_row27_col0, #T_4683b_row27_col1, #T_4683b_row28_col0, #T_4683b_row28_col1, #T_4683b_row29_col0, #T_4683b_row29_col1, #T_4683b_row30_col0, #T_4683b_row30_col1, #T_4683b_row31_col0, #T_4683b_row31_col1, #T_4683b_row32_col0, #T_4683b_row32_col1, #T_4683b_row33_col0, #T_4683b_row33_col1, #T_4683b_row34_col0, #T_4683b_row34_col1, #T_4683b_row35_col0, #T_4683b_row35_col1, #T_4683b_row36_col0, #T_4683b_row36_col1, #T_4683b_row37_col0, #T_4683b_row37_col1, #T_4683b_row38_col0, #T_4683b_row38_col1, #T_4683b_row39_col0, #T_4683b_row39_col1, #T_4683b_row40_col0, #T_4683b_row40_col1, #T_4683b_row41_col0, #T_4683b_row41_col1, #T_4683b_row42_col0, #T_4683b_row42_col1, #T_4683b_row43_col0, #T_4683b_row43_col1, #T_4683b_row44_col0, #T_4683b_row44_col1, #T_4683b_row45_col0, #T_4683b_row45_col1, #T_4683b_row46_col0, #T_4683b_row46_col1, #T_4683b_row47_col0, #T_4683b_row47_col1, #T_4683b_row48_col0, #T_4683b_row48_col1, #T_4683b_row49_col0, #T_4683b_row49_col1, #T_4683b_row50_col0, #T_4683b_row50_col1, #T_4683b_row51_col0, #T_4683b_row51_col1 {
+#T_6cdee_row0_col0, #T_6cdee_row0_col1, #T_6cdee_row1_col0, #T_6cdee_row1_col1, #T_6cdee_row2_col0, #T_6cdee_row2_col1, #T_6cdee_row3_col0, #T_6cdee_row3_col1, #T_6cdee_row4_col0, #T_6cdee_row4_col1, #T_6cdee_row5_col0, #T_6cdee_row5_col1, #T_6cdee_row6_col0, #T_6cdee_row6_col1, #T_6cdee_row7_col0, #T_6cdee_row7_col1, #T_6cdee_row8_col0, #T_6cdee_row8_col1, #T_6cdee_row9_col0, #T_6cdee_row9_col1, #T_6cdee_row10_col0, #T_6cdee_row10_col1, #T_6cdee_row11_col0, #T_6cdee_row11_col1, #T_6cdee_row12_col0, #T_6cdee_row12_col1, #T_6cdee_row13_col0, #T_6cdee_row13_col1, #T_6cdee_row14_col0, #T_6cdee_row14_col1, #T_6cdee_row15_col0, #T_6cdee_row15_col1, #T_6cdee_row16_col0, #T_6cdee_row16_col1, #T_6cdee_row17_col0, #T_6cdee_row17_col1, #T_6cdee_row18_col0, #T_6cdee_row18_col1, #T_6cdee_row19_col0, #T_6cdee_row19_col1, #T_6cdee_row20_col0, #T_6cdee_row20_col1, #T_6cdee_row21_col0, #T_6cdee_row21_col1, #T_6cdee_row22_col0, #T_6cdee_row22_col1, #T_6cdee_row23_col0, #T_6cdee_row23_col1, #T_6cdee_row24_col0, #T_6cdee_row24_col1, #T_6cdee_row25_col0, #T_6cdee_row25_col1, #T_6cdee_row26_col0, #T_6cdee_row26_col1, #T_6cdee_row27_col0, #T_6cdee_row27_col1, #T_6cdee_row28_col0, #T_6cdee_row28_col1, #T_6cdee_row29_col0, #T_6cdee_row29_col1, #T_6cdee_row30_col0, #T_6cdee_row30_col1, #T_6cdee_row31_col0, #T_6cdee_row31_col1, #T_6cdee_row32_col0, #T_6cdee_row32_col1, #T_6cdee_row33_col0, #T_6cdee_row33_col1, #T_6cdee_row34_col0, #T_6cdee_row34_col1, #T_6cdee_row35_col0, #T_6cdee_row35_col1, #T_6cdee_row36_col0, #T_6cdee_row36_col1, #T_6cdee_row37_col0, #T_6cdee_row37_col1, #T_6cdee_row38_col0, #T_6cdee_row38_col1, #T_6cdee_row39_col0, #T_6cdee_row39_col1, #T_6cdee_row40_col0, #T_6cdee_row40_col1, #T_6cdee_row41_col0, #T_6cdee_row41_col1, #T_6cdee_row42_col0, #T_6cdee_row42_col1, #T_6cdee_row43_col0, #T_6cdee_row43_col1, #T_6cdee_row44_col0, #T_6cdee_row44_col1, #T_6cdee_row45_col0, #T_6cdee_row45_col1, #T_6cdee_row46_col0, #T_6cdee_row46_col1, #T_6cdee_row47_col0, #T_6cdee_row47_col1, #T_6cdee_row48_col0, #T_6cdee_row48_col1, #T_6cdee_row49_col0, #T_6cdee_row49_col1, #T_6cdee_row50_col0, #T_6cdee_row50_col1, #T_6cdee_row51_col0, #T_6cdee_row51_col1 {
   text-align: left;
 }
 </style>
 
-<table id="T_4683b" class="caption-top table table-sm table-striped small">
+<table id="T_6cdee" class="caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
-<th id="T_4683b_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">FIELDS</th>
-<th id="T_4683b_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">DESCRIPTION</th>
+<th id="T_6cdee_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">FIELDS</th>
+<th id="T_6cdee_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">DESCRIPTION</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td id="T_4683b_row0_col0" class="data row0 col0">Type</td>
-<td id="T_4683b_row0_col1" class="data row0 col1">: Type of transaction made</td>
+<td id="T_6cdee_row0_col0" class="data row0 col0">Type</td>
+<td id="T_6cdee_row0_col1" class="data row0 col1">: Type of transaction made</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row1_col0" class="data row1 col0">Days for shipping (real)</td>
-<td id="T_4683b_row1_col1" class="data row1 col1">: Actual shipping days of the purchased product</td>
+<td id="T_6cdee_row1_col0" class="data row1 col0">Days for shipping (real)</td>
+<td id="T_6cdee_row1_col1" class="data row1 col1">: Actual shipping days of the purchased product</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row2_col0" class="data row2 col0">Days for shipment (scheduled)</td>
-<td id="T_4683b_row2_col1" class="data row2 col1">: Days of scheduled delivery of the purchased product</td>
+<td id="T_6cdee_row2_col0" class="data row2 col0">Days for shipment (scheduled)</td>
+<td id="T_6cdee_row2_col1" class="data row2 col1">: Days of scheduled delivery of the purchased product</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row3_col0" class="data row3 col0">Benefit per order</td>
-<td id="T_4683b_row3_col1" class="data row3 col1">: Earnings per order placed</td>
+<td id="T_6cdee_row3_col0" class="data row3 col0">Benefit per order</td>
+<td id="T_6cdee_row3_col1" class="data row3 col1">: Earnings per order placed</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row4_col0" class="data row4 col0">Sales per customer</td>
-<td id="T_4683b_row4_col1" class="data row4 col1">: Total sales per customer made per customer</td>
+<td id="T_6cdee_row4_col0" class="data row4 col0">Sales per customer</td>
+<td id="T_6cdee_row4_col1" class="data row4 col1">: Total sales per customer made per customer</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row5_col0" class="data row5 col0">Delivery Status</td>
-<td id="T_4683b_row5_col1" class="data row5 col1">: Delivery status of orders: Advance shipping , Late delivery , Shipping canceled , Shipping on time</td>
+<td id="T_6cdee_row5_col0" class="data row5 col0">Delivery Status</td>
+<td id="T_6cdee_row5_col1" class="data row5 col1">: Delivery status of orders: Advance shipping , Late delivery , Shipping canceled , Shipping on time</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row6_col0" class="data row6 col0">Late_delivery_risk</td>
-<td id="T_4683b_row6_col1" class="data row6 col1">: Categorical variable that indicates if sending is late (1), it is not late (0).</td>
+<td id="T_6cdee_row6_col0" class="data row6 col0">Late_delivery_risk</td>
+<td id="T_6cdee_row6_col1" class="data row6 col1">: Categorical variable that indicates if sending is late (1), it is not late (0).</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row7_col0" class="data row7 col0">Category Id</td>
-<td id="T_4683b_row7_col1" class="data row7 col1">: Product category code</td>
+<td id="T_6cdee_row7_col0" class="data row7 col0">Category Id</td>
+<td id="T_6cdee_row7_col1" class="data row7 col1">: Product category code</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row8_col0" class="data row8 col0">Category Name</td>
-<td id="T_4683b_row8_col1" class="data row8 col1">: Description of the product category</td>
+<td id="T_6cdee_row8_col0" class="data row8 col0">Category Name</td>
+<td id="T_6cdee_row8_col1" class="data row8 col1">: Description of the product category</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row9_col0" class="data row9 col0">Customer City</td>
-<td id="T_4683b_row9_col1" class="data row9 col1">: City where the customer made the purchase</td>
+<td id="T_6cdee_row9_col0" class="data row9 col0">Customer City</td>
+<td id="T_6cdee_row9_col1" class="data row9 col1">: City where the customer made the purchase</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row10_col0" class="data row10 col0">Customer Country</td>
-<td id="T_4683b_row10_col1" class="data row10 col1">: Country where the customer made the purchase</td>
+<td id="T_6cdee_row10_col0" class="data row10 col0">Customer Country</td>
+<td id="T_6cdee_row10_col1" class="data row10 col1">: Country where the customer made the purchase</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row11_col0" class="data row11 col0">Customer Email</td>
-<td id="T_4683b_row11_col1" class="data row11 col1">: Customer's email</td>
+<td id="T_6cdee_row11_col0" class="data row11 col0">Customer Email</td>
+<td id="T_6cdee_row11_col1" class="data row11 col1">: Customer's email</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row12_col0" class="data row12 col0">Customer Fname</td>
-<td id="T_4683b_row12_col1" class="data row12 col1">: Customer name</td>
+<td id="T_6cdee_row12_col0" class="data row12 col0">Customer Fname</td>
+<td id="T_6cdee_row12_col1" class="data row12 col1">: Customer name</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row13_col0" class="data row13 col0">Customer Id</td>
-<td id="T_4683b_row13_col1" class="data row13 col1">: Customer ID</td>
+<td id="T_6cdee_row13_col0" class="data row13 col0">Customer Id</td>
+<td id="T_6cdee_row13_col1" class="data row13 col1">: Customer ID</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row14_col0" class="data row14 col0">Customer Lname</td>
-<td id="T_4683b_row14_col1" class="data row14 col1">: Customer lastname</td>
+<td id="T_6cdee_row14_col0" class="data row14 col0">Customer Lname</td>
+<td id="T_6cdee_row14_col1" class="data row14 col1">: Customer lastname</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row15_col0" class="data row15 col0">Customer Password</td>
-<td id="T_4683b_row15_col1" class="data row15 col1">: Masked customer key</td>
+<td id="T_6cdee_row15_col0" class="data row15 col0">Customer Password</td>
+<td id="T_6cdee_row15_col1" class="data row15 col1">: Masked customer key</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row16_col0" class="data row16 col0">Customer Segment</td>
-<td id="T_4683b_row16_col1" class="data row16 col1">: Types of Customers: Consumer , Corporate , Home Office</td>
+<td id="T_6cdee_row16_col0" class="data row16 col0">Customer Segment</td>
+<td id="T_6cdee_row16_col1" class="data row16 col1">: Types of Customers: Consumer , Corporate , Home Office</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row17_col0" class="data row17 col0">Customer State</td>
-<td id="T_4683b_row17_col1" class="data row17 col1">: State to which the store where the purchase is registered belongs</td>
+<td id="T_6cdee_row17_col0" class="data row17 col0">Customer State</td>
+<td id="T_6cdee_row17_col1" class="data row17 col1">: State to which the store where the purchase is registered belongs</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row18_col0" class="data row18 col0">Customer Street</td>
-<td id="T_4683b_row18_col1" class="data row18 col1">: Street to which the store where the purchase is registered belongs</td>
+<td id="T_6cdee_row18_col0" class="data row18 col0">Customer Street</td>
+<td id="T_6cdee_row18_col1" class="data row18 col1">: Street to which the store where the purchase is registered belongs</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row19_col0" class="data row19 col0">Customer Zipcode</td>
-<td id="T_4683b_row19_col1" class="data row19 col1">: Customer Zipcode</td>
+<td id="T_6cdee_row19_col0" class="data row19 col0">Customer Zipcode</td>
+<td id="T_6cdee_row19_col1" class="data row19 col1">: Customer Zipcode</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row20_col0" class="data row20 col0">Department Id</td>
-<td id="T_4683b_row20_col1" class="data row20 col1">: Department code of store</td>
+<td id="T_6cdee_row20_col0" class="data row20 col0">Department Id</td>
+<td id="T_6cdee_row20_col1" class="data row20 col1">: Department code of store</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row21_col0" class="data row21 col0">Department Name</td>
-<td id="T_4683b_row21_col1" class="data row21 col1">: Department name of store</td>
+<td id="T_6cdee_row21_col0" class="data row21 col0">Department Name</td>
+<td id="T_6cdee_row21_col1" class="data row21 col1">: Department name of store</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row22_col0" class="data row22 col0">Latitude</td>
-<td id="T_4683b_row22_col1" class="data row22 col1">: Latitude corresponding to location of store</td>
+<td id="T_6cdee_row22_col0" class="data row22 col0">Latitude</td>
+<td id="T_6cdee_row22_col1" class="data row22 col1">: Latitude corresponding to location of store</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row23_col0" class="data row23 col0">Longitude</td>
-<td id="T_4683b_row23_col1" class="data row23 col1">: Longitude corresponding to location of store</td>
+<td id="T_6cdee_row23_col0" class="data row23 col0">Longitude</td>
+<td id="T_6cdee_row23_col1" class="data row23 col1">: Longitude corresponding to location of store</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row24_col0" class="data row24 col0">Market</td>
-<td id="T_4683b_row24_col1" class="data row24 col1">: Market to where the order is delivered : Africa , Europe , LATAM , Pacific Asia , USCA</td>
+<td id="T_6cdee_row24_col0" class="data row24 col0">Market</td>
+<td id="T_6cdee_row24_col1" class="data row24 col1">: Market to where the order is delivered : Africa , Europe , LATAM , Pacific Asia , USCA</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row25_col0" class="data row25 col0">Order City</td>
-<td id="T_4683b_row25_col1" class="data row25 col1">: Destination city of the order</td>
+<td id="T_6cdee_row25_col0" class="data row25 col0">Order City</td>
+<td id="T_6cdee_row25_col1" class="data row25 col1">: Destination city of the order</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row26_col0" class="data row26 col0">Order Country</td>
-<td id="T_4683b_row26_col1" class="data row26 col1">: Destination country of the order</td>
+<td id="T_6cdee_row26_col0" class="data row26 col0">Order Country</td>
+<td id="T_6cdee_row26_col1" class="data row26 col1">: Destination country of the order</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row27_col0" class="data row27 col0">Order Customer Id</td>
-<td id="T_4683b_row27_col1" class="data row27 col1">: Customer order code</td>
+<td id="T_6cdee_row27_col0" class="data row27 col0">Order Customer Id</td>
+<td id="T_6cdee_row27_col1" class="data row27 col1">: Customer order code</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row28_col0" class="data row28 col0">order date (DateOrders)</td>
-<td id="T_4683b_row28_col1" class="data row28 col1">: Date on which the order is made</td>
+<td id="T_6cdee_row28_col0" class="data row28 col0">order date (DateOrders)</td>
+<td id="T_6cdee_row28_col1" class="data row28 col1">: Date on which the order is made</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row29_col0" class="data row29 col0">Order Id</td>
-<td id="T_4683b_row29_col1" class="data row29 col1">: Order code</td>
+<td id="T_6cdee_row29_col0" class="data row29 col0">Order Id</td>
+<td id="T_6cdee_row29_col1" class="data row29 col1">: Order code</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row30_col0" class="data row30 col0">Order Item Cardprod Id</td>
-<td id="T_4683b_row30_col1" class="data row30 col1">: Product code generated through the RFID reader</td>
+<td id="T_6cdee_row30_col0" class="data row30 col0">Order Item Cardprod Id</td>
+<td id="T_6cdee_row30_col1" class="data row30 col1">: Product code generated through the RFID reader</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row31_col0" class="data row31 col0">Order Item Discount</td>
-<td id="T_4683b_row31_col1" class="data row31 col1">: Order item discount value</td>
+<td id="T_6cdee_row31_col0" class="data row31 col0">Order Item Discount</td>
+<td id="T_6cdee_row31_col1" class="data row31 col1">: Order item discount value</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row32_col0" class="data row32 col0">Order Item Discount Rate</td>
-<td id="T_4683b_row32_col1" class="data row32 col1">: Order item discount percentage</td>
+<td id="T_6cdee_row32_col0" class="data row32 col0">Order Item Discount Rate</td>
+<td id="T_6cdee_row32_col1" class="data row32 col1">: Order item discount percentage</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row33_col0" class="data row33 col0">Order Item Id</td>
-<td id="T_4683b_row33_col1" class="data row33 col1">: Order item code</td>
+<td id="T_6cdee_row33_col0" class="data row33 col0">Order Item Id</td>
+<td id="T_6cdee_row33_col1" class="data row33 col1">: Order item code</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row34_col0" class="data row34 col0">Order Item Product Price</td>
-<td id="T_4683b_row34_col1" class="data row34 col1">: Price of products without discount</td>
+<td id="T_6cdee_row34_col0" class="data row34 col0">Order Item Product Price</td>
+<td id="T_6cdee_row34_col1" class="data row34 col1">: Price of products without discount</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row35_col0" class="data row35 col0">Order Item Profit Ratio</td>
-<td id="T_4683b_row35_col1" class="data row35 col1">: Order Item Profit Ratio</td>
+<td id="T_6cdee_row35_col0" class="data row35 col0">Order Item Profit Ratio</td>
+<td id="T_6cdee_row35_col1" class="data row35 col1">: Order Item Profit Ratio</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row36_col0" class="data row36 col0">Order Item Quantity</td>
-<td id="T_4683b_row36_col1" class="data row36 col1">: Number of products per order</td>
+<td id="T_6cdee_row36_col0" class="data row36 col0">Order Item Quantity</td>
+<td id="T_6cdee_row36_col1" class="data row36 col1">: Number of products per order</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row37_col0" class="data row37 col0">Sales</td>
-<td id="T_4683b_row37_col1" class="data row37 col1">: Value in sales</td>
+<td id="T_6cdee_row37_col0" class="data row37 col0">Sales</td>
+<td id="T_6cdee_row37_col1" class="data row37 col1">: Value in sales</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row38_col0" class="data row38 col0">Order Item Total</td>
-<td id="T_4683b_row38_col1" class="data row38 col1">: Total amount per order</td>
+<td id="T_6cdee_row38_col0" class="data row38 col0">Order Item Total</td>
+<td id="T_6cdee_row38_col1" class="data row38 col1">: Total amount per order</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row39_col0" class="data row39 col0">Order Profit Per Order</td>
-<td id="T_4683b_row39_col1" class="data row39 col1">: Order Profit Per Order</td>
+<td id="T_6cdee_row39_col0" class="data row39 col0">Order Profit Per Order</td>
+<td id="T_6cdee_row39_col1" class="data row39 col1">: Order Profit Per Order</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row40_col0" class="data row40 col0">Order Region</td>
-<td id="T_4683b_row40_col1" class="data row40 col1">: Region of the world where the order is delivered : Southeast Asia ,South Asia ,Oceania ,Eastern Asia, West Asia , West of USA , US Center , West Africa, Central Africa ,North Africa ,Western Europe ,Northern , Caribbean , South America ,East Africa ,Southern Europe , East of USA ,Canada ,Southern Africa , Central Asia , Europe , Central America, Eastern Europe , South of USA</td>
+<td id="T_6cdee_row40_col0" class="data row40 col0">Order Region</td>
+<td id="T_6cdee_row40_col1" class="data row40 col1">: Region of the world where the order is delivered : Southeast Asia ,South Asia ,Oceania ,Eastern Asia, West Asia , West of USA , US Center , West Africa, Central Africa ,North Africa ,Western Europe ,Northern , Caribbean , South America ,East Africa ,Southern Europe , East of USA ,Canada ,Southern Africa , Central Asia , Europe , Central America, Eastern Europe , South of USA</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row41_col0" class="data row41 col0">Order State</td>
-<td id="T_4683b_row41_col1" class="data row41 col1">: State of the region where the order is delivered</td>
+<td id="T_6cdee_row41_col0" class="data row41 col0">Order State</td>
+<td id="T_6cdee_row41_col1" class="data row41 col1">: State of the region where the order is delivered</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row42_col0" class="data row42 col0">Order Status</td>
-<td id="T_4683b_row42_col1" class="data row42 col1">: Order Status : COMPLETE , PENDING , CLOSED , PENDING_PAYMENT ,CANCELED , PROCESSING ,SUSPECTED_FRAUD ,ON_HOLD ,PAYMENT_REVIEW</td>
+<td id="T_6cdee_row42_col0" class="data row42 col0">Order Status</td>
+<td id="T_6cdee_row42_col1" class="data row42 col1">: Order Status : COMPLETE , PENDING , CLOSED , PENDING_PAYMENT ,CANCELED , PROCESSING ,SUSPECTED_FRAUD ,ON_HOLD ,PAYMENT_REVIEW</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row43_col0" class="data row43 col0">Product Card Id</td>
-<td id="T_4683b_row43_col1" class="data row43 col1">: Product code</td>
+<td id="T_6cdee_row43_col0" class="data row43 col0">Product Card Id</td>
+<td id="T_6cdee_row43_col1" class="data row43 col1">: Product code</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row44_col0" class="data row44 col0">Product Category Id</td>
-<td id="T_4683b_row44_col1" class="data row44 col1">: Product category code</td>
+<td id="T_6cdee_row44_col0" class="data row44 col0">Product Category Id</td>
+<td id="T_6cdee_row44_col1" class="data row44 col1">: Product category code</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row45_col0" class="data row45 col0">Product Description</td>
-<td id="T_4683b_row45_col1" class="data row45 col1">: Product Description</td>
+<td id="T_6cdee_row45_col0" class="data row45 col0">Product Description</td>
+<td id="T_6cdee_row45_col1" class="data row45 col1">: Product Description</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row46_col0" class="data row46 col0">Product Image</td>
-<td id="T_4683b_row46_col1" class="data row46 col1">: Link of visit and purchase of the product</td>
+<td id="T_6cdee_row46_col0" class="data row46 col0">Product Image</td>
+<td id="T_6cdee_row46_col1" class="data row46 col1">: Link of visit and purchase of the product</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row47_col0" class="data row47 col0">Product Name</td>
-<td id="T_4683b_row47_col1" class="data row47 col1">: Product Name</td>
+<td id="T_6cdee_row47_col0" class="data row47 col0">Product Name</td>
+<td id="T_6cdee_row47_col1" class="data row47 col1">: Product Name</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row48_col0" class="data row48 col0">Product Price</td>
-<td id="T_4683b_row48_col1" class="data row48 col1">: Product Price</td>
+<td id="T_6cdee_row48_col0" class="data row48 col0">Product Price</td>
+<td id="T_6cdee_row48_col1" class="data row48 col1">: Product Price</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row49_col0" class="data row49 col0">Product Status</td>
-<td id="T_4683b_row49_col1" class="data row49 col1">: Status of the product stock :If it is 1 not available , 0 the product is available</td>
+<td id="T_6cdee_row49_col0" class="data row49 col0">Product Status</td>
+<td id="T_6cdee_row49_col1" class="data row49 col1">: Status of the product stock :If it is 1 not available , 0 the product is available</td>
 </tr>
 <tr class="odd">
-<td id="T_4683b_row50_col0" class="data row50 col0">Shipping date (DateOrders)</td>
-<td id="T_4683b_row50_col1" class="data row50 col1">: Exact date and time of shipment</td>
+<td id="T_6cdee_row50_col0" class="data row50 col0">Shipping date (DateOrders)</td>
+<td id="T_6cdee_row50_col1" class="data row50 col1">: Exact date and time of shipment</td>
 </tr>
 <tr class="even">
-<td id="T_4683b_row51_col0" class="data row51 col0">Shipping Mode</td>
-<td id="T_4683b_row51_col1" class="data row51 col1">: The following shipping modes are presented : Standard Class , First Class , Second Class , Same Day</td>
+<td id="T_6cdee_row51_col0" class="data row51 col0">Shipping Mode</td>
+<td id="T_6cdee_row51_col1" class="data row51 col1">: The following shipping modes are presented : Standard Class , First Class , Second Class , Same Day</td>
 </tr>
 </tbody>
 </table>
@@ -1111,7 +1111,7 @@ Mendeley Data, V5. https://doi.org/10.17632/8gx2fvg2k6.5</p>
 </section>
 <section id="inspecting-fact_logistics_raw-dataset" class="level3">
 <h3 class="anchored" data-anchor-id="inspecting-fact_logistics_raw-dataset">Inspecting <code>fact_logistics_raw</code> Dataset</h3>
-<div id="ffb2738e" class="cell" data-execution_count="7">
+<div id="76ffa6eb" class="cell" data-execution_count="7">
 <div class="cell-output cell-output-stdout">
 <pre><code>======================================================================
 RAW DATASET INSPECTION — FACT_LOGISTICS_RAW
@@ -1640,7 +1640,7 @@ Inspection complete.
 </section>
 <section id="inspecting-fact_access_logs_raw-dataset" class="level3">
 <h3 class="anchored" data-anchor-id="inspecting-fact_access_logs_raw-dataset">Inspecting <code>fact_access_logs_raw</code> Dataset</h3>
-<div id="90d2cb13" class="cell" data-execution_count="8">
+<div id="6681533f" class="cell" data-execution_count="8">
 <div class="cell-output cell-output-stdout">
 <pre><code>======================================================================
 RAW DATASET INSPECTION — FACT_ACCESS_LOGS_RAW
@@ -1791,7 +1791,7 @@ Inspection complete.
 <h3 class="anchored" data-anchor-id="column-naming-irregularity-audit">Column Naming Irregularity Audit</h3>
 <p>Both datasets contain inconsistent naming conventions, including: - spaces in column names, - underscores in some fields, - parentheses in date fields, - mixed casing, - and vendor‑specific patterns.</p>
 <p>The following audit highlights columns that may require renaming during the cleaning phase.</p>
-<div id="a6968d1f" class="cell" data-execution_count="10">
+<div id="b8f22d15" class="cell" data-execution_count="10">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== COLUMN NAMING AUDIT — FACT_LOGISTICS_RAW ===
 
@@ -1967,7 +1967,7 @@ dtype: object</code></pre>
 <h3 class="anchored" data-anchor-id="date-field-inspection">Date Field Inspection</h3>
 <p>Date fields in both datasets are stored as raw text and may contain inconsistent formats.<br>
 Before parsing, we inspect a sample of unique values to understand formatting, locale assumptions, and potential anomalies.</p>
-<div id="94589034" class="cell" data-execution_count="11">
+<div id="36c1f426" class="cell" data-execution_count="11">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== DATE FORMAT SAMPLE — order date (DateOrders) ===</code></pre>
 </div>
@@ -2011,7 +2011,7 @@ Before parsing, we inspect a sample of unique values to understand formatting, l
 <p><code>/department/&lt;dept&gt;/category/&lt;category&gt;/product/&lt;product_name&gt;/&lt;action&gt;</code></p>
 <p>Encoded characters such as <code>%20</code> and <code>%26</code> indicate that URL decoding will be required before extracting structured fields.<br>
 The following sample illustrates the raw structure.</p>
-<div id="12452aee" class="cell" data-execution_count="12">
+<div id="f8bd1cb5" class="cell" data-execution_count="12">
 <div class="cell-output cell-output-display" data-execution_count="12">
 <pre><code>['/department/fitness/category/baseball%20&amp;%20softball/product/adidas%20Brazuca%202017%20Official%20Match%20Ball',
  "/department/fan%20shop/category/hunting%20&amp;%20shooting/product/The%20North%20Face%20Women's%20Recon%20Backpack",
@@ -2030,7 +2030,7 @@ The following sample illustrates the raw structure.</p>
 <h3 class="anchored" data-anchor-id="ip-address-distribution-check">IP Address Distribution Check</h3>
 <p>IP addresses may represent unique visitors, repeated sessions, or automated traffic.<br>
 Understanding their distribution helps identify: - heavy repeat IPs (possible bots), - geographic diversity, - and sessionisation feasibility.</p>
-<div id="59d8abdc" class="cell" data-execution_count="13">
+<div id="d35df9f6" class="cell" data-execution_count="13">
 <div class="cell-output cell-output-stdout">
 <pre><code>Unique IP count: 3340</code></pre>
 </div>
@@ -2071,7 +2071,7 @@ This reveals whether mismatches are caused only by letter‑case differences.</p
 - Encoding inconsistencies<br>
 - Truncation<br>
 - Or genuinely different naming conventions between datasets</p>
-<div id="038c616d" class="cell" data-execution_count="14">
+<div id="da57aa85" class="cell" data-execution_count="14">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== SAMPLE PRODUCT NAMES FROM fact_logistics_raw ===
 
@@ -2156,7 +2156,7 @@ This helps identify issues such as:<br>
 - Truncated product names<br>
 - Embedded category or department paths<br>
 - Formatting inconsistencies that may affect product‑name matching later</p>
-<div id="f60f6179" class="cell" data-execution_count="15">
+<div id="6fb6368c" class="cell" data-execution_count="15">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== SAMPLE URL‑DECODED PATHS FROM fact_access_logs_raw ===
 /department/fitness/category/baseball &amp; softball/product/adidas Brazuca 2017 Official Match Ball
@@ -2175,7 +2175,7 @@ This helps identify issues such as:<br>
 <section id="punctuationstripped-product-name-inspection" class="level3">
 <h3 class="anchored" data-anchor-id="punctuationstripped-product-name-inspection">Punctuation‑Stripped Product Name Inspection</h3>
 <p>Some mismatches arise from punctuation differences such as apostrophes, hyphens, slashes, or trailing spaces. This inspection previews how product names look when punctuation is removed, without modifying the underlying dataset. The goal is to understand whether punctuation alone explains a subset of mismatches.</p>
-<div id="4c59bcef" class="cell" data-execution_count="16">
+<div id="ed4e3c61" class="cell" data-execution_count="16">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== SAMPLE PUNCTUATION‑STRIPPED PRODUCT NAMES (fact_logistics_raw) ===
 smart watch
@@ -2209,75 +2209,75 @@ team golf pittsburgh steelers putter grip</code></pre>
 <section id="tokenbased-product-name-inspection" class="level3">
 <h3 class="anchored" data-anchor-id="tokenbased-product-name-inspection">Token‑Based Product Name Inspection</h3>
 <p>Many mismatches appear to be caused by truncated names, reordered words, or SKU variations. Token‑based inspection helps reveal whether two product names share the same core tokens even when the full strings differ. This step remains purely observational and does not perform fuzzy matching or cleaning.</p>
-<div id="d5eaed05" class="cell" data-execution_count="17">
+<div id="6913bdfb" class="cell" data-execution_count="17">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== SAMPLE TOKEN OVERLAPS BETWEEN DATASETS ===
 
 LOGISTICS: Perfect Fitness Perfect Rip Deck
 ACCESS:    Perfect Fitness Perfect Rip Deck
-TOKENS:    {'perfect', 'rip', 'deck', 'fitness'}
+TOKENS:    {'deck', 'fitness', 'rip', 'perfect'}
 
 LOGISTICS: Under Armour Girls' Toddler Spine Surge Runni
 ACCESS:    Under Armour Girls' Toddler Spine Surge Runni
-TOKENS:    {'toddler', 'surge', 'runni', 'armour', 'under', 'girls', 'spine'}
+TOKENS:    {'surge', 'armour', 'spine', 'under', 'toddler', 'runni', 'girls'}
 
 LOGISTICS: Nike Men's Dri-FIT Victory Golf Polo
 ACCESS:    Nike Men's Dri-FIT Victory Golf Polo
-TOKENS:    {'victory', 'polo', 'nike', 'golf', 'drifit', 'mens'}
+TOKENS:    {'golf', 'victory', 'polo', 'mens', 'nike', 'drifit'}
 
 LOGISTICS: Under Armour Men's Compression EV SL Slide
 ACCESS:    Under Armour Men's Compression EV SL Slide
-TOKENS:    {'slide', 'compression', 'ev', 'armour', 'sl', 'under', 'mens'}
+TOKENS:    {'ev', 'armour', 'sl', 'slide', 'under', 'compression', 'mens'}
 
 LOGISTICS: Under Armour Men's Compression EV SL Slide
 ACCESS:    Under Armour Men's Tech II T-Shirt
-TOKENS:    {'under', 'mens', 'armour'}
+TOKENS:    {'mens', 'armour', 'under'}
 
 LOGISTICS: Under Armour Men's Compression EV SL Slide
 ACCESS:    Under Armour Kids' Mercenary Slide
-TOKENS:    {'slide', 'under', 'armour'}
+TOKENS:    {'armour', 'slide', 'under'}
 
 LOGISTICS: Under Armour Men's Compression EV SL Slide
 ACCESS:    Under Armour Women's Ignite Slide
-TOKENS:    {'slide', 'under', 'armour'}
+TOKENS:    {'armour', 'slide', 'under'}
 
 LOGISTICS: Under Armour Women's Micro G Skulpt Running S
 ACCESS:    Under Armour Women's Micro G Skulpt Running S
-TOKENS:    {'running', 'armour', 'micro', 'g', 'skulpt', 'under', 'womens', 's'}
+TOKENS:    {'womens', 'armour', 'running', 'micro', 'g', 'under', 's', 'skulpt'}
 
 LOGISTICS: Under Armour Women's Micro G Skulpt Running S
 ACCESS:    Under Armour Women's Ignite Slide
-TOKENS:    {'under', 'armour', 'womens'}
+TOKENS:    {'armour', 'womens', 'under'}
 
 LOGISTICS: Nike Men's Free 5.0+ Running Shoe
 ACCESS:    Nike Men's Free 5.0+ Running Shoe
-TOKENS:    {'50', 'running', 'shoe', 'free', 'nike', 'mens'}
+TOKENS:    {'running', 'free', '50', 'mens', 'shoe', 'nike'}
 
 LOGISTICS: Nike Men's Free 5.0+ Running Shoe
 ACCESS:    Nike Men's Fingertrap Max Training Shoe
-TOKENS:    {'shoe', 'nike', 'mens'}
+TOKENS:    {'mens', 'shoe', 'nike'}
 
 LOGISTICS: Nike Men's Free 5.0+ Running Shoe
 ACCESS:    Nike Men's Free TR 5.0 TB Training Shoe
-TOKENS:    {'50', 'shoe', 'free', 'nike', 'mens'}
+TOKENS:    {'free', '50', 'mens', 'shoe', 'nike'}
 
 LOGISTICS: Nike Men's Free 5.0+ Running Shoe
 ACCESS:    Nike Women's Free 5.0 TR FIT PRT 4 Training S
-TOKENS:    {'free', '50', 'nike'}
+TOKENS:    {'free', 'nike', '50'}
 
 LOGISTICS: Glove It Women's Mod Oval 3-Zip Carry All Gol
 ACCESS:    Glove It Women's Mod Oval Golf Glove
-TOKENS:    {'glove', 'it', 'womens', 'mod', 'oval'}
+TOKENS:    {'oval', 'womens', 'mod', 'glove', 'it'}
 
 LOGISTICS: Glove It Women's Mod Oval 3-Zip Carry All Gol
 ACCESS:    Glove It Women's Imperial Golf Glove
-TOKENS:    {'it', 'womens', 'glove'}</code></pre>
+TOKENS:    {'glove', 'womens', 'it'}</code></pre>
 </div>
 </div>
 <section id="tokenoverlap-density-check" class="level4">
 <h4 class="anchored" data-anchor-id="tokenoverlap-density-check">Token‑Overlap Density Check</h4>
 <p>To understand how often product names share meaningful tokens across datasets, we compute a simple overlap score. This is not fuzzy matching — it is a raw inspection to quantify how many products share at least some lexical similarity.</p>
-<div id="f092c344" class="cell" data-execution_count="18">
+<div id="bffb137f" class="cell" data-execution_count="18">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== TOKEN OVERLAP COUNTS (logistics → access_logs) ===
 Smart watch   --&gt;  overlaps with 4 products in access_logs
@@ -2434,7 +2434,7 @@ O'Brien Men's Neoprene Life Vest  --&gt;  overlaps with 13 products in access_lo
 <h3 class="anchored" data-anchor-id="event-density-checks">Event Density Checks</h3>
 <p>High‑level event density checks help identify: - traffic spikes, - missing periods, - batch‑generated logs, - and overall temporal coverage.</p>
 <p>These checks remain part of raw inspection and do not modify the data.</p>
-<div id="50d59f83" class="cell" data-execution_count="19">
+<div id="8726678f" class="cell" data-execution_count="19">
 <div class="cell-output cell-output-display" data-execution_count="19">
 <pre><code>Date_only
 9/14/2017    45648
@@ -2450,7 +2450,7 @@ O'Brien Men's Neoprene Life Vest  --&gt;  overlaps with 13 products in access_lo
 Name: count, dtype: int64</code></pre>
 </div>
 </div>
-<div id="ed95e3e0" class="cell" data-execution_count="20">
+<div id="337abec9" class="cell" data-execution_count="20">
 <div class="cell-output cell-output-display" data-execution_count="20">
 <pre><code>Hour
 0      2227
@@ -2485,7 +2485,7 @@ Name: count, dtype: int64</code></pre>
 <h3 class="anchored" data-anchor-id="categorical-cardinality-summary">Categorical Cardinality Summary</h3>
 <p>Understanding the number of unique values in categorical fields helps identify: - high‑cardinality fields, - potential typos or inconsistent labels, - and fields requiring normalisation.</p>
 <p>This summary is purely observational.</p>
-<div id="02b14927" class="cell" data-execution_count="21">
+<div id="981ffdfa" class="cell" data-execution_count="21">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== CATEGORICAL CARDINALITY — FACT_LOGISTICS_RAW ===</code></pre>
 </div>
@@ -2721,7 +2721,7 @@ Name: count, dtype: int64</code></pre>
 <li><strong>Grain‑appropriate restructuring</strong> to ensure that order‑item‑level logistics data and event‑level access logs can be aggregated, mapped, and compared consistently in downstream modelling.</li>
 </ul>
 <p>The goal of this phase is not to perform modelling or feature engineering, but to produce a <strong>clean, canonical, and internally consistent Silver Layer</strong> that faithfully reflects the raw data while preserving the confirmed semantic distinctions (especially in geography) and resolving the structural issues surfaced during EDA. All transformations will be implemented transparently and sequentially, with explicit justification grounded in the inspection findings documented above.</p>
-<div id="273a52e5" class="cell" data-execution_count="23">
+<div id="2712730b" class="cell" data-execution_count="23">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== LOGISTICS BRONZE SCHEMA (AFTER STANDARDISATION + MAPPING) ===
 - transaction_type       object
@@ -3128,7 +3128,7 @@ Name: count, dtype: int64</code></pre>
 </div>
 </div>
 </div>
-<div id="9075ea73" class="cell" data-execution_count="24">
+<div id="37846d46" class="cell" data-execution_count="24">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== LOGISTICS BRONZE (AFTER DATE PARSING, ID FIXING, TRIMMING) ===</code></pre>
 </div>
@@ -3593,7 +3593,7 @@ Name: count, dtype: int64</code></pre>
 <li>schema export for downstream modelling</li>
 </ul>
 <p>The resulting dataset becomes the canonical input for the Gold layer (feature engineering, modelling, and enrichment).</p>
-<div id="e4f24326" class="cell" data-execution_count="25">
+<div id="f91a7647" class="cell" data-execution_count="25">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== LOGISTICS SILVER SCHEMA (DTYPES) ===</code></pre>
 </div>
@@ -4000,7 +4000,7 @@ dtype: object</code></pre>
 </div>
 </div>
 </div>
-<div id="d8362192" class="cell" data-execution_count="26">
+<div id="272f984d" class="cell" data-execution_count="26">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== ACCESS LOGS SILVER SCHEMA (DTYPES) ===</code></pre>
 </div>
@@ -4177,7 +4177,7 @@ dtype: object</code></pre>
 <section id="next-step" class="level3">
 <h3 class="anchored" data-anchor-id="next-step">Next Step</h3>
 <p>Before moving forward with product matching or modelling, we should compute the temporal ranges of both datasets and verify whether they intersect. This will determine whether cross‑dataset integration is logically valid or whether the datasets should be treated as separate analytical domains.</p>
-<div id="ade3cbf6" class="cell" data-execution_count="27">
+<div id="5f6b410c" class="cell" data-execution_count="27">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== LOGISTICS DATASET — TEMPORAL RANGE ===
 Earliest order_date : 2015-01-01 00:00:00
@@ -4439,7 +4439,7 @@ Overlap window: 2017-09-01 06:00:00 → 2018-01-31 23:38:00</code></pre>
 </ul></li>
 </ul>
 <p>This Gold‑layer plan ensures that all cross‑dataset integration is <strong>temporally coherent</strong>, analytically defensible, and clearly separated from broader operational modelling that uses the full logistics history.</p>
-<div id="4569827e" class="cell" data-execution_count="28">
+<div id="4e1caac9" class="cell" data-execution_count="28">
 <div class="cell-output cell-output-stdout">
 <pre><code>=== LOGISTICS OVERLAP SHAPE === (13746, 48)
 === ACCESS OVERLAP SHAPE    === (466728, 11)</code></pre>
@@ -4507,7 +4507,7 @@ providing a normalised profitability measure at the order‑item level.</li>
 <p>These temporal attributes support seasonality analysis, demand modelling, and behavioural alignment with clickstream sessions.</p>
 <hr>
 <p>Together, these engineered fields form the <strong>Gold‑Layer logistics table</strong>, providing a clean, enriched, and modelling‑ready foundation for customer‑level and product‑level feature construction.</p>
-<div id="37be279f" class="cell" data-execution_count="30">
+<div id="b57f7a76" class="cell" data-execution_count="30">
 <div class="cell-output cell-output-display" data-execution_count="30">
 <div>
 
@@ -4897,7 +4897,7 @@ If missing, we generate a canonicalised version by lowercasing, stripping punctu
 <p>We remove duplicate rows and reset the index to ensure a clean, consistent Gold‑Layer dataset.</p>
 <hr>
 <p>Together, these engineered features form the <strong>Gold‑Layer access‑logs table</strong>, providing a structured, high‑resolution view of customer browsing behaviour, product interaction intensity, and session‑level engagement patterns.</p>
-<div id="c3a346b4" class="cell" data-execution_count="32">
+<div id="a0d6a8be" class="cell" data-execution_count="32">
 <div class="cell-output cell-output-display" data-execution_count="32">
 <div>
 
@@ -5215,7 +5215,7 @@ This helps identify:</p>
 <li>(potentially other actions in the full dataset)</li>
 </ul>
 <p>Example from the raw and silver layers:</p>
-<div id="bc84fdc6" class="cell" data-execution_count="33">
+<div id="454adfd7" class="cell" data-execution_count="33">
 <div class="cell-output cell-output-display" data-execution_count="33">
 <div>
 
@@ -5255,7 +5255,7 @@ This helps identify:</p>
 </ul>
 <p>Key event detection is implemented as:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb57"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>'fact<span class="co">[</span><span class="ot">"is_key_event"</span><span class="co">]</span> = fact<span class="co">[</span><span class="ot">"page_url"</span><span class="co">]</span>.str.contains("add_to_cart", case=False, regex=False)'</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div id="a0026803" class="cell" data-execution_count="35">
+<div id="9bb4073d" class="cell" data-execution_count="35">
 <div class="cell-output cell-output-display" data-execution_count="35">
 <div>
 
@@ -5435,7 +5435,7 @@ We use safe, strictly increasing bin edges to avoid monotonic‑binning errors:<
 </ul>
 <p>These engineered features form the <strong>Gold‑Layer customer table</strong>, produced for both the full logistics dataset and the overlap‑aligned subset used for cross‑domain modelling.<br>
 Together, they provide a consolidated, modelling‑ready view of customer behaviour, value, lifecycle, and operational experience.</p>
-<div id="65c69f2c" class="cell" data-execution_count="36">
+<div id="d88e0281" class="cell" data-execution_count="36">
 <div class="cell-output cell-output-display" data-execution_count="36">
 <div>
 
@@ -5594,7 +5594,7 @@ Together, they provide a consolidated, modelling‑ready view of customer behavi
 </ul>
 <p>These engineered features form the <strong>Gold‑Layer product table</strong>, produced for both the full logistics dataset and the overlap‑aligned subset used for cross‑domain modelling.<br>
 Together, they provide a comprehensive, modelling‑ready view of product demand, profitability, operational behaviour, and lifecycle dynamics.</p>
-<div id="7e4c7c2b" class="cell" data-execution_count="37">
+<div id="ac8eb3f5" class="cell" data-execution_count="37">
 <div class="cell-output cell-output-display" data-execution_count="37">
 <div>
 
@@ -5926,7 +5926,7 @@ For each dataset, we will:</p>
 <li><code>product_features_gold</code></li>
 </ul>
 <p>We will now run the summary process on each of these datasets.</p>
-<div id="6ee85da6" class="cell" data-execution_count="39">
+<div id="559900ee" class="cell" data-execution_count="39">
 <div class="cell-output cell-output-stdout">
 <pre><code>
 
@@ -14783,11 +14783,11 @@ END OF SUMMARY REPORT FOR: product_features_gold_overlap
 <h4 class="anchored" data-anchor-id="revenue-related-distributions">Revenue-related distributions</h4>
 <section id="revenue-concentration-and-the-case-for-log-transformation" class="level5">
 <h5 class="anchored" data-anchor-id="revenue-concentration-and-the-case-for-log-transformation">Revenue Concentration and the Case for Log Transformation</h5>
-<div id="1edd8c09" class="cell" data-execution_count="41">
+<div id="22446d24" class="cell" data-execution_count="41">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-42-output-1.png" width="945" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-42-output-1.png" width="945" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -14798,11 +14798,11 @@ END OF SUMMARY REPORT FOR: product_features_gold_overlap
 </section>
 <section id="linelevel-value-concentration-and-the-structural-case-for-log-transformation" class="level5">
 <h5 class="anchored" data-anchor-id="linelevel-value-concentration-and-the-structural-case-for-log-transformation">Line‑Level Value Concentration and the Structural Case for Log Transformation</h5>
-<div id="9460746c" class="cell" data-execution_count="42">
+<div id="322d078b" class="cell" data-execution_count="42">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-43-output-1.png" width="943" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-43-output-1.png" width="943" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -14814,11 +14814,11 @@ END OF SUMMARY REPORT FOR: product_features_gold_overlap
 </section>
 <section id="revenue-concentration-heavytail-dynamics-and-the-case-for-log-transformation" class="level5">
 <h5 class="anchored" data-anchor-id="revenue-concentration-heavytail-dynamics-and-the-case-for-log-transformation">Revenue Concentration, Heavy‑Tail Dynamics, and the Case for Log Transformation</h5>
-<div id="664941ce" class="cell" data-execution_count="43">
+<div id="8462ebf3" class="cell" data-execution_count="43">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-44-output-1.png" width="943" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-44-output-1.png" width="943" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -14832,18 +14832,18 @@ END OF SUMMARY REPORT FOR: product_features_gold_overlap
 <h4 class="anchored" data-anchor-id="discounts-profit-ratios">Discounts &amp; profit ratios</h4>
 <section id="extreme-discount-outliers-and-their-operational-and-modelling-implications" class="level5">
 <h5 class="anchored" data-anchor-id="extreme-discount-outliers-and-their-operational-and-modelling-implications">Extreme Discount Outliers and Their Operational and Modelling Implications</h5>
-<div id="0e332397" class="cell" data-execution_count="44">
+<div id="fa8c2e07" class="cell" data-execution_count="44">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-45-output-1.png" width="945" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-45-output-1.png" width="945" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-45-output-2.png" width="1137" height="369" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-45-output-2.png" width="1137" height="369" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -14851,18 +14851,18 @@ END OF SUMMARY REPORT FOR: product_features_gold_overlap
 <p>The distribution shows a dense concentration of very small discounts, followed by a long stretch of unusually large values. The boxplot reinforces this pattern: the interquartile range is tightly compressed near zero, the upper whisker rises only modestly, and then a large number of individual points extend far beyond it. This structure signals the presence of extreme outliers—discounts that are far larger than what the underlying distribution would naturally produce.</p>
 <p>Several explanations can account for these extremes. Some may stem from operational or data‑entry anomalies, such as manual overrides, bulk adjustments, or inconsistent application of discount rules. Others may reflect legitimate policy exceptions, including clearance events, special customer tiers, or product‑specific promotions. Mixed discount mechanisms can also create artificial outliers if percentage‑based and absolute‑value discounts are stored in the same field. In some cases, the highest values may indicate data quality issues such as mis‑scaled entries, duplicated discounts, or incorrect currency conversions.</p>
 <p>From a modelling perspective, these outliers can distort averages, inflate variance, and weaken relationships with revenue, margin, or product attributes. A log transformation helps stabilise the distribution by compressing extreme values and reducing skewness, but direct inspection of the largest discounts is still advisable. Understanding whether they represent genuine business behaviour or require cleaning or capping will improve both interpretability and downstream model performance.</p>
-<div id="753b05bd" class="cell" data-execution_count="45">
+<div id="a4713744" class="cell" data-execution_count="45">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-46-output-1.png" width="945" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-46-output-1.png" width="945" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-46-output-2.png" width="1137" height="369" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-46-output-2.png" width="1137" height="369" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -14870,18 +14870,18 @@ END OF SUMMARY REPORT FOR: product_features_gold_overlap
 <p>The discount rate distribution is tightly concentrated in a narrow band, with most values clustered between roughly 0.05 and 0.15 and a clear peak around the midpoint of that range. The histogram shows a steep rise near the lower end, followed by a smooth decline, which signals a right‑skewed distribution but with far less extreme tail behaviour than the absolute discount amounts. The boxplot reinforces this: the interquartile range is compact, the median sits cleanly inside it, and the whiskers extend only modestly before reaching the maximum. There are no extreme spikes or long chains of outliers, which means discount rates are applied in a more controlled and consistent way.</p>
 <p>This pattern suggests that a relatively small subset of transactions does not dominate the discount rate landscape. Instead, the business appears to operate with a fairly standardised discounting policy, where most items receive similar percentage reductions. The absence of extreme outliers implies that discount rates are likely governed by rules or automated logic rather than manual overrides. This contrasts with absolute discount amounts, where large outliers can arise from high‑priced items or operational inconsistencies.</p>
 <p>From an analytical perspective, the stability of the discount rate distribution makes it a more reliable feature for modelling than raw discount amounts. It is less sensitive to product price variation and less prone to distortion from rare, high‑value transactions. The narrow range also means transformations are generally unnecessary, and the variable can be used directly in models without risking undue influence from a small number of extreme cases.</p>
-<div id="711bd409" class="cell" data-execution_count="46">
+<div id="1dba858a" class="cell" data-execution_count="46">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-47-output-1.png" width="945" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-47-output-1.png" width="945" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-47-output-2.png" width="1137" height="369" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-47-output-2.png" width="1137" height="369" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -14893,18 +14893,18 @@ END OF SUMMARY REPORT FOR: product_features_gold_overlap
 </section>
 <section id="shipping-delays" class="level4">
 <h4 class="anchored" data-anchor-id="shipping-delays">Shipping delays</h4>
-<div id="f49e2cf9" class="cell" data-execution_count="47">
+<div id="2b9529fb" class="cell" data-execution_count="47">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-48-output-1.png" width="945" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-48-output-1.png" width="945" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-48-output-2.png" width="945" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-48-output-2.png" width="945" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -14917,32 +14917,32 @@ Shipping duration patterns and operational implications The distribution of actu
 </section>
 <section id="session-level-behaviour" class="level4">
 <h4 class="anchored" data-anchor-id="session-level-behaviour">Session-level behaviour</h4>
-<div id="a686402d" class="cell" data-execution_count="48">
+<div id="f3ea36cd" class="cell" data-execution_count="48">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-49-output-1.png" width="945" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-49-output-1.png" width="945" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-49-output-2.png" width="945" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-49-output-2.png" width="945" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-49-output-3.png" width="945" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-49-output-3.png" width="945" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-49-output-4.png" width="945" height="462" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-49-output-4.png" width="945" height="462" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -14957,11 +14957,11 @@ Engagement patterns and session duration The distribution shows that most sessio
 </section>
 <section id="product-prices" class="level4">
 <h4 class="anchored" data-anchor-id="product-prices">Product Prices</h4>
-<div id="42e021c7" class="cell" data-execution_count="49">
+<div id="4cecb807" class="cell" data-execution_count="49">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-50-output-1.png" width="1137" height="369" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-50-output-1.png" width="1137" height="369" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -14986,18 +14986,18 @@ Engagement patterns and session duration The distribution shows that most sessio
 </section>
 <section id="violin-plot-revenue-by-department" class="level4">
 <h4 class="anchored" data-anchor-id="violin-plot-revenue-by-department">Violin plot: revenue by department</h4>
-<div id="24db6cda" class="cell" data-execution_count="50">
+<div id="61dbd421" class="cell" data-execution_count="50">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-51-output-1.png" width="1135" height="562" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-51-output-1.png" width="1135" height="562" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-51-output-2.png" width="1135" height="562" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-51-output-2.png" width="1135" height="562" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15042,18 +15042,18 @@ Engagement patterns and session duration The distribution shows that most sessio
 </section>
 <section id="violin-plot-shipping-delay-by-region" class="level4">
 <h4 class="anchored" data-anchor-id="violin-plot-shipping-delay-by-region">Violin plot: shipping delay by region</h4>
-<div id="13ec82b9" class="cell" data-execution_count="51">
+<div id="60dc6d1d" class="cell" data-execution_count="51">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-52-output-1.png" width="1136" height="561" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-52-output-1.png" width="1136" height="561" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-52-output-2.png" width="1136" height="561" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-52-output-2.png" width="1136" height="561" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15104,11 +15104,11 @@ Engagement patterns and session duration The distribution shows that most sessio
 </section>
 <section id="violin-plot-engagement-by-day-of-week" class="level4">
 <h4 class="anchored" data-anchor-id="violin-plot-engagement-by-day-of-week">Violin plot: engagement by day of week</h4>
-<div id="fe6366d3" class="cell" data-execution_count="52">
+<div id="87c9b425" class="cell" data-execution_count="52">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-53-output-1.png" width="1136" height="561" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-53-output-1.png" width="1136" height="561" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15151,11 +15151,11 @@ Engagement patterns and session duration The distribution shows that most sessio
 <h3 class="anchored" data-anchor-id="categorical-distributions-concentration-patterns">2. CATEGORICAL DISTRIBUTIONS &amp; CONCENTRATION PATTERNS</h3>
 <section id="scale-of-late-vs-ontime-deliveries" class="level4">
 <h4 class="anchored" data-anchor-id="scale-of-late-vs-ontime-deliveries">Scale of late vs on‑time deliveries</h4>
-<div id="8bed4ae4" class="cell" data-execution_count="53">
+<div id="70c3f70c" class="cell" data-execution_count="53">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-54-output-1.png" width="943" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-54-output-1.png" width="943" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15192,11 +15192,11 @@ Engagement patterns and session duration The distribution shows that most sessio
 </section>
 <section id="transaction-types" class="level4">
 <h4 class="anchored" data-anchor-id="transaction-types">Transaction Types</h4>
-<div id="de13f8bd" class="cell" data-execution_count="54">
+<div id="6fec1c87" class="cell" data-execution_count="54">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-55-output-1.png" width="944" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-55-output-1.png" width="944" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15236,25 +15236,25 @@ Engagement patterns and session duration The distribution shows that most sessio
 </section>
 <section id="distribution-of-customer-segments" class="level4">
 <h4 class="anchored" data-anchor-id="distribution-of-customer-segments">Distribution of Customer Segments</h4>
-<div id="945cc0e4" class="cell" data-execution_count="55">
+<div id="8fd10191" class="cell" data-execution_count="55">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-56-output-1.png" width="944" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-56-output-1.png" width="944" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-56-output-2.png" width="944" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-56-output-2.png" width="944" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-56-output-3.png" width="944" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-56-output-3.png" width="944" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15308,25 +15308,25 @@ Engagement patterns and session duration The distribution shows that most sessio
 </section>
 <section id="pareto-concentration" class="level3">
 <h3 class="anchored" data-anchor-id="pareto-concentration">Pareto Concentration</h3>
-<div id="0bc2cc0b" class="cell" data-execution_count="56">
+<div id="3bfcc8f2" class="cell" data-execution_count="56">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-57-output-1.png" width="1137" height="560" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-57-output-1.png" width="1137" height="560" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-57-output-2.png" width="1137" height="561" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-57-output-2.png" width="1137" height="561" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-57-output-3.png" width="1137" height="560" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-57-output-3.png" width="1137" height="560" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15387,25 +15387,25 @@ Engagement patterns and session duration The distribution shows that most sessio
 </section>
 <section id="geographic-market-visualisations" class="level3">
 <h3 class="anchored" data-anchor-id="geographic-market-visualisations">3. GEOGRAPHIC &amp; MARKET VISUALISATIONS</h3>
-<div id="1dc0a4c1" class="cell" data-execution_count="57">
+<div id="fae52468" class="cell" data-execution_count="57">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-58-output-1.png" width="1072" height="754" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-58-output-1.png" width="1072" height="754" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-58-output-2.png" width="1092" height="754" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-58-output-2.png" width="1092" height="754" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-58-output-3.png" width="1072" height="754" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-58-output-3.png" width="1072" height="754" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15463,11 +15463,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 <h3 class="anchored" data-anchor-id="temporal-patterns-seasonality">4. TEMPORAL PATTERNS &amp; SEASONALITY</h3>
 <section id="order-volumn" class="level4">
 <h4 class="anchored" data-anchor-id="order-volumn">Order Volumn</h4>
-<div id="8f9630f6" class="cell" data-execution_count="58">
+<div id="c262d9ef" class="cell" data-execution_count="58">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-59-output-1.png" width="1137" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-59-output-1.png" width="1137" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15497,11 +15497,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="revenue" class="level4">
 <h4 class="anchored" data-anchor-id="revenue">Revenue</h4>
-<div id="3c4849b0" class="cell" data-execution_count="59">
+<div id="33d81c86" class="cell" data-execution_count="59">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-60-output-1.png" width="1137" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-60-output-1.png" width="1137" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15526,18 +15526,18 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="shipping-delays-1" class="level4">
 <h4 class="anchored" data-anchor-id="shipping-delays-1">Shipping Delays</h4>
-<div id="4d038734" class="cell" data-execution_count="60">
+<div id="25674331" class="cell" data-execution_count="60">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-61-output-1.png" width="1137" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-61-output-1.png" width="1137" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-61-output-2.png" width="1137" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-61-output-2.png" width="1137" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15561,25 +15561,25 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="browsing-seasonality-and-traffic-peaks" class="level4">
 <h4 class="anchored" data-anchor-id="browsing-seasonality-and-traffic-peaks">Browsing Seasonality and Traffic Peaks</h4>
-<div id="dfaa2cee" class="cell" data-execution_count="61">
+<div id="e2efc66e" class="cell" data-execution_count="61">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-62-output-1.png" width="1137" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-62-output-1.png" width="1137" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-62-output-2.png" width="1137" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-62-output-2.png" width="1137" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-62-output-3.png" width="1137" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-62-output-3.png" width="1137" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15601,11 +15601,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="seasonal-decomposition-of-revenue" class="level4">
 <h4 class="anchored" data-anchor-id="seasonal-decomposition-of-revenue">Seasonal Decomposition of Revenue</h4>
-<div id="91a38ea2" class="cell" data-execution_count="62">
+<div id="05074041" class="cell" data-execution_count="62">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-63-output-1.png" width="1136" height="786" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-63-output-1.png" width="1136" height="786" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15626,11 +15626,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="seasonal-decomposition-of-shipping-delay" class="level4">
 <h4 class="anchored" data-anchor-id="seasonal-decomposition-of-shipping-delay">Seasonal Decomposition of Shipping Delay</h4>
-<div id="a03fbf68" class="cell" data-execution_count="63">
+<div id="8827eef9" class="cell" data-execution_count="63">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-64-output-1.png" width="1136" height="786" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-64-output-1.png" width="1136" height="786" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15647,11 +15647,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 <li><p><strong>Residual (Resid) Stability and Break:</strong> For the majority of the time series, the residuals stay very close to 1.0, confirming that the high delays were remarkably “normal” and predictable for this business. However, starting in late 2017, the residuals drop to the 0.5 level. This indicates that the sudden drop in delays is an <strong>extreme anomaly</strong> that the historical seasonal and trend patterns cannot account for.</p></li>
 </ul>
 <p>Overall, the decomposition shows that shipping delays were a chronic, seasonally-predictable feature of the business for years. The late-2017 “improvement” is statistically decoupled from normal operations, reinforcing the narrative of a major structural exit or system failure.</p>
-<div id="3f77f068" class="cell" data-execution_count="64">
+<div id="3028003d" class="cell" data-execution_count="64">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-65-output-1.png" width="1137" height="786" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-65-output-1.png" width="1137" height="786" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15675,11 +15675,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="browsing-heatmap-peak-hours-by-day-of-week" class="level4">
 <h4 class="anchored" data-anchor-id="browsing-heatmap-peak-hours-by-day-of-week">Browsing Heatmap (Peak Hours by Day of Week)</h4>
-<div id="652c6876" class="cell" data-execution_count="65">
+<div id="39e65b0e" class="cell" data-execution_count="65">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-66-output-1.png" width="1060" height="561" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-66-output-1.png" width="1060" height="561" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15701,11 +15701,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="order-volume-heatmap-month-year-trends" class="level4">
 <h4 class="anchored" data-anchor-id="order-volume-heatmap-month-year-trends">Order Volume Heatmap (Month × Year Trends)</h4>
-<div id="bdbef946" class="cell" data-execution_count="66">
+<div id="35e8d3eb" class="cell" data-execution_count="66">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-67-output-1.png" width="1050" height="561" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-67-output-1.png" width="1050" height="561" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15729,11 +15729,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 <h3 class="anchored" data-anchor-id="behavioural-funnel-engagement-patterns">5. BEHAVIOURAL FUNNEL &amp; ENGAGEMENT PATTERNS</h3>
 <section id="conversion-funnel-and-revenue-lifecycle" class="level4">
 <h4 class="anchored" data-anchor-id="conversion-funnel-and-revenue-lifecycle">Conversion Funnel and Revenue Lifecycle</h4>
-<div id="0b92776d" class="cell" data-execution_count="67">
+<div id="65d9facf" class="cell" data-execution_count="67">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-68-output-1.png" width="753" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-68-output-1.png" width="753" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15755,11 +15755,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="engagement-score-vs.-session-duration" class="level4">
 <h4 class="anchored" data-anchor-id="engagement-score-vs.-session-duration">Engagement Score vs.&nbsp;Session Duration</h4>
-<div id="30f551b9" class="cell" data-execution_count="68">
+<div id="2eb85e9e" class="cell" data-execution_count="68">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-69-output-1.png" width="752" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-69-output-1.png" width="752" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15784,11 +15784,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="engagement-score-vs.-key-events" class="level4">
 <h4 class="anchored" data-anchor-id="engagement-score-vs.-key-events">Engagement Score vs.&nbsp;Key Events</h4>
-<div id="e13346a4" class="cell" data-execution_count="69">
+<div id="76cc7207" class="cell" data-execution_count="69">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-70-output-1.png" width="752" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-70-output-1.png" width="752" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15816,32 +15816,32 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 <h3 class="anchored" data-anchor-id="relationships-correlations">6. RELATIONSHIPS &amp; CORRELATIONS</h3>
 <section id="correlation-matrices-key-drivers-and-feature-clusters" class="level4">
 <h4 class="anchored" data-anchor-id="correlation-matrices-key-drivers-and-feature-clusters">Correlation Matrices (Key Drivers and Feature Clusters)</h4>
-<div id="4ea618bd" class="cell" data-execution_count="70">
+<div id="a55437eb" class="cell" data-execution_count="70">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-71-output-1.png" width="1082" height="752" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-71-output-1.png" width="1082" height="752" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-71-output-2.png" width="1080" height="751" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-71-output-2.png" width="1080" height="751" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-71-output-3.png" width="1058" height="752" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-71-output-3.png" width="1058" height="752" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-71-output-4.png" width="1071" height="752" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-71-output-4.png" width="1071" height="752" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15869,32 +15869,32 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="discount-impact-revenue-driver-vs.-margin-erosion" class="level4">
 <h4 class="anchored" data-anchor-id="discount-impact-revenue-driver-vs.-margin-erosion">Discount Impact: Revenue Driver vs.&nbsp;Margin Erosion</h4>
-<div id="1ca77351" class="cell" data-execution_count="71">
+<div id="baccb2f3" class="cell" data-execution_count="71">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-72-output-1.png" width="752" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-72-output-1.png" width="752" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-72-output-2.png" width="753" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-72-output-2.png" width="753" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-72-output-3.png" width="752" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-72-output-3.png" width="752" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-72-output-4.png" width="752" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-72-output-4.png" width="752" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15911,11 +15911,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="planned-vs.-actual-shipping-times" class="level4">
 <h4 class="anchored" data-anchor-id="planned-vs.-actual-shipping-times">Planned vs.&nbsp;Actual Shipping Times</h4>
-<div id="450ecf43" class="cell" data-execution_count="72">
+<div id="806af56a" class="cell" data-execution_count="72">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-73-output-1.png" width="752" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-73-output-1.png" width="752" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15932,11 +15932,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="pricemargin-trade-offs-and-product-positioning" class="level4">
 <h4 class="anchored" data-anchor-id="pricemargin-trade-offs-and-product-positioning">Price–Margin Trade-offs and Product Positioning</h4>
-<div id="dc5d17a8" class="cell" data-execution_count="73">
+<div id="2c3bbde8" class="cell" data-execution_count="73">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-74-output-1.png" width="752" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-74-output-1.png" width="752" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15953,11 +15953,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="pairplots-logistics-dataset" class="level4">
 <h4 class="anchored" data-anchor-id="pairplots-logistics-dataset">Pairplots: Logistics Dataset</h4>
-<div id="a173c7b2" class="cell" data-execution_count="74">
+<div id="d7512958" class="cell" data-execution_count="74">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-75-output-1.png" width="944" height="981" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-75-output-1.png" width="944" height="981" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -15979,11 +15979,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 <h4 class="anchored" data-anchor-id="pairplots-sessions-dataset">Pairplots: Sessions Dataset</h4>
 <section id="joint-distributions-engagement-related-metrics" class="level5">
 <h5 class="anchored" data-anchor-id="joint-distributions-engagement-related-metrics">Joint Distributions (Engagement-Related Metrics)</h5>
-<div id="9519979a" class="cell" data-execution_count="75">
+<div id="7f604ad4" class="cell" data-execution_count="75">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-76-output-1.png" width="694" height="739" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-76-output-1.png" width="694" height="739" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16004,32 +16004,32 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 <h3 class="anchored" data-anchor-id="outlier-anomaly-detection">7. OUTLIER &amp; ANOMALY DETECTION</h3>
 <section id="boxplots-for-extreme-values-and-outliers" class="level4">
 <h4 class="anchored" data-anchor-id="boxplots-for-extreme-values-and-outliers">Boxplots for Extreme Values and Outliers</h4>
-<div id="70a7f8d3" class="cell" data-execution_count="76">
+<div id="e30c2115" class="cell" data-execution_count="76">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-77-output-1.png" width="1137" height="369" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-77-output-1.png" width="1137" height="369" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-77-output-2.png" width="1137" height="369" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-77-output-2.png" width="1137" height="369" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-77-output-3.png" width="1137" height="369" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-77-output-3.png" width="1137" height="369" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-77-output-4.png" width="1137" height="369" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-77-output-4.png" width="1137" height="369" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16054,11 +16054,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="unusual-discountrevenue-combinations" class="level4">
 <h4 class="anchored" data-anchor-id="unusual-discountrevenue-combinations">Unusual Discount–Revenue Combinations</h4>
-<div id="70b4aa48" class="cell" data-execution_count="77">
+<div id="d04fa642" class="cell" data-execution_count="77">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-78-output-1.png" width="753" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-78-output-1.png" width="753" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16075,11 +16075,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="anomalous-shipping-patterns-vs.-schedule" class="level4">
 <h4 class="anchored" data-anchor-id="anomalous-shipping-patterns-vs.-schedule">Anomalous Shipping Patterns vs.&nbsp;Schedule</h4>
-<div id="ad0cded5" class="cell" data-execution_count="78">
+<div id="5aa726db" class="cell" data-execution_count="78">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-79-output-1.png" width="752" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-79-output-1.png" width="752" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16097,11 +16097,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="unusual-engagementevent-patterns" class="level4">
 <h4 class="anchored" data-anchor-id="unusual-engagementevent-patterns">Unusual Engagement–Event Patterns</h4>
-<div id="0d60e937" class="cell" data-execution_count="79">
+<div id="985f3e01" class="cell" data-execution_count="79">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-80-output-1.png" width="752" height="465" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-80-output-1.png" width="752" height="465" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16122,25 +16122,25 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 <h3 class="anchored" data-anchor-id="cross-dataset-alignment-visualisations">8. CROSS-DATASET ALIGNMENT VISUALISATIONS</h3>
 <section id="popularity-gap-analysis-browsing-intent-vs.-purchasing-reality" class="level4">
 <h4 class="anchored" data-anchor-id="popularity-gap-analysis-browsing-intent-vs.-purchasing-reality">Popularity Gap Analysis: Browsing Intent vs.&nbsp;Purchasing Reality</h4>
-<div id="1f6a9790" class="cell" data-execution_count="80">
+<div id="72470ed4" class="cell" data-execution_count="80">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-81-output-1.png" width="1132" height="560" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-81-output-1.png" width="1132" height="560" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-81-output-2.png" width="945" height="658" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-81-output-2.png" width="945" height="658" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-81-output-3.png" width="945" height="658" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-81-output-3.png" width="945" height="658" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16169,11 +16169,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="category-alignment-view-share-vs-revenue-share" class="level4">
 <h4 class="anchored" data-anchor-id="category-alignment-view-share-vs-revenue-share">Category Alignment: View Share vs Revenue Share</h4>
-<div id="83641e0b" class="cell" data-execution_count="81">
+<div id="64c78a06" class="cell" data-execution_count="81">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-82-output-1.png" width="1136" height="560" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-82-output-1.png" width="1136" height="560" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16194,18 +16194,18 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="temporal-analysis-browsing-intent-vs.-purchasing-lag" class="level4">
 <h4 class="anchored" data-anchor-id="temporal-analysis-browsing-intent-vs.-purchasing-lag">Temporal Analysis: Browsing Intent vs.&nbsp;Purchasing Lag</h4>
-<div id="5ba9091c" class="cell" data-execution_count="82">
+<div id="4e539696" class="cell" data-execution_count="82">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-83-output-1.png" width="1137" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-83-output-1.png" width="1137" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-83-output-2.png" width="1137" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-83-output-2.png" width="1137" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16223,11 +16223,11 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 </section>
 <section id="the-conversion-funnel-browsing-to-order-completion" class="level4">
 <h4 class="anchored" data-anchor-id="the-conversion-funnel-browsing-to-order-completion">The Conversion Funnel: Browsing to Order Completion</h4>
-<div id="c4023156" class="cell" data-execution_count="83">
+<div id="2d636da9" class="cell" data-execution_count="83">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-84-output-1.png" width="752" height="466" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-84-output-1.png" width="752" height="466" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16262,7 +16262,7 @@ This indicates that delays are not caused by remote or hard‑to‑reach stores 
 <p>We flag outliers in key numeric fields and run a simple anomaly detector to understand unusual records.</p>
 <section id="outlier-diagnostics-for-logistics-dataset" class="level3">
 <h3 class="anchored" data-anchor-id="outlier-diagnostics-for-logistics-dataset">Outlier Diagnostics for Logistics Dataset</h3>
-<div id="0185889b" class="cell" data-execution_count="85">
+<div id="6d8c3a59" class="cell" data-execution_count="85">
 <div class="cell-output cell-output-stdout">
 <pre><code>
 === Outlier Diagnostics for Logistics Dataset ===
@@ -16282,7 +16282,7 @@ order_item_discount_rate: 0 outliers (|z| &gt; 3.0)
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-86-output-2.png" width="753" height="562" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-86-output-2.png" width="753" height="562" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16294,7 +16294,7 @@ Isolation Forest anomalies in Logistics Dataset: 0 rows</code></pre>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-86-output-4.png" width="807" height="561" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-86-output-4.png" width="807" height="561" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16307,7 +16307,7 @@ Diagnostics complete.
 </section>
 <section id="outlier-diagnostics-for-access-logs-dataset" class="level3">
 <h3 class="anchored" data-anchor-id="outlier-diagnostics-for-access-logs-dataset">Outlier Diagnostics for Access Logs Dataset</h3>
-<div id="dc792a58" class="cell" data-execution_count="86">
+<div id="803b721c" class="cell" data-execution_count="86">
 <div class="cell-output cell-output-stdout">
 <pre><code>
 === Outlier Diagnostics for Access Logs Dataset ===
@@ -16327,7 +16327,7 @@ product_view_count: 0 outliers (|z| &gt; 3.0)
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-87-output-2.png" width="752" height="562" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-87-output-2.png" width="752" height="562" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16339,7 +16339,7 @@ Isolation Forest anomalies in Access Logs Dataset: 4449 rows</code></pre>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-87-output-4.png" width="752" height="561" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-87-output-4.png" width="752" height="561" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16352,7 +16352,7 @@ Diagnostics complete.
 </section>
 <section id="outlier-diagnostics-for-customer-features" class="level3">
 <h3 class="anchored" data-anchor-id="outlier-diagnostics-for-customer-features">Outlier Diagnostics for Customer Features</h3>
-<div id="6694ef44" class="cell" data-execution_count="87">
+<div id="8c4b1665" class="cell" data-execution_count="87">
 <div class="cell-output cell-output-stdout">
 <pre><code>
 === Outlier Diagnostics for Customer Features Dataset ===
@@ -16372,7 +16372,7 @@ avg_discount: 300 outliers (|z| &gt; 3.0)
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-88-output-2.png" width="752" height="562" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-88-output-2.png" width="752" height="562" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16384,7 +16384,7 @@ Isolation Forest anomalies in Customer Features Dataset: 205 rows</code></pre>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-88-output-4.png" width="752" height="562" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-88-output-4.png" width="752" height="562" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16397,7 +16397,7 @@ Diagnostics complete.
 </section>
 <section id="outlier-diagnostics-for-product-features" class="level3">
 <h3 class="anchored" data-anchor-id="outlier-diagnostics-for-product-features">Outlier Diagnostics for Product Features</h3>
-<div id="8e4b79f3" class="cell" data-execution_count="88">
+<div id="80c660ad" class="cell" data-execution_count="88">
 <div class="cell-output cell-output-stdout">
 <pre><code>
 === Outlier Diagnostics for Product Features Dataset ===
@@ -16417,7 +16417,7 @@ avg_price: 3 outliers (|z| &gt; 3.0)
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-89-output-2.png" width="752" height="562" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-89-output-2.png" width="752" height="562" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16429,7 +16429,7 @@ Isolation Forest anomalies in Product Features Dataset: 2 rows</code></pre>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering_files/figure-html/cell-89-output-4.png" width="774" height="561" class="figure-img"></p>
+<p><img src="index_files/figure-html/cell-89-output-4.png" width="774" height="561" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -16444,7 +16444,7 @@ Diagnostics complete.
 <section id="exploring-modelling-targets" class="level2">
 <h2 class="anchored" data-anchor-id="exploring-modelling-targets">Exploring Modelling Targets</h2>
 <p>We evaluate candidate regression and classification targets for suitability: distribution, class balance, and potential leakage.</p>
-<div id="5b539ef3" class="cell" data-execution_count="91">
+<div id="7551c321" class="cell" data-execution_count="91">
 <div class="cell-output cell-output-display" data-execution_count="91">
 <div>
 
