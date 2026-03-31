@@ -1,5 +1,14 @@
 ---
 title: "Muhammad Khan Muneer"
+# Add this block-headings: to hide the default title/author block
+include-in-header:
+  text: |
+    <style>
+      .quarto-title-block {
+        display: none !important;
+      }
+    </style>
+# title-block-style: none
 page-layout: full
 toc: false
 listing:
@@ -65,18 +74,5 @@ I am a Data Science and BI Consultant specializing in **ML-driven automation**, 
 
 ---
 
-<hr>
-
-<div style="text-align: center; padding: 40px 0;">
-  <h3 style="margin-bottom: 25px; color: #333;">Let's Connect</h3>
-  <a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" style="margin: 10px; padding: 12px 30px;">
-    <i class="bi bi-linkedin"></i> LinkedIn
-  </a>
-  <a href="https://github.com/mkhanmuneer" class="btn btn-dark" style="margin: 10px; padding: 12px 30px;">
-    <i class="bi bi-github"></i> GitHub
-  </a>
-  <a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" style="color: white; margin: 10px; padding: 12px 30px;">
-    <i class="bi bi-graph-up"></i> Kaggle
-  </a>
-</div>
+{{< include ./_includes/_connect.html >}}
 

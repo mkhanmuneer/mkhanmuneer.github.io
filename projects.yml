@@ -1,7 +1,90 @@
-- title: "Supply Chain and Customer Behaviour Analytics: End‑to‑End EDA, Data Quality Assessment, and Behavioural and Logistics Feature Engineering"
-  subtitle: "A comprehensive, production‑aligned exploration of supply‑chain and customer behaviour data, tracing the full journey from raw source files to modelling‑ready feature layers."
-  path: "projects/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering.html"
-  image: "images/thumbnails/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering.png"
-  description: "End‑to‑end exploratory analysis and data‑quality audit of the Supply Chain and Customer Behaviour dataset, built to mirror a real consulting engagement. This project performs raw‑layer ingestion, schema validation, naming‑standard audits, temporal alignment checks, and behavioural‑log diagnostics. It establishes a clean Bronze → Silver → Gold data pipeline, produces analysis‑ready tables, and identifies high‑value modelling opportunities across logistics, customer behaviour, and product analytics."
-  categories: [supply chain, python, eda]
-  date: "2026-03-01"
+- title: "Automated Real Estate Intelligence: A High-Performance Market Valuation Engine"
+  subtitle: "Architecting a Scalable Star-Schema Ecosystem with Automated REST API Orchestration"
+  author: "Muhammad Khan Muneer"
+  date: "2026-02-15"
+  date-format: "MMMM YYYY"
+  description: |
+    Architected an end-to-end ecosystem unifying 2,930 raw housing records into a live, automated intelligence ecosystem. **Star Schema:** Optimized data modeling for analytical depth. **OAuth2 Automation:** Seamless API orchestration for real-time updates. **Memory Efficiency:** Achieved an 82.5% reduction in memory footprint while increasing analytical depth by 79%.
+  categories: [
+    Data Engineering, 
+    Power BI,
+    Star Schema, 
+    Real Estate Analytics, 
+    ETL Pipeline,
+    DAX
+    ]
+  keywords: [
+    Star Schema, 
+    OAuth2 Automation, 
+    Memory Efficiency, 
+    Real Estate Analytics, 
+    Market Valuation, 
+    Data Engineering, 
+    Machine Learning, 
+    ETL Pipeline, 
+    Housing Records, 
+    Analytical Depth
+    ]
+  path: "projects/automated-real-estate-intelligence-high-performance-market-valuation-engine/automated-real-estate-intelligence-high-performance-market-valuation-engine.html"
+
+
+- title: 'Unified Analytics Engine: Bridging Digital Intent & Global Logistics'
+  subtitle: 'A 3-tier Medallion platform featuring automated Target Viability and Multi-domain Feature Engineering.'
+  author: "Muhammad Khan Muneer"
+  date: "2025-12-15"
+  date-format: "MMMM YYYY"
+  description: |
+    Architected an end-to-end ecosystem unifying 4.6M behavioral events and 180k logistics records. **Full Sessionisation:** Custom GA4-style scoring. **Viability Scoring:** A 0–100 audit for leakage/skew. **Cross-Domain Integration:** Aligning customer behavior with global fulfillment across 164 countries.
+  categories: [
+    Data Engineering, 
+    Machine Learning, 
+    Supply Chain, 
+    Behavioral Analytics
+    ]
+  keywords: [
+    Medallion Architecture, 
+    Target Viability Framework, 
+    Customer Behaviour, 
+    Product Analytics, 
+    Conversion Funnels, 
+    Data Quality Assessment, 
+    EDA, 
+    Feature Engineering, 
+    Multi-touch Attribution, 
+    Sessionization, 
+    GA4 Analytics, 
+    Data Leakage Audit, 
+    Python, 
+    SQL
+    ]
+  path: "projects/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering.html" 
+    
+
+
+
+- title: "Citywide Crime Intelligence & Analytics Dashboard"
+  subtitle: "A unified operational intelligence dashboard analysing crime patterns across time, space, demographics, and incident categories."
+  author: "Muhammad Khan Muneer"
+  date: "2025-06-15"
+  date-format: "MMMM YYYY"
+  description: "A unified operational intelligence dashboard analysing crime patterns across time, space, demographics, and incident categories. This project provides a comprehensive view of citywide crime behaviour, enabling data-driven decision-making for law enforcement and public safety agencies."
+  categories: [
+    Power BI, 
+    Crime Analytics, 
+    Data Modelling, 
+    DAX
+    ]
+  keywords: [
+    Crime Analytics, 
+    Power BI, 
+    Data Modelling, 
+    DAX, 
+    Operational Intelligence, 
+    Crime Patterns, 
+    Public Safety, 
+    Law Enforcement, 
+    Data-Driven Decision Making
+    ]
+  path: "projects/citywide-crime-intelligence-analytics-dashboard/citywide-crime-intelligence-analytics-dashboard.html"
+
+

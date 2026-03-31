@@ -4,7 +4,7 @@ project:
 
 # Freeze execution to ensure reproducibility and prevent unintended code runs during rendering 
 execute: 
-  freeze: true
+  freeze: true # Set to true if you want to prevent any code execution during rendering
 
 website:
   title: "Muhammad Khan Muneer"
@@ -33,9 +33,12 @@ website:
 
   # --- Navigation ---
   navbar:
+    title: false # Hides the title from the navbar, since we have it in the hero banner
     left:
       - href: index.qmd
         text: Home
+      - href: index.qmd#featured-projects
+        text: Projects
       - href: cv.qmd
         text: CV
     right:
@@ -45,14 +48,25 @@ website:
         href: https://github.com/mkhanmuneer
       - icon: twitter-x
         href: https://x.com/iMKhanMuneer
-      - icon: facebook
-        href: https://www.facebook.com/mkmuneer1989
       - icon: graph-up
         href: https://www.kaggle.com/muhammadkhanmuneer
-
+      - text: "Contact"
+        href: "#contact"
+  
+  
   # --- Footer ---
   page-footer:
-    center: "© 2026 Muhammad Khan Muneer"
+    left: "© 2026 Muhammad Khan Muneer"
+    center: 
+      - text: "Hire on Upwork"
+        href: "https://www.upwork.com/freelancers/~018de8553286a1d00c"
+      - text: "Hire on Fiverr"
+        href: "https://www.fiverr.com/rimot_solutionz"
+    right: 
+      - icon: github
+        href: https://github.com/mkhanmuneer
+      - icon: linkedin
+        href: https://www.linkedin.com/in/mkmuneer
 
 format:
   html:
@@ -60,8 +74,10 @@ format:
       light: cosmo
       dark: cyborg
     toc: true
+    toc-depth: 3
     code-fold: true
     smooth-scroll: true
     css: styles/custom.css
     mainfont: "Inter, sans-serif" # Cleaner, more modern than standard Cosmo
     page-layout: article         # Ensures a standard starting point for all pages
+
