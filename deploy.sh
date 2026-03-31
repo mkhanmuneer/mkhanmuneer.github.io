@@ -80,8 +80,14 @@ fi
 if [ $? -eq 0 ] && [ -d "docs" ]; then
     echo "📦 Step 7: Staging all authorized assets..."
 
+    # Ensure .nojekyll exists so GitHub doesn't ignore our folders
+    touch docs/.nojekyll
+
     # Copy SEO/Verification assets from root to docs
     cp google*.html robots.txt sitemap.xml docs/ 2>/dev/null || :
+
+    # Force add the docs folder to bypass any hidden ignore rules
+    git add -f docs/    
     
     # Use '.' to catch all new projects/images automatically
     git add .

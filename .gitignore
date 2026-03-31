@@ -7,6 +7,11 @@
 data/
 temp/
 projects/
+projects/**/*.qmd
+projects/**/*.ipynb
+_freeze/
+.quarto/
+/_freeze/
 dataco_env/
 .env
 *.csv
@@ -47,7 +52,6 @@ __pycache__/
 # !index.qmd
 # !cv.qmd
 !docs/
-!/_freeze/
 !_quarto.yml
 !styles/
 !projects.yml
