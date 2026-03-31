@@ -4,7 +4,7 @@ project:
 
 # Freeze execution to ensure reproducibility and prevent unintended code runs during rendering 
 execute: 
-  freeze: true # Set to true if you want to prevent any code execution during rendering
+  freeze: auto # Set to true if you want to prevent any code execution during rendering
 
 website:
   title: "Muhammad Khan Muneer"
