@@ -1,6 +1,9 @@
 [
   {
     "listing": "/index.html",
-    "items": []
+    "items": [
+      "/projects/automated-real-estate-intelligence-high-performance-market-valuation-engine/automated-real-estate-intelligence-high-performance-market-valuation-engine.html",
+      "/projects/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering/supply-chain-customer-behaviour-analytics-data-quality-assessment-eda-feature-engineering.html"
+    ]
   }
 ]
