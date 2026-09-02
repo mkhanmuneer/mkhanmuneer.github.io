@@ -1,1 +1,4 @@
+User-agent: *
+Allow: /
+
 Sitemap: https://mkhanmuneer.github.io/sitemap.xml
