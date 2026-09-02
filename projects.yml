@@ -1,0 +1,1161 @@
+- title: "An Idempotent Medallion Pipeline for a Dual-Domain Supply-Chain Dataset, With Adaptive Anomaly Reconciliation"
+  subtitle: "Turning a 180,519-row logistics CSV and a 466,728-event web access log into eleven validated Gold feature tables — a Bronze → Silver → Gold contract, a data-driven Same-Day shipping fix, and a 153-day cross-domain window."
+  author: "Muhammad Khan Muneer"
+  date: "2026-09-01"
+  date-format: "MMMM YYYY"
+  description: |
+    A three-layer medallion ETL pipeline that feeds an eight-notebook DataCo analysis. **Dual-domain ingestion:** 180,519 order-item transactions over three years, conceptually joined to 466,728 web page-views over five months. **Adaptive anomaly reconciliation:** 4,657 Same-Day shipments carry a recorded 1-day transit time that the timestamps prove is 0 — the field is overridden from the dates. **Redundancy audit:** 7 identical column pairs and 3 zero-variance columns (two sentinel-masked) removed at Silver. **Sessionisation:** a 30-minute inactivity rule yields 196,720 sessions. **Output:** 11 Gold Parquet tables at six grains, validated for round-trip integrity, shape, and determinism.
+  categories: [
+    Data Engineering,
+    ETL Pipeline,
+    Medallion Architecture,
+    Supply Chain,
+    Python
+    ]
+  keywords: [
+    medallion architecture,
+    ETL pipeline,
+    bronze silver gold,
+    data quality audit,
+    sentinel encoding,
+    redundant columns,
+    sessionisation,
+    GA4 engagement,
+    feature engineering,
+    Parquet,
+    idempotent pipeline,
+    data validation,
+    supply chain analytics,
+    Python,
+    pandas
+    ]
+  path: projects/dataco-medallion-pipeline-adaptive-anomaly-reconciliation/index.qmd
+
+
+- title: "Where a Global Supply Chain Loses Time: A Multi-Axis OTIF Diagnostic of 180,519 Order-Items"
+  subtitle: "An exploratory operations analysis of a three-year, 164-country logistics dataset — decomposing a 54.7% late-delivery rate across shipping mode, customer segment, destination region, and time, and testing the system's own late-delivery flag."
+  author: "Muhammad Khan Muneer"
+  date: "2026-09-08"
+  date-format: "MMMM YYYY"
+  description: |
+    A diagnostic read of on-time-in-full (OTIF) performance across 180,519 order-items. **The headline:** 54.7% of order-items arrive late; OTIF is 45.3%. **The mechanism:** the outcome is set almost entirely by shipping mode, because mode fixes the *promised* lead time while the network's *achievable* transit is a flat 2–6 days regardless — First Class is promised 1 day, takes exactly 2, and is late on **all 27,814** of its shipments. **Not a driver:** customer segment (a sub-1-point spread) and destination region. **A prediction–action gap:** the system's own late-delivery flag matches the outcome on 95.2% of order-items (ROC-AUC 0.95), yet the majority still ship late.
+  categories: [
+    Exploratory Data Analysis,
+    Supply Chain,
+    Operations Analytics,
+    Logistics,
+    Python
+    ]
+  keywords: [
+    OTIF,
+    on-time in-full,
+    late delivery,
+    supply chain diagnostic,
+    shipping mode,
+    lead time,
+    delivery performance,
+    exploratory data analysis,
+    profit margin erosion,
+    correlation analysis,
+    predictive integrity,
+    ROC-AUC,
+    Brier score,
+    Python,
+    pandas
+    ]
+  path: projects/global-supply-chain-otif-diagnostic-where-orders-lose-time/index.qmd
+
+
+- title: "A Bifurcated Customer Base: A Revenue-Concentration Diagnostic of 20,652 Customers"
+  subtitle: "An exploratory customer-grain analysis of a three-year e-commerce dataset — the one-and-done majority, a loyalty pyramid whose revenue ranking inverts its population ranking, and the behavioural axis that actually predicts value."
+  author: "Muhammad Khan Muneer"
+  date: "2026-09-15"
+  date-format: "MMMM YYYY"
+  description: |
+    A diagnostic of how revenue distributes across 20,652 customers. **The split:** 43% placed exactly one order and never returned. **The inversion:** the loyalty pyramid runs Standard (63% of customers) → Loyal (28%) → Champion (7%) by headcount, but Loyal alone carries **53% of revenue** and the combined Loyal + Champion tiers (36% of customers) carry **72%**. **Concentration:** the top 20% of customers generate 50% of revenue (Gini 0.52) — real but moderate. **The value axis:** product breadth, not segment or discount — categories bought correlates with revenue at *r* ≈ 0.90, while margin, discount and late rate are decoupled from customer value entirely.
+  categories: [
+    Exploratory Data Analysis,
+    Customer Analytics,
+    RFM Segmentation,
+    Revenue Concentration,
+    Python
+    ]
+  keywords: [
+    customer analytics,
+    RFM,
+    loyalty tiers,
+    revenue concentration,
+    Lorenz curve,
+    Gini coefficient,
+    customer lifetime value,
+    CLV proxy,
+    repeat purchase rate,
+    product breadth,
+    churn,
+    exploratory data analysis,
+    Python,
+    pandas
+    ]
+  path: projects/bifurcated-customer-base-revenue-concentration-diagnostic/index.qmd
+
+
+- title: "Anchor Concentration and the Economy-Over-Luxury Paradox: A Catalogue Diagnostic for 118 Products"
+  subtitle: "An exploratory product-grain analysis of a three-year e-commerce catalogue — the nine products that carry it, a margin distribution that behaves like an accounting rule, and a price ladder that does nothing for profitability."
+  author: "Muhammad Khan Muneer"
+  date: "2026-09-22"
+  date-format: "MMMM YYYY"
+  description: |
+    A diagnostic of how demand, revenue, and margin distribute across 118 products. **Anchor concentration:** nine products carry **88% of catalogue revenue**; the median product earns $18,461 against a top product's $6.2M (337×). **The Economy-over-Luxury paradox:** Luxury (26 products) leads on total revenue, but Economy (7 products) leads 2× on revenue-per-product and on margin — and margin is flat within one point across all five price tiers. **A structural margin anomaly:** 18.7% of order-items are negative-margin at a rate uniform across every operational dimension, and 87% of the catastrophic losses fall on the same nine anchors — the signature of a cost-accounting treatment, not a discounting or fulfilment failure. **Discount is not a lever:** every product discounts at ~11% of revenue and margin is flat across discount deciles.
+  categories: [
+    Exploratory Data Analysis,
+    Product Analytics,
+    Catalogue Diagnostics,
+    Revenue Concentration,
+    Python
+    ]
+  keywords: [
+    product analytics,
+    catalogue diagnostic,
+    revenue concentration,
+    Pareto,
+    profit margin,
+    price tiers,
+    discount analysis,
+    demand distribution,
+    product lifecycle,
+    cost accounting anomaly,
+    exploratory data analysis,
+    Python,
+    pandas
+    ]
+  path: projects/catalogue-anchor-concentration-economy-over-luxury-paradox/index.qmd
+
+
+- title: "A 46.4% Session-to-Cart Rate and a Bimodal Audience: A Conversion and Engagement Diagnostic Over 196,720 Sessions"
+  subtitle: "An exploratory clickstream analysis of a five-month web access log — why the funnel collapses to one step, why the audience is a panel rather than open traffic, and what that does to every rate the data reports."
+  author: "Muhammad Khan Muneer"
+  date: "2026-09-29"
+  date-format: "MMMM YYYY"
+  description: |
+    A behavioural diagnostic of 196,720 web sessions reconstructed from a product-page access log. **The funnel is degenerate:** every URL is a product path, so the only real step is browse → cart, at **46.4%**. **The audience is a panel:** 3,340 IP addresses, ~59 sessions each over five months, 15 first-time sessions in the whole dataset — so the 46.4% rate reflects catalogue-familiar repeat visitors, not cold traffic. **Behaviour is bimodal:** sessions bounce in under a minute (51%) or run 15–60 minutes (27%), with almost nothing between; 82.7% view three pages or fewer. **Bounce depends on the definition:** 49.3% by the single-page rule, 35.5% by GA4's engagement rule.
+  categories: [
+    Exploratory Data Analysis,
+    Clickstream Analytics,
+    Web Analytics,
+    Conversion Analysis,
+    Python
+    ]
+  keywords: [
+    clickstream analysis,
+    web sessions,
+    conversion funnel,
+    add-to-cart rate,
+    bounce rate,
+    GA4 engagement,
+    sessionisation,
+    user panel,
+    exploratory data analysis,
+    browse versus purchase,
+    Python,
+    pandas
+    ]
+  path: projects/clickstream-conversion-engagement-diagnostic-bimodal-audience/index.qmd
+
+
+- title: "A Six-Cluster Refinement of the Loyalty Tier System: Multi-Metric Selection and Three-Algorithm Validation Over 20,652 Customers"
+  subtitle: "Unsupervised K-Means clustering of a customer base on 18 behavioural, monetary, temporal, and product-breadth features — how a data-driven partition consolidates the top two RFM tiers into one group and splits the Standard tier into five, and how far to trust it."
+  author: "Muhammad Khan Muneer"
+  date: "2026-10-06"
+  date-format: "MMMM YYYY"
+  description: |
+    An unsupervised segmentation testing whether a four-tier RFM loyalty system misses structure. **k = 6**, chosen where silhouette and Davies–Bouldin improve together — k = 2 wins every geometry metric but is a small-*k* bias artefact. **Cross-validated:** K-Means, Ward, and a Gaussian mixture agree at ARI 0.56–0.62 — moderate, so the partition is partly algorithm-dependent. **The refinement:** one cluster is 70% Loyal-tier and 26% Champion-tier customers — it holds 99% of all Champions and two-thirds of the Loyal tier — while the Standard tier (63% of the base) fans out across five structurally distinct clusters, among them a **573-customer negative-margin group** the algorithm surfaced with no profitability feature to guide it. **The economics:** two clusters hold 58.6% of customers and 93.1% of revenue. Silhouette 0.32 — a useful lens, not a ground truth.
+  categories: [
+    Unsupervised Learning,
+    Clustering,
+    Customer Segmentation,
+    Dimensionality Reduction,
+    Python
+    ]
+  keywords: [
+    unsupervised learning,
+    K-means clustering,
+    Ward agglomerative clustering,
+    Gaussian mixture model,
+    silhouette score,
+    Davies-Bouldin index,
+    adjusted Rand index,
+    k selection,
+    PCA,
+    UMAP,
+    RFM,
+    customer segmentation,
+    Python,
+    scikit-learn
+    ]
+  path: projects/customer-loyalty-tier-refinement-six-cluster-multi-algorithm-segmentation/index.qmd
+
+
+- title: "Catalogue Structure to Rationalisation Decisions: A Five-Cluster Segmentation of 118 Products, With a Bounded Loss-Making Micro-Segment"
+  subtitle: "Unsupervised clustering at product grain — nine products carry 88% of revenue, the remaining 109 split into four analytically distinct groups, and a three-product negative-margin cluster is reported with a leave-one-out sensitivity check rather than overstated confidence."
+  author: "Muhammad Khan Muneer"
+  date: "2026-10-13"
+  date-format: "MMMM YYYY"
+  description: |
+    An unsupervised segmentation of a 118-product catalogue on 12 volume, price, margin, tenure, and reach features — a small-*N* exercise where every preprocessing choice is made on evidence. **The scaler** is chosen by a 200-sample bootstrap (StandardScaler partition-stability ARI 0.83 vs RobustScaler 0.44, Wilcoxon *p* < .001). **k = 5** is selected on averaged rank across three geometry metrics and confirmed by the Ward dendrogram's largest merge gap. **Validation:** K-Means, Ward, and a Gaussian mixture agree at ARI ≥ 0.98; spectral clustering is a documented negative result — its *k*-NN affinity graph fractures into 3 disconnected components at N = 118. **The finding:** cluster 0 — 9 products, 7.6% of the catalogue — carries **88.2% of revenue and 87.9% of profit**. **The bounded finding:** a 3-product loss-making micro-segment (mean margin −3.2%), reported with a leave-one-out table because 33 combined orders cannot support a generalised rate.
+  categories: [
+    Unsupervised Learning,
+    Clustering,
+    Product Analytics,
+    Dimensionality Reduction,
+    Python
+    ]
+  keywords: [
+    unsupervised learning,
+    K-means clustering,
+    Ward agglomerative clustering,
+    Gaussian mixture model,
+    spectral clustering,
+    silhouette score,
+    adjusted Rand index,
+    bootstrap scaler selection,
+    small sample clustering,
+    revenue concentration,
+    product rationalisation,
+    PCA,
+    leave-one-out sensitivity,
+    Python,
+    scikit-learn
+    ]
+  path: projects/catalogue-segmentation-flagship-concentration-and-a-thin-evidence-loss-segment/index.qmd
+
+
+- title: "A Dual-Engine Delay-Risk Model for 180,519 Shipments, and a Triage Layer Sized to Team Capacity"
+  subtitle: "An XGBoost classifier and regressor scored against a leakage-controlled feature set, blended into a 0–100 operational risk index — with an honest ROC-AUC of 0.87, and a segmentation that caps the Critical alert queue at a fixed share of the portfolio instead of an arbitrary score cut-off."
+  author: "Muhammad Khan Muneer"
+  date: "2026-10-20"
+  date-format: "MMMM YYYY"
+  description: |
+    A supervised modelling pipeline over a three-year, 180,519-order logistics dataset. **Two engines:** an XGBoost classifier for *will this order be late?* and an XGBoost regressor for *how long will it take?*, trained on the same 22-feature, leakage-audited matrix. **Honest performance:** the classifier reaches **ROC-AUC 0.872** on a 36,104-order held-out set (accuracy 0.79, precision 0.85, recall 0.75 at the default threshold); the regressor reaches **MAE 0.71 days, R² 0.68** on calendar days to ship. **One number:** the two outputs blend with historical destination, mode, and category late-rates into a 0–100 operational risk score. **The triage contribution:** fixed score thresholds place 25–37% of the portfolio in the Critical band; percentile and capacity-aware strategies hold it at a chosen 15%. Reproduced entirely from persisted model artefacts.
+  categories: [
+    Machine Learning,
+    Supervised Learning,
+    Supply Chain,
+    Risk Scoring,
+    Python
+    ]
+  keywords: [
+    delay prediction,
+    XGBoost,
+    operational risk score,
+    data leakage audit,
+    multicollinearity,
+    variance inflation factor,
+    probability calibration,
+    threshold analysis,
+    precision recall trade-off,
+    risk segmentation,
+    capacity-aware triage,
+    logistics analytics,
+    Python,
+    scikit-learn
+    ]
+  path: projects/operational-risk-scoring-dual-engine-delay-prediction-and-capacity-sized-triage/index.qmd
+
+
+- title: "Unsupervised Patient Phenotyping: Two-Stream Clustering of a Stroke Cohort With Cross-Algorithm Validation"
+  subtitle: "Segmenting 5,110 patients along a physiological and a demographic feature stream — four algorithms, agreement rather than a single winner, and a post-hoc read against the stroke outcome the clustering never saw."
+  author: "Muhammad Khan Muneer"
+  date: "2026-08-22"
+  date-format: "MMMM YYYY"
+  description: |
+    Label-free segmentation of a 5,110-patient stroke cohort along two feature streams. **Physiological stream:** eight phenotypes with stroke rates from 0.3% to 24.1% — an ~83× spread the supervised models never surfaced. **Cross-algorithm validation:** K-Means and Ward agree at ARI 0.9988 on the physiological stream, only 0.62–0.65 on the demographic one. **Cross-stream link:** the two partitions share Cramér's V = 0.26, driven almost entirely by age.
+  categories: [
+    Unsupervised Learning,
+    Clustering,
+    Clinical Analytics,
+    Machine Learning,
+    Python
+    ]
+  keywords: [
+    unsupervised learning,
+    patient phenotyping,
+    K-means clustering,
+    agglomerative clustering,
+    Gaussian mixture model,
+    HDBSCAN,
+    UMAP,
+    adjusted Rand index,
+    cross-algorithm validation,
+    Cramér's V,
+    feature scaling,
+    stroke cohort,
+    Python,
+    scikit-learn
+    ]
+  path: projects/unsupervised-patient-phenotyping-two-stream-clustering-cross-algorithm-validation/index.qmd
+
+
+- title: "Clinical Feature Profiling for Stroke: Age-Led Stroke-Rate Gradients, Confounder Identification, and Feature-Level Signal Quantification"
+  subtitle: "An exploratory analysis of a 5,110-patient cohort — univariate distributions, within-group rate structure, age stratification, and a full feature-versus-outcome association landscape."
+  author: "Muhammad Khan Muneer"
+  date: "2026-08-08"
+  date-format: "MMMM YYYY"
+  description: |
+    A rate-first exploratory analysis of stroke risk factors in a 5,110-patient cohort (4.87% prevalence). **Age dominance:** the within-decade stroke rate is near-zero to age 50 then rises to 21.5% past 80. **Confounding:** marital status tracks age at Cramér's V = 0.75, explaining its apparent 4-fold rate elevation. **Genuine nulls:** gender and residence type return V = 0.00 against clean, balanced distributions. **Signal ranking:** age-derived terms lead every association metric.
+  categories: [
+    Exploratory Data Analysis,
+    Biostatistics,
+    Epidemiology,
+    Clinical Analytics,
+    Python
+    ]
+  keywords: [
+    exploratory data analysis,
+    stroke risk factors,
+    Wilson confidence interval,
+    Mann-Whitney U,
+    rank-biserial correlation,
+    point-biserial correlation,
+    Cramér's V,
+    confounding,
+    age stratification,
+    decile rate analysis,
+    feature selection,
+    class imbalance,
+    biostatistics,
+    Python
+    ]
+  path: projects/clinical-feature-profiling-age-led-stroke-rate-gradients-confounder-identification-signal-quantification/index.qmd
+
+
+- title: "Sequential Random-Forest Imputation and a Medallion ETL Pipeline for Mixed-Type Clinical Data"
+  subtitle: "Turning a raw 5,110-row healthcare CSV into a validated, fully imputed, feature-engineered Gold layer — with a Bronze → Silver → Gold contract and an explicit read on heterogeneous missingness."
+  author: "Muhammad Khan Muneer"
+  date: "2026-08-01"
+  date-format: "MMMM YYYY"
+  description: |
+    A three-layer medallion ETL pipeline for a stroke-risk dataset. **Heterogeneous missingness:** 201 true bmi NaNs from CSV ingestion versus 1,545 sentinel-encoded gaps (`"Other"`, `"Unknown"`) that masquerade as valid categories. **Sequential RF imputation:** BMI → gender → smoking status, each imputed column feeding the next, resolving all 1,746 gaps. **Leakage audit:** the outcome was (imprecisely) a candidate predictor — quantified at ≤ 1.3% splitting weight in every imputer and disclosed. **Output:** a validated 5,110 × 24 Gold Parquet consumed by every downstream notebook.
+  categories: [
+    Data Engineering,
+    ETL Pipeline,
+    Imputation,
+    Clinical Analytics,
+    Python
+    ]
+  keywords: [
+    medallion architecture,
+    ETL pipeline,
+    random forest imputation,
+    MICE,
+    mixed-type imputation,
+    sentinel encoding,
+    missing data,
+    feature engineering,
+    data validation,
+    Parquet,
+    stroke dataset,
+    Python,
+    scikit-learn
+    ]
+  path: projects/sequential-random-forest-imputation-medallion-pipeline-mixed-type-clinical-data/index.qmd
+
+
+- title: "Clinical Stroke-Screening Model Benchmarking: Champion Selection, Threshold Profiling, and a Calibration Trade-off"
+  subtitle: "Five architectures, three imbalance-correction tiers, a tuned three-model finalist round, and an evidence-based-medicine read on how the champion would behave as a screening tool — on 5,110 patients at 4.9% stroke prevalence."
+  author: "Muhammad Khan Muneer"
+  date: "2026-08-18"
+  date-format: "MMMM YYYY"
+  description: |
+    A binary stroke-screening pipeline benchmarked end to end. **Champion:** a regularised linear model (GLMNET / Elastic Net) wins on ranking — test ROC-AUC 0.841 vs. XGBoost 0.821 and LightGBM 0.808. **Class weighting is the load-bearing fix:** recall jumps from ~0.04 to ~0.80 from tier 1 to tier 2; SMOTE adds only an increment. **Named trade-off:** GLMNET ranks best but calibrates worst (Brier 0.178 vs. ~0.043) — acceptable for a binary flag, not risk communication. **Widest operating range:** GLMNET holds recall to a 0.6 threshold; the tree models collapse by 0.3.
+  categories: [
+    Machine Learning,
+    Clinical Analytics,
+    Imbalanced Classification,
+    Model Calibration,
+    Python
+    ]
+  keywords: [
+    stroke screening,
+    binary classification,
+    class imbalance,
+    SMOTE,
+    class weighting,
+    hyperparameter tuning,
+    ROC-AUC,
+    precision-recall,
+    Youden's J,
+    clinical impact analysis,
+    number needed to screen,
+    calibration,
+    Brier score,
+    SHAP,
+    elastic net,
+    XGBoost,
+    LightGBM,
+    Python,
+    scikit-learn
+    ]
+  path: projects/clinical-stroke-screening-model-benchmarking-champion-selection-threshold-profiling-calibration/index.qmd
+
+
+- title: "A Clinical ML Equity Audit: Age-Band Disparities, Risk-Factor Detection Asymmetry, and Fairness Metrics"
+  subtitle: "Decomposing a stroke-screening model's headline recall across five clinical and demographic subgroups — and showing that a single overall number conceals a structural age-band failure."
+  author: "Muhammad Khan Muneer"
+  date: "2026-08-20"
+  date-format: "MMMM YYYY"
+  description: |
+    A subgroup audit of three tuned stroke-screening models on a 1,022-patient test set (50 events). **The headline conceals a failure:** overall recall of ~0.82 is a senior-band metric — the 60+ band holds 76% of test strokes and is detected at ~0.97, while every model misses *every* stroke in the mid and young bands. **Inverted risk-factor disparity:** patients with hypertension, heart disease, or high glucose are detected better; the markerless stroke is the hardest case. **A vacuous-fairness trap:** the linear model at a 0.10 threshold scores a perfect Equalized-Odds gap of 0.00 — only because it flags every patient positive.
+  categories: [
+    Machine Learning,
+    Fairness & Equity,
+    Clinical Analytics,
+    Model Auditing,
+    Python
+    ]
+  keywords: [
+    algorithmic fairness,
+    equity audit,
+    subgroup analysis,
+    equalized odds,
+    demographic parity,
+    false-negative rate,
+    stroke screening,
+    class imbalance,
+    age disparity,
+    cryptogenic stroke,
+    model governance,
+    Youden threshold,
+    Python
+    ]
+  path: projects/clinical-ml-equity-audit-age-band-disparities-risk-factor-detection-asymmetry-fairness-metrics/index.qmd
+
+
+- title: "Clinical Risk-Factor Analysis of Stroke: Crude and Adjusted Odds Ratios, Confounding Diagnosis, and Population Attributable Fractions"
+  subtitle: "A descriptive epidemiological study of a 5,110-patient cohort — inferential quantification of risk-factor associations, age-confounding adjustment, and modifiable-burden estimation."
+  author: "Muhammad Khan Muneer"
+  date: "2026-08-15"
+  date-format: "MMMM YYYY"
+  description: |
+    A descriptive epidemiological analysis of stroke risk factors in a 5,110-patient cohort. **Crude vs. adjusted:** odds ratios before and after age adjustment. **Confounding:** the crude marital-status effect (OR = 4.18) collapses to 0.85 once age enters the model. **Burden:** Levin population attributable fractions rank elevated glucose (27.7%) and hypertension (20.8%) as the leading modifiable contributors. **Diagnostics:** Hosmer–Lemeshow calibration, ROC-AUC 0.845, and Mantel–Haenszel stratified analysis for effect modification.
+  categories: [
+    Biostatistics,
+    Epidemiology,
+    Clinical Analytics,
+    Logistic Regression,
+    Python
+    ]
+  keywords: [
+    odds ratio,
+    confounding,
+    population attributable fraction,
+    logistic regression,
+    stroke epidemiology,
+    Mantel-Haenszel,
+    attributable risk,
+    Hosmer-Lemeshow,
+    effect modification,
+    Wilson confidence interval,
+    Cramér's V,
+    descriptive risk score,
+    biostatistics,
+    Python,
+    statsmodels
+    ]
+  path: projects/clinical-risk-factor-analysis-crude-adjusted-odds-ratios-confounding-population-attributable-fraction/index.qmd
+
+
+- title: "Automated Real Estate Intelligence: A High-Performance Market Valuation Engine"
+  subtitle: "Architecting a Scalable Star-Schema Ecosystem with Automated REST API Orchestration"
+  author: "Muhammad Khan Muneer"
+  date: "2026-02-15"
+  date-format: "MMMM YYYY"
+  description: |
+    Architected an end-to-end ecosystem unifying 2,930 raw housing records into a live, automated intelligence ecosystem. **Star Schema:** Optimized data modeling for analytical depth. **OAuth2 Automation:** Seamless API orchestration for real-time updates. **Memory Efficiency:** Achieved an 82.5% reduction in memory footprint while increasing analytical depth by 79%.
+  categories: [
+    Data Engineering, 
+    Power BI,
+    Star Schema, 
+    Real Estate Analytics, 
+    ETL Pipeline,
+    DAX
+    ]
+  keywords: [
+    Star Schema, 
+    OAuth2 Automation, 
+    Memory Efficiency, 
+    Real Estate Analytics, 
+    Market Valuation, 
+    Data Engineering, 
+    Machine Learning, 
+    ETL Pipeline, 
+    Housing Records, 
+    Analytical Depth
+    ]
+  path: projects/automated-real-estate-intelligence-high-performance-market-valuation-engine/index.qmd
+
+
+
+- title: "Citywide Crime Intelligence & Analytics Dashboard"
+  subtitle: "A unified operational intelligence dashboard analysing crime patterns across time, space, demographics, and incident categories."
+  author: "Muhammad Khan Muneer"
+  date: "2025-06-15"
+  date-format: "MMMM YYYY"
+  description: "A unified operational intelligence dashboard analysing crime patterns across time, space, demographics, and incident categories. This project provides a comprehensive view of citywide crime behaviour, enabling data-driven decision-making for law enforcement and public safety agencies."
+  categories: [
+    Power BI, 
+    Crime Analytics, 
+    Data Modelling, 
+    DAX
+    ]
+  keywords: [
+    Crime Analytics, 
+    Power BI, 
+    Data Modelling, 
+    DAX, 
+    Operational Intelligence, 
+    Crime Patterns, 
+    Public Safety, 
+    Law Enforcement, 
+    Data-Driven Decision Making
+    ]
+  path: projects/citywide-crime-intelligence-analytics-dashboard/index.qmd
+
+
+- title: "A Medallion Pipeline for Simulated Offer-Response Data: Sentinel Resolution, Dict-Schema Harmonisation, and an Idempotent Attribution Layer"
+  subtitle: "Turning a 10-row offer catalogue, a 17,000-row customer roster, and a 306,534-event log into five validated Gold tables — with a Bronze → Silver → Gold contract, one attribution rule stated once, and a funnel that separates viewing an offer from completing it anyway."
+  author: "Muhammad Khan Muneer"
+  date: "2026-10-27"
+  date-format: "MMMM YYYY"
+  description: |
+    A three-layer medallion ETL pipeline that feeds a five-notebook study of offer response on the Starbucks/Udacity capstone data. **Sentinel resolution:** `age = 118` masks 2,175 customers (12.79%) whose demographics were never collected — invisible to a null count until Silver converts it. **Dict-schema harmonisation:** the event log stores Python dicts as strings whose offer-id key differs by event type (`'offer id'` vs `'offer_id'`); a one-line `or` fallback prevents a silent half-funnel loss on every join. **Attribution:** one rule — viewed before the transaction, transaction inside the validity window, last-click tie-break — stated once and applied across the funnel, transaction, and offer-performance tables. **The carry-forward finding:** 55.1% of completable offers are completed but only 38.8% are viewed *then* completed, and the two most-engaged customer archetypes (43% / 43% of the base) diverge 4.8× in median spend on comparable exposure. **Output:** five Gold Parquet tables, validated for round-trip integrity, shape, and determinism.
+  categories: [
+    Data Engineering,
+    ETL Pipeline,
+    Medallion Architecture,
+    Causal Inference,
+    Marketing Analytics,
+    Python
+    ]
+  keywords: [
+    medallion architecture,
+    ETL pipeline,
+    bronze silver gold,
+    sentinel encoding,
+    data quality audit,
+    last-click attribution,
+    offer funnel,
+    intention-to-treat,
+    feature engineering,
+    Parquet,
+    idempotent pipeline,
+    data validation,
+    Starbucks capstone,
+    offer response,
+    Python,
+    pandas
+    ]
+  path: projects/starbucks-offer-events-medallion-pipeline-sentinel-resolution-dict-harmonisation/index.qmd
+
+
+- title: "Behavioural Profiling of an Offer-Response Cohort: The Funnel, the Spend Concentration, and Five k-Means Segments That Anchor a Causal Analysis"
+  subtitle: "An exploratory read of 17,000 customers, 10 offers, and 306,534 events — a received → viewed → completed funnel where 29.6% of completions were never viewed, a Gini of 0.525 on customer spend, and a five-segment partition chosen over the silhouette-optimal but uninformative k = 2."
+  author: "Muhammad Khan Muneer"
+  date: "2026-11-03"
+  date-format: "MMMM YYYY"
+  description: |
+    An exploratory and segmentation analysis that sets up a five-notebook causal study of promotional-offer response. **The catalogue:** 10 offers (4 BOGO, 4 discount, 2 informational) spanning 4 reward, 5 spend-threshold, and 5 duration levels — so raw cross-offer response rates cannot be compared without adjustment. **The funnel:** of 61,042 non-informational offers, 23.1% are never viewed, a further 28.3% of viewed offers never complete, and **29.6% of the 33,631 completions had no prior view** — organic purchases that cleared the threshold and must be excluded from a "true response" count. **Spend concentration:** transaction amounts are heavy-tailed (mean USD 12.78 vs median USD 8.89) and customer spend has a **Gini of 0.525**, which is why the downstream primary metric uses trimmed means and bootstrap intervals. **Segments:** k-means on 9 RFM-plus-funnel features yields five behavioural strata — high-frequency buyers, offer-responsive spenders, low-value browsers, affluent low-engagement, and a 232-customer high-value outlier cluster — persisted as `segment_id` for use as covariates and heterogeneity strata.
+  categories: [
+    Exploratory Data Analysis,
+    Customer Segmentation,
+    Marketing Analytics,
+    Causal Inference,
+    Clustering,
+    Python
+    ]
+  keywords: [
+    exploratory data analysis,
+    customer segmentation,
+    k-means clustering,
+    RFM analysis,
+    offer funnel,
+    conversion funnel,
+    last-click attribution,
+    intention-to-treat,
+    spend concentration,
+    Lorenz curve,
+    Gini coefficient,
+    silhouette score,
+    heterogeneous treatment effects,
+    Starbucks capstone,
+    Python,
+    scikit-learn
+    ]
+  path: projects/starbucks-offer-response-behavioural-eda-rfm-segmentation-spend-concentration/index.qmd
+
+
+- title: "Designing an A/B Test the Data Cannot Support at Face Value: A Feasibility Sweep, a Monte-Carlo-Validated Design, and a Recovered Hidden Effect"
+  subtitle: "A pre-registered experiment on a 14,825-customer pool with no true no-offer control — the feasibility sweep rejects the obvious USD 2–5 MDEs, the design commits to the tightest feasible USD 7, and 2,000 full-pipeline simulations confirm 90% power and a 3.5% false-positive rate before the primary Welch test recovers an injected USD 8.40 lift to within 6.5%."
+  author: "Muhammad Khan Muneer"
+  date: "2026-11-10"
+  date-format: "MMMM YYYY"
+  description: |
+    A methods demonstration: how to design a trustworthy randomised experiment on a dataset that cannot supply a clean control arm. **The constraint:** only 6 of 17,000 customers received zero offers, so "offer vs no offer" is structurally impossible; the control outcome is observed 30-day spend and the treatment effect is injected synthetically, declared, then recovered with the truth hidden. **The feasibility sweep:** a USD 2 MDE needs ~52,000 customers per arm against a ~14,800 pool; USD 5 needs ~8,400; **only MDE ≥ USD 7 (≈6% relative lift, 4,263 per arm) is deliverable** — and filtering to transacting customers does *not* reduce the outcome SD. **Validation before inference:** 2,000 full-pipeline Monte Carlo runs give realised power 90.1% (Wilson 95% CI [88.1, 91.8]) and realised Type I error 3.5% ([2.5, 4.8]) — both guarantees confirmed empirically. **The result:** a one-sided Welch t-test recovers an observed lift of USD 8.95 against the injected USD 8.40 (6.5% error), t = 2.95, p = 0.0016, one-sided 95% lower bound USD 3.96; the transaction-count guardrail is silent (p = 0.39).
+  categories: [
+    Experimental Design,
+    A/B Testing,
+    Causal Inference,
+    Power Analysis,
+    Monte Carlo,
+    Python
+    ]
+  keywords: [
+    A/B test design,
+    power analysis,
+    minimum detectable effect,
+    design feasibility,
+    stratified randomisation,
+    sample ratio mismatch,
+    covariate balance,
+    Welch t-test,
+    Monte Carlo validation,
+    Type I error,
+    sequential monitoring,
+    guardrail metric,
+    Starbucks capstone,
+    Python,
+    scipy
+    ]
+  path: projects/starbucks-simulated-ab-test-design-feasibility-monte-carlo-validation/index.qmd
+
+
+- title: "Causal Inference on a Rollout That Was Never Randomised: Per-Offer ITT Contrasts, an IV/2SLS LATE for Viewing, and E-Value / Plausibly-Exogenous Sensitivity Bounds"
+  subtitle: "The Starbucks promotions rollout has no no-offer arm — so the estimands are within-treated differential effects and a compliance-weighted local effect. One discount lifts spend USD 18.44 per exposure (E-value 2.28, the only offer robust to any hidden confounder weaker than 2.28×); the pooled IV LATE for viewing is USD 29.15 but breaks down at 40% exclusion-restriction slippage."
+  author: "Muhammad Khan Muneer"
+  date: "2026-11-17"
+  date-format: "MMMM YYYY"
+  description: |
+    Observational causal inference on a non-randomised 76,277-instance offer rollout, with the identification limits stated at every step. **The constraint:** every customer received offers, so there is no treatment-vs-untreated contrast; the ITT analysis compares each offer to the pooled rest, and viewing is instrumented by offer identity. **Balance:** offer *receipt* is near-random across the catalogue (39 of 40 covariate cells |SMD| < 0.1), but offer *viewing* is strongly selective (pre-period spend SMD +0.23) — which is why the IV earns its place. **ITT:** all 28 per-offer contrasts are significant after Benjamini–Hochberg, so the reading is effect-size-first. One discount (reward 2, difficulty 10, 10-day) is top on view rate (96.8%), completion (70.2%), and spend (+USD 18.44 vs pool); one discount (reward 5, difficulty 20) fails on all three. **IV/2SLS:** the pooled LATE of viewing on spend is USD 29.15 (95% CI [27.68, 30.63], first-stage F = 999). **Sensitivity:** the top discount's E-value is 2.28 (strong); the other nine offers sit at 1.31–1.84 (moderate); the LATE's Conley–Hansen–Rossi breakdown point is a direct effect of USD 11.66 (40% of the stock estimate).
+  categories: [
+    Causal Inference,
+    Observational Study,
+    Instrumental Variables,
+    Sensitivity Analysis,
+    Marketing Analytics,
+    Python
+    ]
+  keywords: [
+    quasi-experimental,
+    intention-to-treat,
+    instrumental variables,
+    two-stage least squares,
+    local average treatment effect,
+    E-value,
+    unmeasured confounding,
+    plausibly exogenous,
+    Conley Hansen Rossi,
+    standardised mean difference,
+    Benjamini-Hochberg,
+    exclusion restriction,
+    Starbucks capstone,
+    Python,
+    statsmodels
+    ]
+  path: projects/starbucks-quasi-experimental-causal-inference-itt-iv-late-evalue-sensitivity/index.qmd
+
+
+- title: "A CATE-Targeting Policy That Does Not Beat Send-to-All: Five Uplift Estimators, a Three-Gate Decision Rule, and the Diagnostics That Say No"
+  subtitle: "The focal offer's 97% view rate leaves 167 control customers and a propensity distribution with no customer below 0.80 — so the doubly-robust learner blows up (SD USD 1,317), the pseudo-outcome R² is −0.25, the policy-value improvement over send-to-all is +USD 0.20 [−2.81, +3.29], and the E-value is 1.04. All three pre-registered gates fail; the recommendation is a prospective randomised holdout on the top decile."
+  author: "Muhammad Khan Muneer"
+  date: "2026-11-24"
+  date-format: "MMMM YYYY"
+  description: |
+    A pre-registered conditional-average-treatment-effect (CATE) and uplift analysis that returns a disciplined **negative** result — and is more valuable for it. **The substrate problem:** the focal discount is viewed by 97% of recipients, leaving 167 control customers (50 in the test set) and a propensity distribution where every recipient has P(view | X) > 0.80. **Five estimators:** T/S/X-learners and an honest random forest produce coherent but mutually inconsistent CATE distributions (means USD 11–33); the doubly-robust learner blows up (SD USD 1,317, range −22,585 to +17,877, correlation with every other estimator below 0.06). **The decision rule fails all three gates:** the argmax-CATE policy improves DR policy value over send-to-all by **+USD 0.20** (95% CI [−2.81, +3.29]), the DR pseudo-outcome out-of-fold R² is **−0.25**, and the E-value is **1.04** against a 1.25 threshold. **An unresolved tension:** a model-free empirical lift of **+USD 149** in the top predicted decile (CI excludes zero) that the DR estimator scores as null — resolvable only by a prospective randomised holdout (~45 customers per arm). **A counter-example:** a naive "no-offer" control (n = 5) produces an illusory +USD 277 policy uplift — the failure this pipeline is built to catch.
+  categories: [
+    Causal Inference,
+    Uplift Modelling,
+    Machine Learning,
+    Policy Evaluation,
+    Negative Result,
+    Python
+    ]
+  keywords: [
+    conditional average treatment effect,
+    CATE,
+    uplift modelling,
+    meta-learners,
+    doubly robust learner,
+    causal forest,
+    Qini curve,
+    policy value,
+    propensity overlap,
+    positivity,
+    E-value,
+    negative result,
+    Starbucks capstone,
+    Python,
+    scikit-learn
+    ]
+  path: projects/starbucks-cate-uplift-modelling-negative-result-under-propensity-overlap-limits/index.qmd
+
+
+
+- title: "An Operator-Truth-Preserving Medallion ETL Pipeline for a City Part 1 Crime Archive"
+  subtitle: "Turning a 546,800-row GeoJSON export and a 203-row code lookup into a validated 407,826-incident star schema — a Bronze → Silver → Gold contract, a weapon vocabulary that never loses the operator's 'no weapon' signal, and row accounting where every dropped record is attributed to one filter."
+  author: "Muhammad Khan Muneer"
+  date: "2024-06-10"
+  date-format: "MMMM YYYY"
+  description: |
+    A four-tier medallion ETL pipeline for eleven years of municipal Part 1 (index) crime incidents. **Operator-truth preservation:** the source's `NA` weapon token is an affirmative "no weapon involved" on 281,645 incidents (69% of the cohort) — kept as an explicit `Not Applicable` category, never folded into a null or an "unknown" bucket. **Vocabulary harmonisation:** 31 raw gender tokens collapse to five states, with the operator's deliberate "unknown" held apart from 22 uninterpretable entries. **Row accounting:** 546,800 raw rows → 407,826, every one of the 138,974 dropped records attributed to the temporal window, the spatial-completeness filter, or the Part 1 inner join. **Output:** 14 validated Parquet tables — a feature-engineered fact grain, a surrogate-keyed consolidated fact, and 12 conformed dimensions.
+  categories: [
+    Data Engineering,
+    ETL Pipeline,
+    Medallion Architecture,
+    Star Schema,
+    Crime Analytics,
+    Python
+    ]
+  keywords: [
+    medallion architecture,
+    bronze silver gold,
+    ETL pipeline,
+    star schema,
+    Kimball dimensional model,
+    data quality audit,
+    sentinel encoding,
+    operator-entered data,
+    vocabulary harmonisation,
+    surrogate keys,
+    spatial enrichment,
+    Parquet,
+    GeoJSON,
+    crime incident data,
+    Part 1 crime,
+    feature engineering,
+    Python,
+    pandas
+    ]
+  path: projects/operator-truth-preserving-medallion-etl-pipeline-urban-crime-incident-star-schema/index.qmd
+
+- title: "A Four-Lens Exploratory Analysis of 407,826 Urban Part 1 Crime Incidents"
+  subtitle: "Profiling eleven years of a large U.S. city's serious-crime records across volume, time, severity, and space — a moderate (Gini 0.50) rather than extreme spatial concentration, a near-discrete composite severity score, and a demographic-recording gap in which victim gender and victim age go missing together."
+  author: "Muhammad Khan Muneer"
+  date: "2024-06-24"
+  date-format: "MMMM YYYY"
+  description: |
+    An exploratory read of 407,826 Part 1 (index) crime incidents, 2012–2022. **Composition:** 63.7% property / 36.3% violent; larceny alone is 43% of the cohort. **Concentration:** the 10 busiest neighbourhoods (3.6% of the city) hold 17.5% of incidents and the top 50 hold 50.3% — but the Lorenz-curve Gini is **0.50**, moderate, not the near-1.0 that a Herfindahl-style index (inflated by the 278-neighbourhood count) suggests. **Severity:** the engineered `CrimeSeverityScore` is functionally discrete within each category; only robbery and aggravated assault carry real weapon-driven spread, and firearm involvement concentrates in three violent categories. **A data-quality finding:** the 87,358 incidents with no recorded victim gender also lack a recorded age 88% of the time — gender and age go missing together, not independently.
+  categories: [
+    Exploratory Data Analysis,
+    Crime Analytics,
+    Spatial Analysis,
+    Descriptive Statistics,
+    Python
+    ]
+  keywords: [
+    exploratory data analysis,
+    Part 1 crime,
+    index crime,
+    spatial concentration,
+    Lorenz curve,
+    Gini coefficient,
+    Herfindahl index,
+    crime severity score,
+    temporal crime patterns,
+    crime clock,
+    weapon modality,
+    firearm involvement,
+    missing data,
+    co-missingness,
+    police records,
+    descriptive statistics,
+    Python,
+    pandas
+    ]
+  path: projects/part-1-crime-incident-eda-four-lens-concentration-severity-spatial-inequality/index.qmd
+
+- title: "Classifying Violent versus Property Crime — A Target-Leakage Audit and the Honest AUC"
+  subtitle: "A binary classifier on 407,826 Part 1 incidents that scores ROC-AUC 0.988 on a held-out future year — until one engineered feature is recognised as a deterministic transform of the label. Re-fitting the identical model without it gives the honest figure: 0.913."
+  author: "Muhammad Khan Muneer"
+  date: "2024-07-08"
+  date-format: "MMMM YYYY"
+  description: |
+    A supervised-classification study that turns into a leakage audit. **The reported model:** an XGBoost classifier distinguishing Violent from Property Crime, ROC-AUC **0.988** on a 2021–2022 temporal hold-out, chosen over five other architectures. **The problem:** its top feature, `CrimeSeverityScore`, is `(BaseCrimeSeverity × 10) + WeaponSeverityIndex` — and `BaseCrimeSeverity` is a fixed lookup from the offence category, which maps one-to-one onto the crime-type label. That one feature carries **71%** of the model's SHAP weight and reaches AUC **0.92** alone. **The honest number:** re-fitting the exact champion configuration without it — same split, same seed — gives ROC-AUC **0.913**; also dropping the recorded-weapon field drops it to **0.67**, so weapon information, not time, place, or demographics, carries the signal.
+  categories: [
+    Machine Learning,
+    Classification,
+    Model Evaluation,
+    Data Leakage,
+    Crime Analytics,
+    Python
+    ]
+  keywords: [
+    binary classification,
+    target leakage,
+    data leakage audit,
+    feature leakage,
+    XGBoost,
+    ROC-AUC,
+    temporal validation,
+    SHAP,
+    engineered features,
+    crime severity score,
+    class imbalance,
+    probability calibration,
+    distribution drift,
+    leakage-controlled model,
+    Python,
+    scikit-learn
+    ]
+  path: projects/violent-versus-property-crime-classification-target-leakage-audit-and-leakage-controlled-model/index.qmd
+
+- title: "A Subgroup Equity Audit of a Binary Crime Classifier — Miss-Rate Disparities Across Four Axes"
+  subtitle: "The Violent/Property champion from a companion study is audited for recall consistency across gender, race, age, and district, at two decision thresholds. Age and the ‘unrecorded demographic’ slices carry the widest miss-rate gaps; district is an order of magnitude tighter. And when the audit is repeated on the leakage-controlled model, every gap roughly doubles."
+  author: "Muhammad Khan Muneer"
+  date: "2024-07-22"
+  date-format: "MMMM YYYY"
+  description: |
+    A four-axis subgroup fairness audit of a persisted XGBoost classifier that flags Violent versus Property crime, run at the Youden and best-F1 thresholds on a 58,693-incident held-out year. **The equity metric:** the false-negative rate — a missed violent incident. **The findings:** miss rate rises monotonically with victim age (1% at under-18 to 18% at 60+), the largest gap on any axis; incidents where gender or race went *unrecorded* are missed more often than those with a recorded value; race shows a moderate gap; the nine districts are near-even. **The caveat:** the audited model carries a documented target leak. Re-running the identical audit on the leakage-controlled model roughly doubles every equalised-odds gap and takes the unrecorded-gender miss rate from 12% to 57%.
+  categories: [
+    Machine Learning,
+    Fairness,
+    Model Evaluation,
+    Algorithmic Audit,
+    Crime Analytics,
+    Python
+    ]
+  keywords: [
+    algorithmic fairness,
+    equity audit,
+    subgroup analysis,
+    false-negative rate,
+    equalised odds,
+    demographic parity,
+    threshold sensitivity,
+    missing data bias,
+    age disparity,
+    crime classification,
+    target leakage,
+    leakage-controlled model,
+    Python,
+    scikit-learn
+    ]
+  path: projects/algorithmic-equity-audit-of-a-binary-crime-classifier-subgroup-recall-disparities/index.qmd
+
+- title: "Two-Stream Unsupervised Segmentation of Urban Crime — Spatial Hotspots versus Behavioural Profiles"
+  subtitle: "Geography and behaviour are clustered on deliberately separate feature matrices for 407,826 incidents: HDBSCAN finds 87 density hotspots, K-Means finds four behavioural profiles, and a cross-stream test (Cramér's V = 0.10) shows the two partitions are almost independent — where crime concentrates tells you almost nothing about what kind it is."
+  author: "Muhammad Khan Muneer"
+  date: "2024-08-12"
+  date-format: "MMMM YYYY"
+  description: |
+    Five clustering algorithms and two projections applied to 407,826 Part 1 incidents across two independent streams. **Spatial (HDBSCAN):** 87 neighbourhood-scale hotspots covering 77% of incidents plus 23% dispersed "noise"; DBSCAN's single global radius fails, producing 14,620 one-per-street-corner micro-clusters. **Behavioural (K-Means k = 4):** street-level property (37%), violent crime with weapons (30%), indoor property (32%), and a non-repeat-location isolate (2%) — confirmed by GMM (ARI 0.91), only partly by agglomerative (ARI 0.42). **The headline:** the 87 hotspots and the 4 profiles are near-orthogonal (Cramér's V = 0.10); every hotspot carries the city-wide behavioural mix. Geography answers *where*, not *what kind* or *how severe*.
+  categories: [
+    Machine Learning,
+    Clustering,
+    Unsupervised Learning,
+    Spatial Analysis,
+    Crime Analytics,
+    Python
+    ]
+  keywords: [
+    unsupervised learning,
+    clustering,
+    HDBSCAN,
+    DBSCAN,
+    K-Means,
+    Gaussian mixture model,
+    agglomerative clustering,
+    spatial hotspots,
+    UMAP,
+    PCA,
+    cluster validation,
+    Cramér's V,
+    crime segmentation,
+    Python,
+    scikit-learn
+    ]
+  path: projects/two-stream-unsupervised-crime-segmentation-spatial-hotspots-versus-behavioural-profiles/index.qmd
+
+- title: "Measuring a Predictive Ceiling — Leakage-Restricted Regression of a Crime-Severity Score"
+  subtitle: "The target is a synthetic index built from the offence category and the weapon. Withhold both — as you must, or the model just re-does the arithmetic — and eighteen model variants across four families all land between R² 0.08 and 0.13. Context (when, where, to whom) explains almost nothing about how severe an incident is."
+  author: "Muhammad Khan Muneer"
+  date: "2024-09-09"
+  date-format: "MMMM YYYY"
+  description: |
+    A regression whose result is the low ceiling itself. **The target,** `CrimeSeverityScore`, is `(base severity of the offence category × 10) + weapon-severity index` — a banded ordinal with 23 distinct values, 70% of its mass at scores 11 and 21. **The discipline:** the seven columns that are inputs to that formula are excluded before any model is fit; the 14 remaining features are pure context. **The result:** the champion (LightGBM) reaches R² **0.13** and RMSE **11.4** on a held-out year — barely ahead of predicting the mean (RMSE 12.3). All 18 variants span a 3.2% RMSE range. Predictions collapse toward the centre (predicted SD 5.5 vs actual 12.2) and every high-severity incident is under-predicted by 8–20 points. Context does not tell you how severe a crime is; the offence category does, and that was correctly withheld.
+  categories: [
+    Machine Learning,
+    Regression,
+    Model Evaluation,
+    Predictive Ceiling,
+    Crime Analytics,
+    Python
+    ]
+  keywords: [
+    regression,
+    predictive ceiling,
+    null result,
+    data leakage,
+    target leakage,
+    LightGBM,
+    Tweedie GLM,
+    ordinal regression,
+    model comparison,
+    residual diagnostics,
+    regression to the mean,
+    temporal validation,
+    Python,
+    scikit-learn
+    ]
+  path: projects/leakage-restricted-crime-severity-regression-measuring-the-predictive-ceiling/index.qmd
+
+
+- title: "A Medallion ETL Pipeline for a Diabetic Inpatient Cohort: ICD-9 Diagnosis Grouping and Patient-Disjoint Cross-Validation Folds"
+  subtitle: "Turning a 101,766-row hospital extract and a three-in-one code lookup into two purpose-built analytical substrates — a leakage-aware Bronze → Silver → Gold contract, an eight-plus-one ICD-9 grouping that collapses 700+ diagnosis codes, and pre-computed folds where no patient is ever split across train and test."
+  author: "Muhammad Khan Muneer"
+  date: "2025-03-10"
+  date-format: "MMMM YYYY"
+  description: |
+    A four-tier medallion ETL pipeline for ten years of inpatient encounters among diabetic patients at 130 US hospitals. **Sentinel discipline:** the `?` token encoding "not recorded" across seven columns is resolved to a true null before any business logic runs; HbA1c and serum-glucose results are missing on 83% and 95% of admissions because the tests are simply not ordered, and that absence is preserved as signal. **Diagnosis grouping:** 700+ distinct ICD-9 codes per field collapse to the nine clinical groups of Strack et al. (2014). **Leakage control:** five cross-validation folds are pre-computed with `GroupKFold` on the patient identifier, so a patient's repeat admissions never straddle the split. **Output:** six validated Parquet tables — a feature-engineered fact grain, a 99,340-admission modelling cohort, and a 69,979-patient cohort built to carry a downstream causal question about HbA1c testing.
+  categories: [
+    Data Engineering,
+    ETL Pipeline,
+    Medallion Architecture,
+    Healthcare Analytics,
+    Clinical Data,
+    Python
+    ]
+  keywords: [
+    medallion architecture,
+    bronze silver gold,
+    ETL pipeline,
+    sentinel encoding,
+    missing data,
+    ICD-9 grouping,
+    hospital readmission,
+    diabetes,
+    GroupKFold,
+    patient-disjoint splits,
+    data leakage,
+    cross-validation,
+    feature engineering,
+    Parquet,
+    pandas,
+    Python
+    ]
+  path: projects/diabetic-inpatient-readmission-medallion-etl-icd9-diagnosis-grouping-and-patient-disjoint-cross-validation-folds/index.qmd
+
+
+- title: "Exploratory and Statistical Analysis of a 30-Day Readmission Substrate: Effect-Size-First Signal Scanning, Propensity Confounder Mapping, and a Cross-Validation Leakage Audit"
+  subtitle: "An exploratory analysis of 99,340 diabetic inpatient admissions — where the readmission signal is, how weak every single predictor is, why the HbA1c-testing question needs a causal design, and an empirical check that the patient-disjoint fold split is doing its job."
+  author: "Muhammad Khan Muneer"
+  date: "2025-03-24"
+  date-format: "MMMM YYYY"
+  description: |
+    A rate-first exploratory analysis of 30-day readmission in a 99,340-admission diabetic inpatient cohort (11.4% positive). **Diffuse signal:** across 14 continuous and 23 categorical features, only two — prior inpatient visits and total prior visits — cross from negligible into Cohen's small effect band; no categorical feature clears it. **Strongest single signal:** discharge disposition (Cramer's V = 0.11) — rehab and skilled-nursing discharges readmit at 2–3× the home-discharge rate. **The large-N trap:** with ~99k rows every chi-square is significant, so every claim is read on effect size, not the p-value. **Causal setup:** HbA1c testing (18% of patients) is heavily confounded — stratifying the naive −0.7-point effect by diagnosis reverses its sign in four of nine strata. **Leakage audit:** a row-level vs patient-disjoint fold split changes cross-validated AUC by under 0.2 points under both a linear and a gradient-boosted probe.
+  categories: [
+    Exploratory Data Analysis,
+    Biostatistics,
+    Healthcare Analytics,
+    Clinical Data,
+    Hospital Readmission,
+    Python
+    ]
+  keywords: [
+    exploratory data analysis,
+    effect size,
+    Cramer's V,
+    rank-biserial correlation,
+    point-biserial correlation,
+    Mann-Whitney U,
+    large-sample paradox,
+    hospital readmission,
+    diabetes,
+    propensity score,
+    confounding,
+    data leakage,
+    GroupKFold,
+    cross-validation,
+    Python
+    ]
+  path: projects/diabetic-inpatient-30-day-readmission-eda-effect-size-first-signal-scan-and-cross-validation-leakage-audit/index.qmd
+
+
+- title: "A Calibrated 30-Day Readmission Model at the Cohort's Signal Ceiling: Cross-Family Convergence, Isotonic Calibration, and a Fairness Audit"
+  subtitle: "Four model families, a three-tier imbalance ladder, and a held-out test set of 20,031 admissions — the honest ROC-AUC is 0.67, the useful operating threshold is 0.15 not 0.5, and the loudest fairness signal turns out to be calibrated."
+  author: "Muhammad Khan Muneer"
+  date: "2025-04-08"
+  date-format: "MMMM YYYY"
+  description: |
+    A supervised readmission-risk model on 99,340 diabetic inpatient admissions, evaluated on a patient-disjoint 20,031-admission holdout. **Signal ceiling:** LightGBM, XGBoost, CatBoost, and a regularised logistic model all land at test ROC-AUC 0.646–0.668 — the three boosters within 0.004 and correlated above 0.93, so ensembling adds nothing. **Imbalance is a threshold problem:** class weighting lifts recall from 2% to 59% with no change in ranking; SMOTE on top *hurts* (−6 to −10 points for the linear models). **Calibration:** class-weighted probabilities sit on a 50%-prior scale (Brier 0.21); one isotonic step restores the 11% base rate (Brier 0.097). **Clinical impact:** at a calibrated threshold of 0.15 the model flags 25% of discharges at 46% sensitivity and 21% precision; top-1% targeting reaches 47% precision. **Fairness:** the payer flag-rate disparity (2.4×) is real but *calibrated* — within-payer prediction gaps stay under 2.2 points — while the paediatric subgroup (n = 29) is a generalisation failure, not a bias.
+  categories: [
+    Machine Learning,
+    Classification,
+    Model Calibration,
+    Fairness Audit,
+    Healthcare Analytics,
+    Hospital Readmission,
+    Python
+    ]
+  keywords: [
+    hospital readmission,
+    class imbalance,
+    SMOTE,
+    class weighting,
+    Youden's J,
+    LightGBM,
+    XGBoost,
+    CatBoost,
+    elastic net,
+    isotonic calibration,
+    Brier score,
+    SHAP,
+    decision curve analysis,
+    fairness audit,
+    fairlearn,
+    StratifiedGroupKFold,
+    Python
+    ]
+  path: projects/readmission-risk-model-at-a-signal-ceiling-cross-family-convergence-isotonic-calibration-and-fairness-audit/index.qmd
+
+
+- title: "Does HbA1c Testing Cause Lower 30-Day Readmission? A Disciplined Null, With a Trauma-Subgroup Signal"
+  subtitle: "The naive observational comparison says HbA1c testing is protective. Three causal estimators, a 19% positivity trim, and two sensitivity analyses say the population-level effect is indistinguishable from zero — but a large protective signal survives in injury and orthopedic admissions."
+  author: "Muhammad Khan Muneer"
+  date: "2025-04-22"
+  date-format: "MMMM YYYY"
+  description: |
+    A from-scratch causal analysis of whether ordering an HbA1c test during a diabetic inpatient admission reduces 30-day readmission risk. **The naive signal:** −0.72 percentage points (95% CI [−1.25, −0.18]) — testing looks protective. **Positivity is a problem:** the treatment-assignment model reaches AUC 0.92, and 19% of patients have a propensity below 0.01 or above 0.99; trimming to the discretionary-testing region leaves 56,723 patients and drops the treatment rate from 18% to 7%. **Three estimators disagree in sign:** IPW −0.38 pp, AIPW −0.87 pp, 1:1 matching +0.11 pp — and **every causal 95% CI crosses zero**. **Sensitivity:** an unmeasured confounder at a risk ratio of 1.45 fully explains the AIPW effect, and the CI-bound E-value is 1.00. **The exception:** a −6.5-point effect in injury admissions and −8.2 points in orthopedics, the only two strata whose CIs clearly exclude zero — hypothesis-generating, not confirmatory.
+  categories: [
+    Causal Inference,
+    Observational Study,
+    Propensity Score,
+    Sensitivity Analysis,
+    Healthcare Analytics,
+    Hospital Readmission,
+    Python
+    ]
+  keywords: [
+    causal inference,
+    propensity score,
+    inverse probability weighting,
+    augmented IPW,
+    doubly robust,
+    propensity score matching,
+    positivity,
+    common support,
+    covariate balance,
+    E-value,
+    Rosenbaum bounds,
+    unmeasured confounding,
+    HbA1c,
+    hospital readmission,
+    null result,
+    Python
+    ]
+  path: projects/causal-analysis-of-hba1c-testing-on-30-day-readmission-a-disciplined-null-with-a-trauma-subgroup-signal/index.qmd
+
+
+- title: "From a Calibrated Readmission Scorer to a Governed Targeting Decision: A CHEERS-Aligned PSA, a Pre-Registered Scenario Grid, and a Stepped-Wedge Trial Proposal"
+  subtitle: "The most effective intervention applied to the broadest cohort is the worst cell in the grid. A 10,000-draw probabilistic sensitivity analysis, a 3×3 capacity grid with a decision rule fixed in advance, and a confirmatory trial design for the one causal signal that survived."
+  author: "Muhammad Khan Muneer"
+  date: "2025-05-13"
+  date-format: "MMMM YYYY"
+  description: |
+    Converting a calibrated 30-day readmission scorer into an operational targeting decision, framed as a CHEERS-aligned health-economic evaluation. **The counterintuitive core:** RN transitional care at the broad-screening threshold destroys about $430k/month of value — its 21% precision cannot justify $900/patient. **The recommendation:** broad screening (threshold 0.15) with pharmacist medication-reconciliation calls — **$587k/month net benefit, ~65 readmissions avoided, 100% coverage** — identical in all three capacity regimes. **Uncertainty:** a 10,000-draw PSA puts P(net benefit > 0) at 97% for that cell; a CEAC shows all three interventions clearing 95% cost-effectiveness at a willingness-to-pay of $15k. **The trial:** a stepped-wedge cluster RCT for the injury/orthopedics HbA1c signal — n ≈ 483, 8 sites, 18 months, ~$1.75M. **Fairness:** the 2.3× spread in benefit-per-1,000 across payer groups shrinks to 1.5× among the four large groups and reflects real risk, not bias.
+  categories: [
+    Health Economics,
+    Decision Analysis,
+    Cost-Effectiveness,
+    Probabilistic Sensitivity Analysis,
+    Trial Design,
+    Healthcare Analytics,
+    Python
+    ]
+  keywords: [
+    health economic evaluation,
+    CHEERS,
+    cost-benefit analysis,
+    probabilistic sensitivity analysis,
+    Monte Carlo,
+    cost-effectiveness acceptability curve,
+    tornado diagram,
+    decision rule,
+    pre-registration,
+    stepped-wedge cluster randomised trial,
+    Hussey-Hughes,
+    transitional care,
+    hospital readmission,
+    fairness-aware allocation,
+    Python
+    ]
+  path: projects/calibrated-readmission-scorer-to-a-governed-targeting-decision-cheers-psa-scenario-grid-and-stepped-wedge-trial/index.qmd
+
+
+- title: "Three-Stream Patient Phenotyping: Feature-Space Structure, Not Algorithm Choice, Drives Cluster Quality"
+  subtitle: "Clustering 69,987 diabetic patients along three orthogonal axes — who they are administratively, what brought them in clinically, and how they are medicated — with cross-algorithm agreement as the quality test and the readmission outcome held out until the end."
+  author: "Muhammad Khan Muneer"
+  date: "2025-06-10"
+  date-format: "MMMM YYYY"
+  description: |
+    Label-free segmentation of a 69,987-patient diabetic cohort along three independently-clustered feature streams. **The headline:** cluster quality is set by the feature space, not the algorithm. The clinical/utilisation stream's continuous features give the most robust partition — K-Means and Ward agree at ARI 0.92 on five diagnosis-defined phenotypes. The medication stream's ordinal grid gives the highest raw separation (silhouette 0.56, nine treatment archetypes) but is a discrete lattice, not hidden clinical structure. The administrative stream's one-hot categoricals give an honest negative — cross-algorithm ARI 0.42, a degenerate Gaussian mixture, a 68% mega-cluster. **Cross-stream:** all three pairwise Cramér's V are below 0.10 — the axes are genuinely independent. **Post-hoc:** readmission rate is flat across every cluster (±1.5 points around the 7.3% patient-level baseline).
+  categories: [
+    Machine Learning,
+    Clustering,
+    Unsupervised Learning,
+    Patient Phenotyping,
+    Healthcare Analytics,
+    Python
+    ]
+  keywords: [
+    unsupervised learning,
+    clustering,
+    K-Means,
+    Ward linkage,
+    Gaussian mixture model,
+    adjusted Rand index,
+    silhouette score,
+    Davies-Bouldin index,
+    UMAP,
+    PCA,
+    multi-stream clustering,
+    patient phenotyping,
+    Cramér's V,
+    cross-algorithm validation,
+    Python
+    ]
+  path: projects/three-stream-patient-phenotyping-feature-space-structure-not-algorithm-choice-drives-cluster-quality/index.qmd
+
+
+- title: "Admission-Time Length-of-Stay Forecasting: When MAE Selects the Wrong Model, and Poisson Deviance Selects the Right One"
+  subtitle: "Predicting how many days an admission will last from information known at the door. A seven-model ladder, a predictive ceiling of R² 0.09, and a metric-selection trap — the model with the best MAE has the worst deviance of all seven, worse than always predicting the mean."
+  author: "Muhammad Khan Muneer"
+  date: "2025-06-24"
+  date-format: "MMMM YYYY"
+  description: |
+    An admission-time length-of-stay regression on 99,340 diabetic inpatient encounters, evaluated on a patient-disjoint 19,812-encounter holdout. **The leakage discipline:** only the 23 features known at or before admission — 30 stay-accumulated clinical and medication columns are excluded with a stated reason each. **The predictive ceiling:** the champion (LightGBM, Poisson objective) reaches test R² 0.09, RMSE 2.85 days, MAE 2.21 days, barely ahead of the mean-only baseline's MAE of 2.35. Predictions collapse toward the centre — actual stays span 1–14 days, predicted stays barely leave 3–7. **The metric trap:** an ElasticNet fitted on log-transformed length of stay has the best test MAE (2.19) but the worst Poisson deviance of all seven models (1.888, above the baseline's 1.884) — its expm1 back-transform is a retransformation-biased point estimate that MAE cannot see. **The operational read:** a Youden-calibrated extended-stay flag (predicted stay ≥ 4.5 days) catches 60% of stays longer than a week at 63% specificity — an advisory signal, not a trigger (AUC 0.65).
+  categories: [
+    Machine Learning,
+    Regression,
+    Model Evaluation,
+    Count Regression,
+    Healthcare Analytics,
+    Length of Stay,
+    Python
+    ]
+  keywords: [
+    length of stay,
+    count regression,
+    Poisson regression,
+    Poisson deviance,
+    retransformation bias,
+    smearing estimator,
+    model selection,
+    LightGBM,
+    elastic net,
+    regression to the mean,
+    predictive ceiling,
+    calibration,
+    Youden's J,
+    SHAP,
+    Python
+    ]
+  path: projects/admission-time-length-of-stay-forecasting-when-mae-selects-the-wrong-model-poisson-deviance-champion-selection/index.qmd

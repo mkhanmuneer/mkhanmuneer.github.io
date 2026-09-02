@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Muhammad Khan Muneer">
+<meta name="keywords" content="exploratory data analysis, customer segmentation, k-means clustering, RFM analysis, offer funnel, conversion funnel, last-click attribution, intention-to-treat, spend concentration, Lorenz curve, Gini coefficient, silhouette score, heterogeneous treatment effects, Starbucks capstone, Python, scikit-learn">
+<meta name="description" content="An exploratory and segmentation analysis that sets up a five-notebook causal study of promotional-offer response. The catalogue: 10 offers (4 BOGO, 4 discount, 2 informational) spanning 4 reward, 5 spend-threshold, and 5 duration levels — so raw cross-offer response rates cannot be compared without adjustment. The funnel: of 61,042 non-informational offers, 23.1% are never viewed, a further 28.3% of viewed offers never complete, and 29.6% of the 33,631 completions had no prior view — organic purchases that cleared the threshold and must be excluded from a “true response” count. Spend concentration: transaction amounts are heavy-tailed (mean USD 12.78 vs median USD 8.89) and customer spend has a Gini of 0.525, which is why the downstream primary metric uses trimmed means and bootstrap intervals. Segments: k-means on 9 RFM-plus-funnel features yields five behavioural strata — high-frequency buyers, offer-responsive spenders, low-value browsers, affluent low-engagement, and a 232-customer high-value outlier cluster — persisted as segment_id for use as covariates and heterogeneity strata.">
+
+<title>Behavioural Profiling of an Offer-Response Cohort: The Funnel, the Spend Concentration, and Five k-Means Segments That Anchor a Causal Analysis – Muhammad Khan Muneer</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-ca0cfe78a00f84493d894d8af57a3a20.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": true,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="../../styles/custom.css">
+<meta property="og:title" content="Muhammad Khan Muneer — Data Science &amp; BI Portfolio">
+<meta property="og:description" content="Engineering ML-driven analytics and automated decision systems.">
+<meta property="og:image" content="https://mkhanmuneer.github.io/projects/starbucks-offer-response-behavioural-eda-rfm-segmentation-spend-concentration/assets/fig1_offer_catalogue.png">
+<meta property="og:site_name" content="M. Khan Muneer Portfolio">
+<meta property="og:image:alt" content="Four horizontal-bar panels sharing a y-axis of the ten offers, sorted by type. Panels show reward (0 to 10 USD), spend threshold (0 to 20 USD), validity (3 to 10 days), and channel count (2 to 4 of 4). Discount offers carry low rewards but varied thresholds; BOGO offers pair equal reward and threshold; the two informational offers carry zero reward and zero threshold. Bars coloured by offer type.">
+<meta property="og:image:height" content="925">
+<meta property="og:image:width" content="2388">
+<meta name="twitter:title" content="Behavioural Profiling of an Offer-Response Cohort: The Funnel, the Spend Concentration, and Five k-Means Segments That Anchor a Causal Analysis – Muhammad Khan Muneer">
+<meta name="twitter:description" content="An exploratory and segmentation analysis that sets up a five-notebook causal study of promotional-offer response. The catalogue: 10 offers (4 BOGO, 4 discount, 2 informational) spanning 4 reward, 5 spend-threshold, and 5 duration levels — so raw cross-offer response rates cannot be compared without adjustment. The funnel: of 61,042 non-informational offers, 23.1% are never viewed, a further 28.3% of viewed offers never complete, and 29.6% of the 33,631 completions had no prior view — organic purchases that cleared the threshold and must be excluded from a “true response” count. Spend concentration: transaction amounts are heavy-tailed (mean USD 12.78 vs median USD 8.89) and customer spend has a Gini of 0.525, which is why the downstream primary metric uses trimmed means and bootstrap intervals. Segments: k-means on 9 RFM-plus-funnel features yields five behavioural strata — high-frequency buyers, offer-responsive spenders, low-value browsers, affluent low-engagement, and a 232-customer high-value outlier cluster — persisted as segment_id for use as covariates and heterogeneity strata.">
+<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/starbucks-offer-response-behavioural-eda-rfm-segmentation-spend-concentration/assets/fig1_offer_catalogue.png">
+<meta name="twitter:creator" content="@iMKhanMuneer">
+<meta name="twitter:site" content="@iMKhanMuneer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Four horizontal-bar panels sharing a y-axis of the ten offers, sorted by type. Panels show reward (0 to 10 USD), spend threshold (0 to 20 USD), validity (3 to 10 days), and channel count (2 to 4 of 4). Discount offers carry low rewards but varied thresholds; BOGO offers pair equal reward and threshold; the two informational offers carry zero reward and zero threshold. Bars coloured by offer type.">
+<meta name="twitter:image-height" content="925">
+<meta name="twitter:image-width" content="2388">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#featured-projects"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/iMKhanMuneer"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.kaggle.com/muhammadkhanmuneer"> <i class="bi bi-graph-up" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#contact"> 
+<span class="menu-text">Contact</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#method" id="toc-method" class="nav-link" data-scroll-target="#method">Method</a>
+  <ul class="collapse">
+  <li><a href="#data-source" id="toc-data-source" class="nav-link" data-scroll-target="#data-source">Data source</a></li>
+  <li><a href="#variables-and-measures" id="toc-variables-and-measures" class="nav-link" data-scroll-target="#variables-and-measures">Variables and measures</a></li>
+  <li><a href="#analytic-approach" id="toc-analytic-approach" class="nav-link" data-scroll-target="#analytic-approach">Analytic approach</a></li>
+  <li><a href="#software" id="toc-software" class="nav-link" data-scroll-target="#software">Software</a></li>
+  </ul></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
+  <ul class="collapse">
+  <li><a href="#the-offer-catalogue" id="toc-the-offer-catalogue" class="nav-link" data-scroll-target="#the-offer-catalogue">The offer catalogue</a></li>
+  <li><a href="#the-customer-base" id="toc-the-customer-base" class="nav-link" data-scroll-target="#the-customer-base">The customer base</a></li>
+  <li><a href="#transactional-behaviour-over-the-30-day-window" id="toc-transactional-behaviour-over-the-30-day-window" class="nav-link" data-scroll-target="#transactional-behaviour-over-the-30-day-window">Transactional behaviour over the 30-day window</a></li>
+  <li><a href="#the-offer-funnel" id="toc-the-offer-funnel" class="nav-link" data-scroll-target="#the-offer-funnel">The offer funnel</a></li>
+  <li><a href="#response-by-demographic-group" id="toc-response-by-demographic-group" class="nav-link" data-scroll-target="#response-by-demographic-group">Response by demographic group</a></li>
+  <li><a href="#behavioural-segmentation" id="toc-behavioural-segmentation" class="nav-link" data-scroll-target="#behavioural-segmentation">Behavioural segmentation</a></li>
+  </ul></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a>
+  <ul class="collapse">
+  <li><a href="#principal-findings" id="toc-principal-findings" class="nav-link" data-scroll-target="#principal-findings">Principal findings</a></li>
+  <li><a href="#the-mechanism-worth-carrying-forward" id="toc-the-mechanism-worth-carrying-forward" class="nav-link" data-scroll-target="#the-mechanism-worth-carrying-forward">The mechanism worth carrying forward</a></li>
+  <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations">Limitations</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Behavioural Profiling of an Offer-Response Cohort: The Funnel, the Spend Concentration, and Five k-Means Segments That Anchor a Causal Analysis</h1>
+<p class="subtitle lead">An exploratory read of 17,000 customers, 10 offers, and 306,534 events — a received → viewed → completed funnel where 29.6% of completions were never viewed, a Gini of 0.525 on customer spend, and a five-segment partition chosen over the silhouette-optimal but uninformative k = 2.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Exploratory Data Analysis</div>
+    <div class="quarto-category">Descriptive Statistics</div>
+    <div class="quarto-category">Clustering</div>
+    <div class="quarto-category">Customer Segmentation</div>
+    <div class="quarto-category">RFM Analysis</div>
+    <div class="quarto-category">Funnel Analysis</div>
+    <div class="quarto-category">Inequality Metrics</div>
+    <div class="quarto-category">Marketing Analytics</div>
+    <div class="quarto-category">Python</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>An exploratory and segmentation analysis that sets up a five-notebook causal study of promotional-offer response. <strong>The catalogue:</strong> 10 offers (4 BOGO, 4 discount, 2 informational) spanning 4 reward, 5 spend-threshold, and 5 duration levels — so raw cross-offer response rates cannot be compared without adjustment. <strong>The funnel:</strong> of 61,042 non-informational offers, 23.1% are never viewed, a further 28.3% of viewed offers never complete, and <strong>29.6% of the 33,631 completions had no prior view</strong> — organic purchases that cleared the threshold and must be excluded from a “true response” count. <strong>Spend concentration:</strong> transaction amounts are heavy-tailed (mean USD 12.78 vs median USD 8.89) and customer spend has a <strong>Gini of 0.525</strong>, which is why the downstream primary metric uses trimmed means and bootstrap intervals. <strong>Segments:</strong> k-means on 9 RFM-plus-funnel features yields five behavioural strata — high-frequency buyers, offer-responsive spenders, low-value browsers, affluent low-engagement, and a 232-customer high-value outlier cluster — persisted as <code>segment_id</code> for use as covariates and heterogeneity strata.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Muhammad Khan Muneer </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">August 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+<div>
+  <div class="keywords">
+    <div class="block-title">Keywords</div>
+    <p>exploratory data analysis, customer segmentation, k-means clustering, RFM analysis, offer funnel, conversion funnel, last-click attribution, intention-to-treat, spend concentration, Lorenz curve, Gini coefficient, silhouette score, heterogeneous treatment effects, Starbucks capstone, Python, scikit-learn</p>
+  </div>
+</div>
+
+</header>
+
+
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+<p>This exploratory analysis characterises the substrate for a five-notebook causal study of how customers respond to promotional offers, using the Starbucks/Udacity capstone simulated-offers dataset (17,000 customers, a 10-offer catalogue, and 306,534 events over a 29.75-day window). Three descriptive results shape the downstream identification and estimation choices. First, the offer catalogue is deliberately multi-armed — four reward levels, five spend thresholds, five durations, and an uneven channel mix — so raw cross-offer response rates confound offer attributes and cannot be compared directly. Second, the received → viewed → completed funnel leaks at every stage: of the 61,042 non-informational offer instances, 23.1% are never viewed, a further 28.3% of viewed offers never complete, and 29.6% of the 33,631 completions occurred <em>without a prior view</em> — organic purchases that happened to clear the spend threshold, which must be excluded from any “true response” count. Third, spend is heavily concentrated: transaction amounts are heavy-tailed (mean USD 12.78, median USD 8.89) and customer total spend has a Gini coefficient of 0.525, which motivates trimmed-mean and bootstrap estimators for the downstream primary metric rather than raw means. A k-means partition on nine standardised recency–frequency–monetary and funnel features produces five interpretable behavioural segments — high-frequency buyers (<em>n</em> = 3,812), offer-responsive spenders (<em>n</em> = 4,768), low-value browsers (<em>n</em> = 3,963), affluent low-engagement customers (<em>n</em> = 1,717), and a 232-customer high-value outlier cluster — chosen at <em>k</em> = 5 over the silhouette-optimal but analytically useless <em>k</em> = 2. Segment labels, including −1 for the 2,508 customers outside the feature space, are persisted for use as covariates and heterogeneity strata.</p>
+<p><em>Keywords:</em> exploratory data analysis, customer segmentation, k-means clustering, RFM, offer funnel, last-click attribution, intention-to-treat, spend concentration, Gini coefficient, heterogeneous treatment effects</p>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>The dataset records a promotional-offer rollout as an already-run experiment: over roughly 30 days, 17,000 loyalty-programme members received, viewed, and completed offers drawn from a catalogue of ten, and made 138,953 purchases. The analytical goal of the wider project is causal — to estimate whether receiving or viewing an offer <em>increases</em> spending above what a customer would have done anyway — and that goal imposes requirements on the exploratory pass. It is not enough to describe the data; the description has to surface the specific facts an identification strategy depends on: how the offers differ from one another, where the response funnel loses people, how skewed the outcome distribution is, and whether the customer base contains behaviourally distinct groups that might respond differently.</p>
+<p>This piece answers those four questions in turn and hands the results forward as a set of constraints. It is deliberately descriptive — no treatment effect is estimated here, and the raw group differences reported under “Response by demographic group” are shown as exploratory context, not findings. Every number is recomputed from the persisted Gold tables produced by the project’s ETL stage; the k-means step is re-run from those tables under a fixed seed.</p>
+</section>
+<section id="method" class="level2">
+<h2 class="anchored" data-anchor-id="method">Method</h2>
+<section id="data-source" class="level3">
+<h3 class="anchored" data-anchor-id="data-source">Data source</h3>
+<p>The analysis uses five Gold-layer tables built by the project’s medallion ETL pipeline from the Starbucks / Udacity Data Scientist Nanodegree capstone simulated-offers data (offer <code>portfolio</code>, customer <code>profile</code>, event <code>transcript</code>), distributed on Kaggle. The tables and grains are: <code>dim_offer_gold</code> (one row per offer, <em>n</em> = 10), <code>offer_events_gold</code> (one row per offer instance — a <code>customer × offer × received-time</code> triple — <em>n</em> = 76,277), <code>transactions_gold</code> (one row per purchase, <em>n</em> = 138,953), <code>customer_features_gold</code> (one row per customer, <em>n</em> = 17,000), and <code>offer_performance_gold</code> (one row per offer, pre-aggregated funnel and spend metrics). The observation window is 714 hours (29.75 days) from the start of the rollout.</p>
+</section>
+<section id="variables-and-measures" class="level3">
+<h3 class="anchored" data-anchor-id="variables-and-measures">Variables and measures</h3>
+<p><strong>Offer attributes.</strong> <code>offer_type</code> (BOGO / discount / informational), <code>reward</code> (USD paid on completion), <code>difficulty</code> (USD that must be spent to complete), <code>duration</code> (validity in days), and four binary channel flags (<code>email</code>, <code>mobile</code>, <code>social</code>, <code>web</code>).</p>
+<p><strong>Customer demographics.</strong> <code>age</code>, <code>income</code>, <code>gender</code>, and the derived <code>age_band</code> / <code>income_band</code>, available for 14,825 of 17,000 customers; the remaining 2,175 were sentinel-encoded at source and carry a <code>has_demographics = False</code> flag.</p>
+<p><strong>RFM and funnel features.</strong> Per customer: <code>recency_hours</code> (hours from last purchase to window close), <code>n_transactions</code>, <code>total_spend</code>, <code>mean_spend</code>, <code>n_offers_received</code> / <code>_viewed</code> / <code>_completed</code>, <code>view_rate</code>, and <code>completion_rate_given_viewed</code> (viewed-then-completed ÷ viewed). A completion is credited to an offer only if the customer viewed it <em>before</em> the qualifying purchase; a purchase that clears the threshold without a prior view is not a response.</p>
+</section>
+<section id="analytic-approach" class="level3">
+<h3 class="anchored" data-anchor-id="analytic-approach">Analytic approach</h3>
+<p>Univariate and bivariate summaries throughout. Spend concentration is quantified with a Lorenz curve and its Gini coefficient over customers with positive spend. The behavioural segmentation is k-means (Lloyd’s algorithm; <code>k</code> chosen by inspecting the inertia elbow and the silhouette coefficient over <code>k = 2…8</code>, the latter on a fixed 3,000-customer subsample) on nine z-standardised features, fitted on the 14,492 customers with both demographic and transactional coverage; the fitted partition is visualised in the first two principal components. Customers outside that feature space receive an explicit <code>segment_id = −1</code> rather than an imputed cluster.</p>
+</section>
+<section id="software" class="level3">
+<h3 class="anchored" data-anchor-id="software">Software</h3>
+<p>Python 3.10 with <code>pandas</code> and <code>numpy</code> for the summaries, <code>scikit-learn</code> (<code>StandardScaler</code>, <code>KMeans</code>, <code>PCA</code>, <code>silhouette_score</code>) for the segmentation, and <code>matplotlib</code> for the figures. The k-means fit uses <code>random_state = 42</code> and <code>n_init = 10</code>; re-running from the Gold tables reproduces the segment sizes and profiles reported here exactly.</p>
+</section>
+</section>
+<section id="results" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<section id="the-offer-catalogue" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="the-offer-catalogue">The offer catalogue</h3>
+<p>Ten offers were in circulation: four BOGO, four discount, and two informational. They span reward levels of 0, 2, 3, 5, and 10 USD; spend thresholds of 0, 5, 7, 10, and 20 USD; durations of 3, 4, 5, 7, and 10 days; and an uneven channel mix — every offer goes out by email, nine include mobile, eight include web, but only six include social (Figure 1, Table 1). This heterogeneity is the reason a raw comparison of response rates across offers is uninterpretable: the offer that converts best also happens to be a low-threshold, long-duration, four-channel discount, and those attributes cannot be separated from the offer’s identity without a model. Assignment volume is near-uniform — every offer was received between 7,571 and 7,677 times — so differences in downstream response are genuine, not an artefact of exposure imbalance.</p>
+<p><strong>Figure 1</strong></p>
+<p><em>The Offer Catalogue as a Four-Panel Fingerprint</em></p>
+<p><img src="assets/fig1_offer_catalogue.png" class="img-fluid" alt="Four horizontal-bar panels sharing a y-axis of the ten offers, sorted by type. Panels show reward (0 to 10 USD), spend threshold (0 to 20 USD), validity (3 to 10 days), and channel count (2 to 4 of 4). Discount offers carry low rewards but varied thresholds; BOGO offers pair equal reward and threshold; the two informational offers carry zero reward and zero threshold. Bars coloured by offer type."></p>
+<p><em>Note.</em> “Spend threshold” is the <code>difficulty</code> field — the amount a customer must spend to trigger the reward. The narrow, hard-to-clear <code>Discount r5 / d20 / 10d</code> offer (reward 5, threshold 20, web + email only) is the structural opposite of the top performer.</p>
+<p><strong>Table 1</strong></p>
+<p><em>The Ten-Offer Catalogue and Its Funnel Performance (n = 76,277 offer instances)</em></p>
+<div class="column-page-inset">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Offer</th>
+<th style="text-align: left;">Type</th>
+<th style="text-align: right;">Reward</th>
+<th style="text-align: right;">Threshold</th>
+<th style="text-align: right;">Duration</th>
+<th style="text-align: left;">Channels</th>
+<th style="text-align: right;">Received</th>
+<th style="text-align: right;">View rate</th>
+<th style="text-align: right;">Completion rate</th>
+<th style="text-align: right;">View → completion</th>
+<th style="text-align: right;">Spend / exposure</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Discount r2 / d10 / 10d</td>
+<td style="text-align: left;">discount</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10 d</td>
+<td style="text-align: left;">web, email, mobile, social</td>
+<td style="text-align: right;">7,597</td>
+<td style="text-align: right;">96.8%</td>
+<td style="text-align: right;">70.2%</td>
+<td style="text-align: right;">63.6%</td>
+<td style="text-align: right;">USD 34.28</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Discount r3 / d7 / 7d</td>
+<td style="text-align: left;">discount</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">7 d</td>
+<td style="text-align: left;">web, email, mobile, social</td>
+<td style="text-align: right;">7,646</td>
+<td style="text-align: right;">96.2%</td>
+<td style="text-align: right;">67.6%</td>
+<td style="text-align: right;">60.0%</td>
+<td style="text-align: right;">USD 25.67</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BOGO r10 / d10 / 7d</td>
+<td style="text-align: left;">bogo</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">7 d</td>
+<td style="text-align: left;">email, mobile, social</td>
+<td style="text-align: right;">7,658</td>
+<td style="text-align: right;">87.7%</td>
+<td style="text-align: right;">48.2%</td>
+<td style="text-align: right;">39.1%</td>
+<td style="text-align: right;">USD 22.20</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BOGO r5 / d5 / 5d</td>
+<td style="text-align: left;">bogo</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5 d</td>
+<td style="text-align: left;">web, email, mobile, social</td>
+<td style="text-align: right;">7,571</td>
+<td style="text-align: right;">95.5%</td>
+<td style="text-align: right;">56.7%</td>
+<td style="text-align: right;">49.1%</td>
+<td style="text-align: right;">USD 20.21</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BOGO r10 / d10 / 5d</td>
+<td style="text-align: left;">bogo</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">5 d</td>
+<td style="text-align: left;">web, email, mobile, social</td>
+<td style="text-align: right;">7,593</td>
+<td style="text-align: right;">95.5%</td>
+<td style="text-align: right;">43.9%</td>
+<td style="text-align: right;">38.2%</td>
+<td style="text-align: right;">USD 20.17</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Discount r2 / d10 / 7d</td>
+<td style="text-align: left;">discount</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">7 d</td>
+<td style="text-align: left;">web, email, mobile</td>
+<td style="text-align: right;">7,632</td>
+<td style="text-align: right;">54.0%</td>
+<td style="text-align: right;">52.7%</td>
+<td style="text-align: right;">52.2%</td>
+<td style="text-align: right;">USD 13.64</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BOGO r5 / d5 / 7d</td>
+<td style="text-align: left;">bogo</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">7 d</td>
+<td style="text-align: left;">web, email, mobile</td>
+<td style="text-align: right;">7,677</td>
+<td style="text-align: right;">54.4%</td>
+<td style="text-align: right;">56.7%</td>
+<td style="text-align: right;">51.1%</td>
+<td style="text-align: right;">USD 13.31</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Discount r5 / d20 / 10d</td>
+<td style="text-align: left;">discount</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">10 d</td>
+<td style="text-align: left;">web, email</td>
+<td style="text-align: right;">7,668</td>
+<td style="text-align: right;">35.6%</td>
+<td style="text-align: right;">44.9%</td>
+<td style="text-align: right;">49.8%</td>
+<td style="text-align: right;">USD 10.24</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Informational / 3d</td>
+<td style="text-align: left;">informational</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">3 d</td>
+<td style="text-align: left;">email, mobile, social</td>
+<td style="text-align: right;">7,618</td>
+<td style="text-align: right;">80.8%</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">USD 9.62</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Informational / 4d</td>
+<td style="text-align: left;">informational</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4 d</td>
+<td style="text-align: left;">web, email, mobile</td>
+<td style="text-align: right;">7,617</td>
+<td style="text-align: right;">50.0%</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">USD 7.47</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><em>Note.</em> Sorted by mean attributed spend per exposure (descending). Completion rate = completed ÷ received (intention-to-treat); view → completion = viewed-then-completed ÷ viewed (treatment-on-treated). Informational offers have no completion criterion. Spend per exposure divides attributed spend by all instances distributed.</p>
+</section>
+<section id="the-customer-base" class="level3">
+<h3 class="anchored" data-anchor-id="the-customer-base">The customer base</h3>
+<p>Of 17,000 customers, 14,825 (87.2%) carry demographics and 2,175 (12.8%) do not — a sentinel-encoded block at source, kept in scope as an explicit “anonymous” stratum rather than imputed or dropped. Among those with demographics, age is roughly bell-shaped and older than a general consumer population (mean 54.4, median 55, range 18–101), income spans a truncated USD 30,000–120,000 (mean 65,405, median 64,000), and gender runs 57% male, 41% female, 1% other. Age-band mass sits at the top: the 65+ band alone holds 29% of the demographic base, and customers 45 or over are roughly 72% of it. Membership acquisition ramped steeply — from ~290 sign-ups in 2013 to ~6,500 in 2017 — with 2018 a partial year (Figure 2). Both age and income show hard endpoints (101 and USD 120,000) that look like source-data caps rather than natural tails, which matters if either enters a downstream model as a continuous covariate.</p>
+<p><strong>Figure 2</strong></p>
+<p><em>Demographic Composition of the 14,825 Customers with Recorded Demographics</em></p>
+<p><img src="assets/fig2_customer_demographics.png" class="img-fluid" alt="Four panels. Age histogram, bell-shaped, centred near a median of 55. Household income histogram, a broad plateau from USD 40k to 75k tapering to a USD 120k cap. Age-band bar chart rising from 6% under 25 to 29% at 65 plus. Membership-start-year bar chart rising from about 290 in 2013 to about 6,500 in 2017, then a partial 2018."></p>
+<p><em>Note.</em> The 2,175 customers without demographics are excluded from this figure but retained in every other analysis. The 2018 membership bar is a partial year (data ends 2018-07-26).</p>
+</section>
+<section id="transactional-behaviour-over-the-30-day-window" class="level3">
+<h3 class="anchored" data-anchor-id="transactional-behaviour-over-the-30-day-window">Transactional behaviour over the 30-day window</h3>
+<p>Daily transaction volume and total spend do not trend smoothly — they rise and fall on an ~8–9-day rhythm, from ~3,200 transactions and ~USD 39,000 spend on the quietest days (around days 6 and 13) to ~5,900 transactions and ~USD 78,000 on the busiest (around days 17–19 and 25). The spacing matches the offer durations (3–10 days), which is consistent with the periodicity being driven by overlapping offer-validity windows rather than a calendar effect; it means any day-level analysis downstream should not treat days as exchangeable (Figure 3).</p>
+<p><strong>Figure 3</strong></p>
+<p><em>Daily Transaction Count and Total Spend Across the Observation Window</em></p>
+<p><img src="assets/fig3_daily_volume_spend.png" class="img-fluid" alt="A bar-and-line chart over 30 days. Bars for daily transaction count vary between about 3,200 and 5,900 with visible dips near days 6 and 13 and peaks near days 17 to 19 and 25. An overlaid line for total daily spend follows the same rhythm between about USD 39,000 and USD 78,000."></p>
+<p><em>Note.</em> Left axis: transactions (bars). Right axis: total spend in USD thousands (line). The dip-and-peak spacing tracks the 3–10-day offer durations.</p>
+<p>The spend distribution is severely right-skewed at every level. Transaction amounts have a mean of USD 12.78 against a median of USD 8.89, a 99th percentile of USD 40.02, and a maximum of USD 1,062.28 — on a log scale the body is roughly log-normal with a thin tail (Figure 4, left). At the customer level, total spend over the window has a Gini coefficient of <strong>0.525</strong> across the 16,578 customers with positive spend: the lower-spending 40% of customers account for roughly 10% of spend, the top 20% for roughly 45–50% (Figure 4, right). Restricting to active customers, median recency is 60 hours, median frequency is 7 transactions, and median total spend is USD 72.41 against a mean of USD 107.10 — a ~48% mean-over-median gap. This concentration is the reason the downstream primary-metric estimator uses trimmed means and bootstrap confidence intervals: with a Gini this high, a handful of large spenders can move an untrimmed mean by more than a realistic treatment effect.</p>
+<p><strong>Figure 4</strong></p>
+<p><em>Spend Skew at the Transaction Level and Concentration at the Customer Level</em></p>
+<p><img src="assets/fig4_spend_concentration.png" class="img-fluid" alt="Two panels. Left: histogram of transaction amounts on a log x-axis, roughly log-normal, body between USD 1 and 40 with a thin tail to USD 1,062; median USD 8.89, mean USD 12.78. Right: a Lorenz curve of customer total spend bowed well below the equality diagonal, annotated Gini = 0.525 over 16,578 customers."></p>
+<p><em>Note.</em> Left panel excludes the small number of zero-amount rows for the log axis. Right panel is over customers with positive spend in the window.</p>
+</section>
+<section id="the-offer-funnel" class="level3">
+<h3 class="anchored" data-anchor-id="the-offer-funnel">The offer funnel</h3>
+<p>For the 61,042 non-informational offer instances, the received → viewed → completed funnel leaks at three points (Figure 5). From received to viewed is a <strong>23.1%</strong> drop — roughly a quarter of offers are never seen. From viewed to completed is a further <strong>28.3%</strong> drop. The third leak is the one that matters for attribution: of the 33,631 completions, only 23,677 were <em>viewed then</em> completed in the correct order, so <strong>29.6% of completions (9,954 instances) had no prior view</strong>. Under the viewed-before-completed rule, those 9,954 are organic purchases that cleared the spend threshold, not responses to the offer — the operative completion figure going forward is 23,677, not 33,631. This is the intention-to-treat versus treatment-on-treated distinction, and it is the single most important thing this exploratory pass establishes for the causal work.</p>
+<p><strong>Figure 5</strong></p>
+<p><em>The Non-Informational Offer Funnel and Its Three Leak Points</em></p>
+<p><img src="assets/fig5_offer_funnel.png" class="img-fluid" alt="A horizontal funnel of four bars for non-informational offers. Received 61,042. Viewed 46,931, annotated 23.1% never viewed. Completed 33,631, annotated 28.3% of viewed never complete. Viewed then completed 23,677, annotated 29.6% of completions had no prior view (9,954)."></p>
+<p><em>Note.</em> Informational offers (15,235 instances) are excluded — they have no completion criterion. “Completed (any)” counts every completion event; “viewed then completed” additionally requires the view to precede the completion.</p>
+<p>Per offer, the spread is wide and does not follow reward size (Figure 6, Table 1). The two low-reward, long-duration discount offers lead on every measure — view rates near 97%, completion rates of 70% and 68%, and USD 34 and USD 26 mean spend per exposure. The <code>BOGO r10 / d10 / 7d</code> offer draws views (88%) but converts poorly (48% completion, 39% view-to-completion) despite carrying the same USD 10 spend threshold as the top discount offer, which converts at 70%. Whether that gap is a reward-structure effect (BOGO vs discount), a duration effect, or something else is precisely the confound-control problem the causal notebooks exist to solve; this table is its descriptive starting point.</p>
+<p><strong>Figure 6</strong></p>
+<p><em>Per-Offer View Rate, Completion Rate, and Mean Attributed Spend per Exposure</em></p>
+<p><img src="assets/fig6_per_offer_performance.png" class="img-fluid" alt="Three horizontal-bar panels sharing a y-axis of the ten offers, sorted by view rate. View rate ranges from 36% to 97%. Completion rate of received ranges from 0% (informational) to 70%. Mean attributed spend per exposure ranges from USD 7 to USD 34. Discount offers occupy the high end of completion and spend; bars coloured by offer type."></p>
+<p><em>Note.</em> Completion rate is of all received (intention-to-treat). The two informational offers show 0% completion by construction.</p>
+</section>
+<section id="response-by-demographic-group" class="level3">
+<h3 class="anchored" data-anchor-id="response-by-demographic-group">Response by demographic group</h3>
+<p>These are raw, unadjusted group means with no significance testing — exploratory context, not findings. Both view rate and completion rate rise with age: completion-given-viewed moves from 36% in the under-25 band to roughly 47–48% across the 45+ bands, and mean total spend rises from USD 84 to USD 129 over the same range (Figure 7, Table 2). By gender, female customers complete at 51% against male customers’ 40% — an ~11-point gap on near-identical view rates (75% vs 74%) — and spend more on average (USD 141 vs USD 100). Crossing age with income, completion rises with <em>both</em> dimensions roughly additively, from ~0.33 in the youngest, lowest-income cell to ~0.58 in the oldest, highest-income cells (Figure 8). The gender gap in particular is large enough to warrant a formal subgroup test — but that test belongs downstream under a pre-registration discipline, not here.</p>
+<p><strong>Figure 7</strong></p>
+<p><em>Unadjusted View Rate, Completion Rate, and Spend by Age Band and by Gender</em></p>
+<p><img src="assets/fig7_response_by_demographics.png" class="img-fluid" alt="Two panels. Left, by age band: view rate (line) flat near 0.74 above the 35-44 band, completion rate (line) rising from 0.36 to 0.48, mean total spend (bars) rising from USD 84 to USD 129. Right, by gender: female view rate 0.75 and completion 0.51, male 0.73 and 0.40, other 0.84 and 0.50."></p>
+<p><em>Note.</em> Restricted to the 14,820 customers with demographics who received at least one offer. Rates are customer-level means; no adjustment and no significance testing.</p>
+<p><strong>Figure 8</strong></p>
+<p><em>Mean Completion Rate (Given Viewed) by Age Band × Income Band</em></p>
+<p><img src="assets/fig8_response_heatmap.png" class="img-fluid" alt="A 6-by-5 heatmap of mean completion-rate-given-viewed with age band on the rows and income band on the columns. Values rise from about 0.33 in the youngest, lowest-income cell to about 0.58 in the oldest, highest-income cells. The top-right cells for customers under 35 with income above USD 80k are blank."></p>
+<p><em>Note.</em> Blank cells are structurally empty — in the simulated data income and age are positively coupled, so no customer under 35 has income ≥ USD 80,000. The <code>35–44 × 100k+</code> cell (0.77) is <em>n</em> = 8 and should be read as noise.</p>
+<p><strong>Table 2</strong></p>
+<p><em>Unadjusted Response by Age Band and by Gender (customers with demographics who received an offer)</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Group</th>
+<th style="text-align: right;"><em>n</em></th>
+<th style="text-align: right;">Mean view rate</th>
+<th style="text-align: right;">Mean completion rate (given viewed)</th>
+<th style="text-align: right;">Mean total spend</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Age &lt; 25</td>
+<td style="text-align: right;">876</td>
+<td style="text-align: right;">0.687</td>
+<td style="text-align: right;">0.356</td>
+<td style="text-align: right;">USD 83.87</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Age 25–34</td>
+<td style="text-align: right;">1,380</td>
+<td style="text-align: right;">0.685</td>
+<td style="text-align: right;">0.378</td>
+<td style="text-align: right;">USD 85.12</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Age 35–44</td>
+<td style="text-align: right;">1,869</td>
+<td style="text-align: right;">0.772</td>
+<td style="text-align: right;">0.436</td>
+<td style="text-align: right;">USD 110.43</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Age 45–54</td>
+<td style="text-align: right;">3,012</td>
+<td style="text-align: right;">0.759</td>
+<td style="text-align: right;">0.457</td>
+<td style="text-align: right;">USD 116.27</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Age 55–64</td>
+<td style="text-align: right;">3,420</td>
+<td style="text-align: right;">0.742</td>
+<td style="text-align: right;">0.478</td>
+<td style="text-align: right;">USD 128.41</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Age 65+</td>
+<td style="text-align: right;">4,263</td>
+<td style="text-align: right;">0.742</td>
+<td style="text-align: right;">0.475</td>
+<td style="text-align: right;">USD 128.55</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Gender: female</td>
+<td style="text-align: right;">6,125</td>
+<td style="text-align: right;">0.746</td>
+<td style="text-align: right;">0.514</td>
+<td style="text-align: right;">USD 140.98</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Gender: male</td>
+<td style="text-align: right;">8,483</td>
+<td style="text-align: right;">0.735</td>
+<td style="text-align: right;">0.404</td>
+<td style="text-align: right;">USD 99.59</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Gender: other</td>
+<td style="text-align: right;">212</td>
+<td style="text-align: right;">0.843</td>
+<td style="text-align: right;">0.501</td>
+<td style="text-align: right;">USD 124.32</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> <code>completion_rate_given_viewed</code> is undefined for customers with zero viewed offers and excluded from that column’s mean.</p>
+</section>
+<section id="behavioural-segmentation" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="behavioural-segmentation">Behavioural segmentation</h3>
+<p>k-means was fitted on nine standardised RFM-plus-funnel features for the 14,492 customers with full coverage. The inertia curve has no sharp elbow; the silhouette coefficient peaks at <em>k</em> = 2 (0.171) and again, near-tied, at <em>k</em> = 5 (0.170), with a dip at <em>k</em> = 3 (Figure 9). The silhouette-optimal <em>k</em> = 2 is rejected: a two-way split carries barely more information than a single median cut and is useless as a covariate or heterogeneity stratum for the downstream analysis. <em>k</em> = 5 — the next silhouette peak, and the smallest <em>k</em> at that quality level with enough strata to be useful — is chosen instead.</p>
+<p><strong>Figure 9</strong></p>
+<p><em>Choosing k: Inertia Elbow and Silhouette Coefficient over k = 2…8</em></p>
+<p><img src="assets/fig9_k_selection.png" class="img-fluid" alt="Two panels. Left: inertia falling smoothly from about 109,000 at k=2 to about 66,000 at k=8 with no sharp knee. Right: silhouette coefficient at 0.171 for k=2, dipping to 0.158 at k=3, recovering to 0.169 and 0.170 at k=4 and k=5, then declining to 0.139 at k=8. A dashed line marks the chosen k=5."></p>
+<p><em>Note.</em> Silhouette computed on a fixed 3,000-customer subsample for speed. <code>k = 5</code> is the local maximum after the <code>k = 3</code> dip.</p>
+<p>The five segments partition the covered customers into four broad groups of 1,700–4,800 and one small outlier cluster, well separated in principal-component space (PC1 27.0%, PC2 20.4% of variance; Figure 10, Table 3):</p>
+<ul>
+<li><strong>Segment 0 — high-frequency buyers</strong> (<em>n</em> = 3,812): the most recently active (mean recency 45 h) and by far the most frequent (14.6 transactions), with many small purchases (mean USD 9.9) and solid response (view 0.79, completion 0.59). Youngest of the large segments (age 46), mid-income.</li>
+<li><strong>Segment 1 — offer-responsive spenders</strong> (<em>n</em> = 4,768, the largest): moderate recency and frequency but the highest completion rate (0.67) and largest per-transaction spend among the large segments (USD 21.9). Older (age 63) and highest-income (USD 83k).</li>
+<li><strong>Segment 2 — low-value browsers</strong> (<em>n</em> = 3,963): lowest total spend (USD 33) and mean spend (USD 6.0), and a completion rate of just 0.14 despite a not-unusual view rate (0.62) — they see offers and rarely act.</li>
+<li><strong>Segment 3 — affluent low-engagement</strong> (<em>n</em> = 1,717): recency of 243 hours, more than three times any other segment’s, the lowest frequency (3.8), a low completion rate (0.28), but the second-highest income (USD 76k) — affluent but dormant.</li>
+<li><strong>Segment 4 — high-value outliers</strong> (<em>n</em> = 232): total spend USD 829 and mean spend USD 106, roughly 5–10× the next segment, with response behaviour like Segment 1’s. k-means separates them cleanly because spend magnitude dominates the standardised feature space.</li>
+</ul>
+<p><code>n_offers_received</code> is 4.3–4.7 across all five, so offer <em>exposure</em> is not what separates the segments — spend magnitude, frequency, recency, and completion do. The labels, plus <code>segment_id = −1</code> for the 2,508 customers with no demographics or no activity, are persisted to the customer-feature table for downstream use.</p>
+<p><strong>Figure 10</strong></p>
+<p><em>The Five Behavioural Segments in Principal-Component Space</em></p>
+<p><img src="assets/fig10_kmeans_pca.png" class="img-fluid" alt="A scatter of 14,492 customers in the first two principal components, coloured by segment. Segments 0, 1, and 2 form three large overlapping masses near the origin; segment 3 (affluent low-engagement) sits in a band at higher PC2; segment 4 (high-value outliers, n=232) is sparse and spread along high PC1."></p>
+<p><em>Note.</em> Projection is for visualisation only; clusters were fitted in the full nine-dimensional standardised space.</p>
+<p><strong>Table 3</strong></p>
+<p><em>k-Means Segment Profiles — Feature Means (k = 5, n = 14,492)</em></p>
+<div class="column-page-inset">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Segment</th>
+<th style="text-align: right;"><em>n</em></th>
+<th style="text-align: right;">Recency (h)</th>
+<th style="text-align: right;">Frequency</th>
+<th style="text-align: right;">Total spend</th>
+<th style="text-align: right;">Mean spend</th>
+<th style="text-align: right;">Offers received</th>
+<th style="text-align: right;">View rate</th>
+<th style="text-align: right;">Completion (given viewed)</th>
+<th style="text-align: right;">Age</th>
+<th style="text-align: right;">Income</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">0 · high-frequency buyers</td>
+<td style="text-align: right;">3,812</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">14.6</td>
+<td style="text-align: right;">USD 136</td>
+<td style="text-align: right;">USD 9.9</td>
+<td style="text-align: right;">4.7</td>
+<td style="text-align: right;">0.79</td>
+<td style="text-align: right;">0.59</td>
+<td style="text-align: right;">46</td>
+<td style="text-align: right;">USD 51,006</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">1 · offer-responsive spenders</td>
+<td style="text-align: right;">4,768</td>
+<td style="text-align: right;">65</td>
+<td style="text-align: right;">7.5</td>
+<td style="text-align: right;">USD 163</td>
+<td style="text-align: right;">USD 21.9</td>
+<td style="text-align: right;">4.5</td>
+<td style="text-align: right;">0.80</td>
+<td style="text-align: right;">0.67</td>
+<td style="text-align: right;">63</td>
+<td style="text-align: right;">USD 83,343</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2 · low-value browsers</td>
+<td style="text-align: right;">3,963</td>
+<td style="text-align: right;">77</td>
+<td style="text-align: right;">6.0</td>
+<td style="text-align: right;">USD 33</td>
+<td style="text-align: right;">USD 6.0</td>
+<td style="text-align: right;">4.4</td>
+<td style="text-align: right;">0.62</td>
+<td style="text-align: right;">0.14</td>
+<td style="text-align: right;">48</td>
+<td style="text-align: right;">USD 51,459</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">3 · affluent low-engagement</td>
+<td style="text-align: right;">1,717</td>
+<td style="text-align: right;">243</td>
+<td style="text-align: right;">3.8</td>
+<td style="text-align: right;">USD 65</td>
+<td style="text-align: right;">USD 17.8</td>
+<td style="text-align: right;">4.3</td>
+<td style="text-align: right;">0.75</td>
+<td style="text-align: right;">0.28</td>
+<td style="text-align: right;">61</td>
+<td style="text-align: right;">USD 76,089</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">4 · high-value outliers</td>
+<td style="text-align: right;">232</td>
+<td style="text-align: right;">71</td>
+<td style="text-align: right;">9.5</td>
+<td style="text-align: right;">USD 829</td>
+<td style="text-align: right;">USD 106.3</td>
+<td style="text-align: right;">4.6</td>
+<td style="text-align: right;">0.81</td>
+<td style="text-align: right;">0.64</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">USD 80,819</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><em>Note.</em> Recency is hours since last purchase; frequency and offer counts are over the 30-day window. Segment integers are arbitrary k-means labels; the descriptive names are assigned from these profiles.</p>
+</section>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<section id="principal-findings" class="level3">
+<h3 class="anchored" data-anchor-id="principal-findings">Principal findings</h3>
+<p>Four descriptive facts constrain the causal analysis to follow. (1) The offer catalogue confounds reward, threshold, duration, and channel, so cross-offer response comparisons require adjustment or a within-offer design. (2) The funnel’s third leak — 29.6% of completions with no prior view — means the recorded completion count overstates genuine response by nearly a third (the rate on the received base falls from 55.1% to 38.8%), and the analysis must distinguish intention-to-treat (received) from treatment-on-treated (viewed then completed). (3) Customer spend has a Gini of 0.525, so the primary outcome must be estimated with tail-robust methods. (4) The customer base contains five behaviourally distinct segments — most sharply, two groups (Segments 1 and 0/4) that see and act on offers, one (Segment 2) that sees and does not, and one (Segment 3) that has largely disengaged — that are candidates for heterogeneous-effects analysis.</p>
+</section>
+<section id="the-mechanism-worth-carrying-forward" class="level3">
+<h3 class="anchored" data-anchor-id="the-mechanism-worth-carrying-forward">The mechanism worth carrying forward</h3>
+<p>The equal-view / unequal-completion pattern recurs at every level of aggregation. The overall funnel shows it (46,931 viewed, 23,677 viewed-then-completed). The per-offer table shows it (<code>BOGO r10 / d10 / 7d</code>: 88% viewed, 39% viewed-then-completed). The demographic cut shows it (female and male view rates within one point; completion rates eleven points apart). And the segmentation shows it as the primary axis of separation — Segments 1 and 2 have similar view rates (0.80 vs 0.62) but completion rates of 0.67 and 0.14. Whatever drives completion conditional on viewing is not the same thing that drives viewing, and it is not offer exposure volume, which is flat across segments. Identifying that driver — customer type, offer attributes, or a genuine causal effect of the offer — is the question the downstream notebooks take up.</p>
+</section>
+<section id="limitations" class="level3">
+<h3 class="anchored" data-anchor-id="limitations">Limitations</h3>
+<p>The data are simulated, and several structural features are artefacts of the simulation rather than consumer behaviour: age and income are positively coupled (no customer under 35 earns ≥ USD 80,000), age and income are hard-capped at 101 and USD 120,000, and the daily periodicity is an artefact of overlapping offer windows. The 2,175 customers without demographics cannot be placed in the demographic analyses or the segmentation and are carried as a separate stratum; any downstream covariate-adjusted estimate must handle them explicitly. The k-means partition is one of several defensible segmentations — a different feature set, distance metric, or <code>k</code> would give different groups — and its role is as a pragmatic stratification variable, not a claim about latent customer types. All demographic and per-offer differences reported here are unadjusted and untested.</p>
+</section>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
+<p>The offer rollout can be read as an experiment, but only after three corrections: separate the offers by their attributes, separate viewed-then-completed from merely completed, and estimate spend with tail-robust statistics. The five-segment partition and the demographic strata give the downstream analysis the subgroups it needs to ask whether the offer’s effect is uniform or concentrated. Nothing here estimates that effect; that is the next notebook’s work.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Gini, C. (1921). Measurement of inequality of incomes. <em>The Economic Journal, 31</em>(121), 124–126. https://doi.org/10.2307/2223319</p>
+<p>Harris, C. R., Millman, K. J., van der Walt, S. J., Gommers, R., Virtanen, P., Cournapeau, D., Wieser, E., Taylor, J., Berg, S., Smith, N. J., Kern, R., Picus, M., Hoyer, S., van Kerkwijk, M. H., Brett, M., Haldane, A., del Río, J. F., Wiebe, M., Peterson, P., … Oliphant, T. E. (2020). Array programming with NumPy. <em>Nature, 585</em>, 357–362. https://doi.org/10.1038/s41586-020-2649-2</p>
+<p>Lloyd, S. P. (1982). Least squares quantization in PCM. <em>IEEE Transactions on Information Theory, 28</em>(2), 129–137. https://doi.org/10.1109/TIT.1982.1056489</p>
+<p>Lorenz, M. O. (1905). Methods of measuring the concentration of wealth. <em>Publications of the American Statistical Association, 9</em>(70), 209–219. https://doi.org/10.2307/2276207</p>
+<p>The pandas development team. (2020). <em>pandas-dev/pandas: Pandas</em> (Version latest) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.3509134</p>
+<p>Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., &amp; Duchesnay, É. (2011). Scikit-learn: Machine learning in Python. <em>Journal of Machine Learning Research, 12</em>, 2825–2830.</p>
+<p>Rousseeuw, P. J. (1987). Silhouettes: A graphical aid to the interpretation and validation of cluster analysis. <em>Journal of Computational and Applied Mathematics, 20</em>, 53–65. https://doi.org/10.1016/0377-0427(87)90125-7</p>
+<p>Starbucks, &amp; Udacity. (2018). <em>Starbucks Capstone Challenge simulated offers dataset</em> [Data set]. Retrieved from Kaggle (I. Muliar, mirror). https://www.kaggle.com/datasets/ihormuliar/starbucks-customer-data</p>
+<hr>
+<p><em>Descriptive study; no estimate here supports a causal claim. Figures and every headline number were regenerated from the Gold tables — the k-means segmentation re-run under a fixed seed reproduces the notebook’s segment sizes and profiles exactly.</em></p>
+
+
+<div id="contact" class="connect-section" style="text-align: center; padding: 50px 20px; background: #f9f9f9; border-radius: 15px; border: 1px solid #eaeaea; margin-top: 40px;">
+<h3 style="color: #2c3e50; font-weight: 700; margin-bottom: 15px; border: none;" class="anchored">Let's Collaborate</h3>
+<p style="color: #666; max-width: 650px; margin: 0 auto 30px auto; font-size: 1.05rem; line-height: 1.6;">Available for high-impact <strong>Business Intelligence, Power BI Engineering, and Advanced Data Analytics</strong> projects. Connect with me or hire me directly through the platforms below.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
+<a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-linkedin"></i> LinkedIn</a>
+<a href="https://github.com/mkhanmuneer" class="btn btn-dark" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-github"></i> GitHub</a>
+<a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" target="_blank" rel="noopener" style="color: white; padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-graph-up"></i> Kaggle</a>
+<a href="https://www.upwork.com/freelancers/~018de8553286a1d00c" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-briefcase"></i> Upwork</a>
+<a href="https://www.fiverr.com/neuronvision" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-lightning-charge"></i> Fiverr</a>
+</div>
+</div>
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/mkhanmuneer\.github\.io\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 Muhammad Khan Muneer</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.upwork.com/freelancers/~018de8553286a1d00c">
+<p>Hire on Upwork</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.fiverr.com/neuronvision">
+<p>Hire on Fiverr</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

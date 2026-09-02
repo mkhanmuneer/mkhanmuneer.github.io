@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Muhammad Khan Muneer">
+<meta name="keywords" content="medallion architecture, bronze silver gold, ETL pipeline, star schema, Kimball dimensional model, data quality audit, sentinel encoding, operator-entered data, vocabulary harmonisation, surrogate keys, spatial enrichment, Parquet, GeoJSON, crime incident data, Part 1 crime, feature engineering, Python, pandas">
+<meta name="description" content="A four-tier medallion ETL pipeline for eleven years of municipal Part 1 (index) crime incidents. Operator-truth preservation: the source’s NA weapon token is an affirmative “no weapon involved” on 281,645 incidents (69% of the cohort) — it is kept as an explicit Not Applicable category, never folded into a null or an “unknown” bucket. Vocabulary harmonisation: 31 raw gender tokens collapse to five states, with the operator’s deliberate “unknown” held apart from 22 uninterpretable entries. Row accounting: 546,800 raw rows → 407,826, with every one of the 138,974 dropped records attributed to the temporal window, the spatial-completeness filter, or the Part 1 inner join. Output: 14 validated Parquet tables — a feature-engineered fact grain, a surrogate-keyed consolidated fact, and 12 conformed dimensions.">
+
+<title>An Operator-Truth-Preserving Medallion ETL Pipeline for a City Part 1 Crime Archive – Muhammad Khan Muneer</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-ca0cfe78a00f84493d894d8af57a3a20.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": true,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="../../styles/custom.css">
+<meta property="og:title" content="Muhammad Khan Muneer — Data Science &amp; BI Portfolio">
+<meta property="og:description" content="Engineering ML-driven analytics and automated decision systems.">
+<meta property="og:image" content="https://mkhanmuneer.github.io/projects/operator-truth-preserving-medallion-etl-pipeline-urban-crime-incident-star-schema/assets/fig1_medallion_architecture.png">
+<meta property="og:site_name" content="M. Khan Muneer Portfolio">
+<meta property="og:image:alt" content="Top-to-bottom flow. Three source boxes (GeoJSON export 546,800 by 22; crime-codes lookup 203 rows narrowing to 88 Part 1; two RDS geocoding assets) feed a RAW tier (immutable Parquet snapshot). RAW flows to BRONZE (structural cleaning, snake_case, key repair, no value changed), then SILVER (business logic, sentinels, vocabulary harmonisation, bounding box, UTC window), then GOLD (spatial enrichment, 13 engineered features, operator-truth weapon unification), then a STAR SCHEMA of 12 dimensions plus a consolidated fact of 407,826 incidents across 14 Parquet tables.">
+<meta property="og:image:height" content="1056">
+<meta property="og:image:width" content="1342">
+<meta name="twitter:title" content="An Operator-Truth-Preserving Medallion ETL Pipeline for a City Part 1 Crime Archive – Muhammad Khan Muneer">
+<meta name="twitter:description" content="A four-tier medallion ETL pipeline for eleven years of municipal Part 1 (index) crime incidents. Operator-truth preservation: the source’s NA weapon token is an affirmative “no weapon involved” on 281,645 incidents (69% of the cohort) — it is kept as an explicit Not Applicable category, never folded into a null or an “unknown” bucket. Vocabulary harmonisation: 31 raw gender tokens collapse to five states, with the operator’s deliberate “unknown” held apart from 22 uninterpretable entries. Row accounting: 546,800 raw rows → 407,826, with every one of the 138,974 dropped records attributed to the temporal window, the spatial-completeness filter, or the Part 1 inner join. Output: 14 validated Parquet tables — a feature-engineered fact grain, a surrogate-keyed consolidated fact, and 12 conformed dimensions.">
+<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/operator-truth-preserving-medallion-etl-pipeline-urban-crime-incident-star-schema/assets/fig1_medallion_architecture.png">
+<meta name="twitter:creator" content="@iMKhanMuneer">
+<meta name="twitter:site" content="@iMKhanMuneer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Top-to-bottom flow. Three source boxes (GeoJSON export 546,800 by 22; crime-codes lookup 203 rows narrowing to 88 Part 1; two RDS geocoding assets) feed a RAW tier (immutable Parquet snapshot). RAW flows to BRONZE (structural cleaning, snake_case, key repair, no value changed), then SILVER (business logic, sentinels, vocabulary harmonisation, bounding box, UTC window), then GOLD (spatial enrichment, 13 engineered features, operator-truth weapon unification), then a STAR SCHEMA of 12 dimensions plus a consolidated fact of 407,826 incidents across 14 Parquet tables.">
+<meta name="twitter:image-height" content="1056">
+<meta name="twitter:image-width" content="1342">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#featured-projects"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/iMKhanMuneer"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.kaggle.com/muhammadkhanmuneer"> <i class="bi bi-graph-up" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#contact"> 
+<span class="menu-text">Contact</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#pipeline-architecture" id="toc-pipeline-architecture" class="nav-link" data-scroll-target="#pipeline-architecture">Pipeline architecture</a></li>
+  <li><a href="#raw-ingestion-and-audit" id="toc-raw-ingestion-and-audit" class="nav-link" data-scroll-target="#raw-ingestion-and-audit">Raw ingestion and audit</a>
+  <ul class="collapse">
+  <li><a href="#structural-artefacts" id="toc-structural-artefacts" class="nav-link" data-scroll-target="#structural-artefacts">Structural artefacts</a></li>
+  <li><a href="#the-missingness-surface" id="toc-the-missingness-surface" class="nav-link" data-scroll-target="#the-missingness-surface">The missingness surface</a></li>
+  <li><a href="#vocabulary-fragmentation" id="toc-vocabulary-fragmentation" class="nav-link" data-scroll-target="#vocabulary-fragmentation">Vocabulary fragmentation</a></li>
+  </ul></li>
+  <li><a href="#bronze-layer-structural-cleaning" id="toc-bronze-layer-structural-cleaning" class="nav-link" data-scroll-target="#bronze-layer-structural-cleaning">Bronze layer — structural cleaning</a></li>
+  <li><a href="#silver-layer-business-logic-cleaning" id="toc-silver-layer-business-logic-cleaning" class="nav-link" data-scroll-target="#silver-layer-business-logic-cleaning">Silver layer — business-logic cleaning</a></li>
+  <li><a href="#gold-layer-the-analytical-fact-grain" id="toc-gold-layer-the-analytical-fact-grain" class="nav-link" data-scroll-target="#gold-layer-the-analytical-fact-grain">Gold layer — the analytical fact grain</a></li>
+  <li><a href="#dimensions-and-the-consolidated-fact" id="toc-dimensions-and-the-consolidated-fact" class="nav-link" data-scroll-target="#dimensions-and-the-consolidated-fact">Dimensions and the consolidated fact</a></li>
+  <li><a href="#validation" id="toc-validation" class="nav-link" data-scroll-target="#validation">Validation</a></li>
+  <li><a href="#carry-forward-findings" id="toc-carry-forward-findings" class="nav-link" data-scroll-target="#carry-forward-findings">Carry-forward findings</a></li>
+  <li><a href="#tools-and-references" id="toc-tools-and-references" class="nav-link" data-scroll-target="#tools-and-references">Tools and references</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">An Operator-Truth-Preserving Medallion ETL Pipeline for a City Part 1 Crime Archive</h1>
+<p class="subtitle lead">Turning a 546,800-row GeoJSON export and a 203-row code lookup into a validated 407,826-incident star schema — a Bronze → Silver → Gold contract, a three-state weapon vocabulary that never loses the operator’s ‘no weapon’ signal, and row accounting where every dropped record is attributed to one filter.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Data Engineering</div>
+    <div class="quarto-category">ETL Pipeline</div>
+    <div class="quarto-category">Medallion Architecture</div>
+    <div class="quarto-category">Star Schema</div>
+    <div class="quarto-category">Dimensional Modelling</div>
+    <div class="quarto-category">Data Quality</div>
+    <div class="quarto-category">Feature Engineering</div>
+    <div class="quarto-category">Spatial Analysis</div>
+    <div class="quarto-category">Crime Analytics</div>
+    <div class="quarto-category">Public Safety</div>
+    <div class="quarto-category">Python</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>A four-tier medallion ETL pipeline for eleven years of municipal Part 1 (index) crime incidents. <strong>Operator-truth preservation:</strong> the source’s <code>NA</code> weapon token is an affirmative “no weapon involved” on 281,645 incidents (69% of the cohort) — it is kept as an explicit <code>Not Applicable</code> category, never folded into a null or an “unknown” bucket. <strong>Vocabulary harmonisation:</strong> 31 raw gender tokens collapse to five states, with the operator’s deliberate “unknown” held apart from 22 uninterpretable entries. <strong>Row accounting:</strong> 546,800 raw rows → 407,826, with every one of the 138,974 dropped records attributed to the temporal window, the spatial-completeness filter, or the Part 1 inner join. <strong>Output:</strong> 14 validated Parquet tables — a feature-engineered fact grain, a surrogate-keyed consolidated fact, and 12 conformed dimensions.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Muhammad Khan Muneer </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">June 2024</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+<div>
+  <div class="keywords">
+    <div class="block-title">Keywords</div>
+    <p>medallion architecture, bronze silver gold, ETL pipeline, star schema, Kimball dimensional model, data quality audit, sentinel encoding, operator-entered data, vocabulary harmonisation, surrogate keys, spatial enrichment, Parquet, GeoJSON, crime incident data, Part 1 crime, feature engineering, Python, pandas</p>
+  </div>
+</div>
+
+</header>
+
+
+<section id="overview" class="level2">
+<h2 class="anchored" data-anchor-id="overview">Overview</h2>
+<p>This is the extract–transform–load (ETL) stage of a six-notebook project on eleven years of urban crime. It has one job: turn a raw municipal open-data export — 546,800 incident records in a GeoJSON file, plus a 203-row crime-code lookup and two spatial-enrichment assets — into an analysis-ready set of Parquet tables that the exploratory, modelling, fairness, clustering, and regression notebooks each load without re-running any upstream logic. The dataset is a large U.S. city’s <em>Part 1</em> file: the serious “index” offences — homicide, rape, robbery, aggravated assault, burglary, larceny, auto theft, and arson — reported between 2012 and 2022. The city is not named here; the interest is in the pipeline, not the jurisdiction.</p>
+<p>The pipeline follows a <strong>four-tier medallion architecture</strong> (Raw → Bronze → Silver → Gold), where each tier has a strict contract, a distinct fault-isolation boundary, and a persisted Parquet snapshot any consumer can reload independently. The finding that shapes every design decision is that this data was <strong>entered by people, under time pressure, into a constrained form</strong> — and the resulting artefacts are not random noise. A <code>Weapon</code> value of <code>NA</code> is not a missing value; it is an operator’s affirmative statement that no weapon was involved, and it is the single largest token in the column. A <code>Gender</code> value of <code>U</code> is a deliberate “I don’t know,” which is analytically different from the string <code>042819</code> that a fat-fingered entry produced. An <code>Inside_Outside</code> value of <code>None</code> was picked from a menu. The pipeline’s central principle is to <strong>preserve these operator-entered distinctions as explicit, named categories</strong> rather than collapsing them into a single null — because collapsing them silently destroys real signal, and in the weapon column that signal covers 69% of the cohort.</p>
+</section>
+<section id="pipeline-architecture" class="level2">
+<h2 class="anchored" data-anchor-id="pipeline-architecture">Pipeline architecture</h2>
+<p>Each tier knows strictly more about the data than the one before it. Raw knows nothing — it is a byte-for-byte snapshot. Bronze knows what the data <em>looks like</em> — column names, key fragments, dtypes. Silver knows what the data <em>means</em> — sentinels, controlled vocabularies, coordinate validity, the temporal window. Gold produces the <em>analytical surface</em> — spatial enrichment, the Part 1 filter, weapon unification, dimensional modelling, and 13 pre-computed features. The contract for each tier — and, just as important, what each tier must <strong>not</strong> do — is fixed (Figure 1, Table 1).</p>
+<p><strong>Figure 1</strong></p>
+<p><em>The Four-Tier Medallion Pipeline</em></p>
+<p><img src="assets/fig1_medallion_architecture.png" class="img-fluid" alt="Top-to-bottom flow. Three source boxes (GeoJSON export 546,800 by 22; crime-codes lookup 203 rows narrowing to 88 Part 1; two RDS geocoding assets) feed a RAW tier (immutable Parquet snapshot). RAW flows to BRONZE (structural cleaning, snake_case, key repair, no value changed), then SILVER (business logic, sentinels, vocabulary harmonisation, bounding box, UTC window), then GOLD (spatial enrichment, 13 engineered features, operator-truth weapon unification), then a STAR SCHEMA of 12 dimensions plus a consolidated fact of 407,826 incidents across 14 Parquet tables."></p>
+<p><em>Note.</em> Every arrow adds knowledge, never rows in an uncontrolled way. Rows are removed at exactly three points, each documented (Figure 5).</p>
+<p><strong>Table 1</strong></p>
+<p><em>Tier Contracts in the Medallion Pipeline</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Tier</th>
+<th style="text-align: left;">Knows</th>
+<th style="text-align: left;">Does</th>
+<th style="text-align: left;">Must not do</th>
+<th style="text-align: left;">Persisted as</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Raw</td>
+<td style="text-align: left;">nothing</td>
+<td style="text-align: left;">byte-for-byte Parquet snapshot of each source file</td>
+<td style="text-align: left;">any transformation</td>
+<td style="text-align: left;"><code>crimes_incidents_raw</code> (a geometry-bearing copy and a WKT-string copy), <code>crime_codes_raw</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Bronze</td>
+<td style="text-align: left;">physical structure</td>
+<td style="text-align: left;"><code>snake_case</code> normalisation; repair <code>row_i_d</code> → <code>row_id</code> and <code>v_r_i_name</code> → <code>vri_name</code>; assert the join key is present</td>
+<td style="text-align: left;">change any value, filter any row, add or drop a column</td>
+<td style="text-align: left;"><code>crimes_incidents_bronze</code> (36.5 MB), <code>crime_codes_bronze</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Silver</td>
+<td style="text-align: left;">domain meaning</td>
+<td style="text-align: left;">sentinel → explicit token or <code>NaN</code>; vocabulary harmonisation; city bounding-box coordinate check; UTC-aware datetime parse; 2012–2022 window filter; Part 1 code filter (203 → 88)</td>
+<td style="text-align: left;">impute, derive cross-table features, drop rows without a documented reason</td>
+<td style="text-align: left;"><code>crimes_incidents_silver</code> (40.0 MB), <code>crime_codes_silver</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Gold</td>
+<td style="text-align: left;">analytical intent</td>
+<td style="text-align: left;">spatial enrichment from geocoding assets; inner join to the Part 1 dimension; operator-truth weapon unification; 13 engineered features; star-schema construction</td>
+<td style="text-align: left;">clean data-quality issues (Silver’s job); impute; use nullable extension dtypes</td>
+<td style="text-align: left;">14 Parquet tables (56.3 MB total)</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> The single deliberate row expansion is at the dimension boundary: <code>dim_district</code> carries 10 rows (9 patrol districts + an explicit <code>Unknown</code> member) and <code>dim_neighbourhood</code> carries 279 (278 + <code>Unknown</code>), so every fact row resolves to a real surrogate key rather than relying on pandas’ implicit <code>NaN == NaN</code> join behaviour.</p>
+</section>
+<section id="raw-ingestion-and-audit" class="level2">
+<h2 class="anchored" data-anchor-id="raw-ingestion-and-audit">Raw ingestion and audit</h2>
+<p>The GeoJSON source loads as a <strong>546,800 × 22</strong> GeoDataFrame; the crime-code lookup as <strong>203 × 8</strong>. Both are snapshotted to Parquet <em>before any transformation</em> as the lineage anchor — if a downstream finding is ever challenged, the exact source state at run time can be reloaded without re-parsing the 322 MB GeoJSON. The audit that follows reads the untouched frame, names every structural and distributional problem, and establishes the evidence for each later transformation.</p>
+<section id="structural-artefacts" class="level3">
+<h3 class="anchored" data-anchor-id="structural-artefacts">Structural artefacts</h3>
+<p>All 21 attribute columns carry mixed casing; two names fragment incorrectly under naive <code>snake_case</code> conversion (<code>RowID</code> → <code>row_i_d</code>, <code>VRIName</code> → <code>v_r_i_name</code>). The first is the join key for the Gold spatial-enrichment step, so its correct repair is a hard dependency. <code>CrimeDateTime</code> arrives as an <code>object</code> string with 359,213 distinct values — every temporal feature and both derived key columns depend on Silver’s UTC-aware parse. Two columns are inert: <code>Total_Incidents</code> is a constant <code>1</code> (a row-counter vestige), and <code>Shape</code> is 100% null (a geometry-metadata artefact). Both are carried to Gold and dropped there.</p>
+</section>
+<section id="the-missingness-surface" class="level3">
+<h3 class="anchored" data-anchor-id="the-missingness-surface">The missingness surface</h3>
+<p>Missingness is severe and structurally uneven (Figure 2). <code>Ethnicity</code> is absent on 96.5% of rows and <code>VRIName</code> on 88.4% — these are collection gaps, not pipeline faults, and the downstream notebooks treat their missingness rates as hard analytical constraints. <code>Age</code> (20.2%), <code>Gender</code> (16.2%), <code>Premise</code> (13.9%), and <code>Inside_Outside</code> (13.8%) sit in a middle band. Every <em>structural</em> field — the coordinate pair, <code>Location</code>, <code>Neighborhood</code>, <code>District</code>, <code>Post</code> — is missing on well under 1% of rows. The 900 rows (0.16%) with an identical missing count across <code>Latitude</code>, <code>Longitude</code>, and <code>geometry</code> are the same records: the bad-geocoding placeholder pairs the source writes as <code>(0.0, 0.0)</code> and the string <code>(,)</code>.</p>
+<p><strong>Figure 2</strong></p>
+<p><em>The Raw Missingness Landscape, and Its Resolution</em></p>
+<p><img src="assets/fig2_raw_missingness_landscape.png" class="img-fluid" alt="Left panel: horizontal bars of the percentage of raw rows missing each field, sorted high to low. Ethnicity 96.5 percent and VRI label 88.4 percent dominate; Age 20.2, Gender 16.2, Premise 13.9, Inside/outside 13.8; Race 1.7; and every structural field (Location, Neighbourhood, District, Post, Latitude, Longitude) under 0.5 percent. Right panel: the same fields, all at 0.0 percent after the Gold layer, marked with green dots."></p>
+<p><em>Note.</em> Amber = demographic or descriptive field; grey = structural field. Silver and Gold resolve every gap either by an explicit token (<code>Unknown</code>, <code>Unsure</code>, <code>Not Applicable</code>) or, for <code>age</code> alone, by mean imputation — the one imputation the pipeline performs, made at Silver because every downstream consumer uses <code>age</code> as a continuous feature and a single consistent fill is preferable to five notebooks each choosing their own.</p>
+</section>
+<section id="vocabulary-fragmentation" class="level3">
+<h3 class="anchored" data-anchor-id="vocabulary-fragmentation">Vocabulary fragmentation</h3>
+<p><code>Gender</code> carries 31 distinct non-null tokens; <code>Weapon</code> carries 24; <code>Inside_Outside</code> carries four tokens spanning two logical states. The unique-value counts understate the problem — the fragmentation is a mix of abbreviation variants, operator-asserted uncertainty tokens, and uninterpretable entries that need three qualitatively different treatments. Figures 3 and 4 make the two consequential cases concrete.</p>
+</section>
+</section>
+<section id="bronze-layer-structural-cleaning" class="level2">
+<h2 class="anchored" data-anchor-id="bronze-layer-structural-cleaning">Bronze layer — structural cleaning</h2>
+<p>Bronze applies <code>snake_case</code> normalisation and two targeted fragment repairs, then asserts that <code>row_id</code> is present. No value is changed, no row is filtered, no column is added or removed. Shape is unchanged at 546,800 × 22; the Parquet file writes at 36.5 MB (down from a 535 MB in-memory footprint) under Snappy compression. Bronze is the reload point for any issue that traces to column naming, key-fragment repair, or join-key presence.</p>
+</section>
+<section id="silver-layer-business-logic-cleaning" class="level2">
+<h2 class="anchored" data-anchor-id="silver-layer-business-logic-cleaning">Silver layer — business-logic cleaning</h2>
+<p>Silver resolves each finding from the raw audit through an explicit, documented rule. The vocabulary work is where the operator-truth principle first bites (Table 2).</p>
+<p><strong>Table 2</strong></p>
+<p><em>Silver Vocabulary Harmonisation — Three Kinds of Operator Signal</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Source field</th>
+<th style="text-align: left;">Raw state</th>
+<th style="text-align: left;">Silver rule</th>
+<th style="text-align: left;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>inside_outside</code></td>
+<td style="text-align: left;"><code>I</code>, <code>Inside</code>, <code>O</code>, <code>Outside</code>, plus a 75,448-row null arm containing menu-selected <code>None</code> and genuine blanks</td>
+<td style="text-align: left;">map the four directional tokens to two states; route everything else — the whole null arm — to a third state</td>
+<td style="text-align: left;"><code>Inside</code>, <code>Outside</code>, <code>Unknown</code> (3 states, zero nulls)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>gender</code></td>
+<td style="text-align: left;">31 non-null tokens: canonical forms, operator “unknown” (<code>U</code>), and 22 uninterpretable entries</td>
+<td style="text-align: left;"><code>np.select</code>: canonical forms → <code>Female</code> / <code>Male</code> / <code>Transgender</code>; <code>U</code> / blank → <code>Unknown</code>; default branch → <code>Unsure</code></td>
+<td style="text-align: left;"><code>Female</code> 207,452 · <code>Male</code> 196,771 · <code>Unknown</code> 93,256 · <code>Unsure</code> 183 · <code>Transgender</code> 9</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>weapon</code></td>
+<td style="text-align: left;"><code>NA</code> (404,057 rows — the largest token), <code>UNKNOWN</code>, genuine blanks, and 21 specific weapon types</td>
+<td style="text-align: left;">resolved at Gold: <code>NA</code> → <code>Not Applicable</code>; <code>UNKNOWN</code> → <code>Unknown</code>; blank → dimension-side fallback, then <code>Unknown</code></td>
+<td style="text-align: left;">24-token unified vocabulary, <code>Not Applicable</code> and <code>Unknown</code> semantically distinct (Figure 4)</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> The <code>gender</code> split is the pattern: the operator’s deliberate “I don’t know” (<code>U</code>, 11,943 raw rows) is analytically different from a value the system cannot interpret, so the two are kept in separate buckets. Collapsing them would inflate the “unknown” count with a small but real population of data-entry noise.</p>
+<p>Figure 3 shows the gender collapse. The two canonical abbreviations account for 95% of non-null entries; the operator-asserted <code>Unknown</code> is a visible middle band; the entire uninterpretable tail is 183 rows across 22 token types.</p>
+<p><strong>Figure 3</strong></p>
+<p><em>31 Raw Gender Tokens Collapse to Five States</em></p>
+<p><img src="assets/fig3_gender_vocabulary_split.png" class="img-fluid" alt="Horizontal bars on a log scale for the five Silver gender states, each y-label annotated with the raw tokens that feed it. Female 207,452 (from F, Female, W); Male 196,771 (from M, Male, M-backslash); Unknown 93,256 (from U and blank/None, operator-asserted); Unsure 183 (from 22 uninterpretable tokens, system leakage); Transgender 9. The Unknown and Unsure bars are coloured differently from the canonical states."></p>
+<p><em>Note.</em> <code>Agender</code> exists in the mapping for forward compatibility but no row in this eleven-year extract maps to it.</p>
+<p><strong>Coordinates and time.</strong> The <code>enforce_bounding_box</code> helper nulls <code>latitude</code> and <code>longitude</code> <em>together</em> for any pair where either component falls outside the city rectangle — a partially valid pair is as unusable spatially as a fully wrong one. This lifts the coordinate null count from 900 to 978 (the extra 78 are pairs that parsed cleanly but land outside the city). <code>crime_date_time</code> is parsed UTC-aware; rows outside the 2012–2022 operational window are removed. This is the single largest row loss in the pipeline: <strong>49,127</strong> pre-2012 timestamps (legacy-system contamination) plus <strong>2</strong> unparseable values, for <strong>49,129</strong> rows. Silver output: <strong>497,671 × 25</strong>.</p>
+<p><strong>The crime-code lookup.</strong> Silver proper-cases the labels, renames the opaque source columns, and filters <code>crime_class == "PART 1"</code> — reducing the lookup from <strong>203 to 88 rows</strong>. This filter <em>defines the analytical cohort</em>: the Gold inner join on <code>crime_code</code> will exclude any fact row whose code is not among these 88. A derived <code>crime_category</code> field maps the fine-grained subcategory strings to the eight canonical buckets (39 of the 88 codes are <code>Robbery</code> variants; 17 are <code>Arson</code>; the rest spread across the other six).</p>
+</section>
+<section id="gold-layer-the-analytical-fact-grain" class="level2">
+<h2 class="anchored" data-anchor-id="gold-layer-the-analytical-fact-grain">Gold layer — the analytical fact grain</h2>
+<p>Gold operates on Silver inputs only and applies five things in sequence.</p>
+<p><strong>Spatial enrichment.</strong> Two geocoding assets from a prior mapping-API pass are coalesced into the frame with <code>combine_first</code>, filling only where Silver’s value was <code>NaN</code> — a valid Silver coordinate is never overwritten. The bounding box is re-enforced (geocoders occasionally return out-of-city points), then rows with fewer than three of the five key location fields populated are dropped: <strong>497,671 → 497,342</strong>, a loss of <strong>329</strong>.</p>
+<p><strong>The Part 1 join.</strong> An inner join on <code>crime_code</code> against the 88-row dimension brings the cohort to its final size: <strong>497,342 → 407,826</strong>, excluding <strong>89,516</strong> rows whose codes are Part 2 misdemeanours, calls-for-service, or administrative entries. Deduplication on <code>row_id</code> finds <strong>zero</strong> duplicates — the join produced no fan-out. Figure 5 is the complete row ledger.</p>
+<p><strong>Figure 5</strong></p>
+<p><em>Cohort Row Accounting — Every Dropped Record Attributed</em></p>
+<p><img src="assets/fig5_row_accounting_funnel.png" class="img-fluid" alt="A four-stage funnel. Raw incidents 546,800 (100.0% of raw). After Silver 497,671 (91.0%), with an annotation: minus 49,129, timestamps outside the 2012 to 2022 window. After the spatial-completeness filter 497,342 (91.0%), annotation: minus 329, fewer than 3 of 5 location fields present. Final Part 1 cohort 407,826 (74.6%), annotation: minus 89,516, crime code not in the 88-row Part 1 dimension."></p>
+<p><em>Note.</em> 546,800 − 49,129 − 329 − 89,516 = 407,826. No other step removes a row.</p>
+<p><strong>Operator-truth weapon unification.</strong> Two standardisers run before a <code>combine_first</code> merge. The fact-side function preserves <code>NA</code> → <code>Not Applicable</code> and <code>UNKNOWN</code> → <code>Unknown</code> as terminal sentinels while routing genuine blanks to <code>NaN</code>; the dimension-side function — working from a coarse four-token fallback taxonomy that carries no operator-truth distinctions — routes everything null-flavoured to <code>NaN</code>. The fact signal wins where it exists; any residual <code>NaN</code> becomes <code>Unknown</code>. The result (Figure 4): <code>Not Applicable</code> is 281,645 incidents — <strong>69.06%</strong> of the cohort — and it is a first-class category, never folded into the 20,049-row <code>Unknown</code> bucket or into a null.</p>
+<p><strong>Figure 4</strong></p>
+<p><em>The Unified Weapon Vocabulary — ‘Not Applicable’ Is a Category, Not a Gap</em></p>
+<p><img src="assets/fig4_operator_truth_weapon_vocabulary.png" class="img-fluid" alt="Horizontal bars of incident counts by unified weapon type. Not Applicable 281,645 (coloured as operator-asserted no weapon); Firearm 44,827; Other 28,466; Unknown 20,049 (coloured as operator-asserted unknown); Knife 17,158; Hands 6,545; Personal Weapons 3,007; Fire 2,041; Handgun 1,731; and 14 rarer types totalling about 2,357. A legend distinguishes operator-asserted no weapon, operator-asserted unknown, and specific weapon type."></p>
+<p><em>Note.</em> Any weapon analysis in the downstream notebooks must treat <code>Not Applicable</code> and <code>Unknown</code> as separate categories; a single “missing weapon” bucket would merge an affirmative signal with an absence of one.</p>
+<p><strong>Feature engineering.</strong> Gold adds 13 analytical columns on the fact grain (Table 3) and drops the descriptive scaffolding. Final fact-grain shape: <strong>407,826 × 36</strong>.</p>
+<p><strong>Table 3</strong></p>
+<p><em>The 13 Engineered Gold Features</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Group</th>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;">Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Temporal (7)</td>
+<td style="text-align: left;"><code>HourOfDay</code>, <code>MinuteOfHour</code></td>
+<td style="text-align: left;">extracted from the UTC timestamp</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><code>DayOfWeekName</code>, <code>DayOfWeekNumber</code></td>
+<td style="text-align: left;">1 = Monday … 7 = Sunday</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><code>IsWeekend</code></td>
+<td style="text-align: left;"><code>DayOfWeekNumber ≥ 6</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><code>PartOfDay</code></td>
+<td style="text-align: left;">Morning 05:00–11:59 · Afternoon 12:00–16:59 · Evening 17:00–20:59 · Night 21:00–04:59</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><code>IsNightTime</code></td>
+<td style="text-align: left;"><code>True</code> for hours 21:00–04:59</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Severity (3)</td>
+<td style="text-align: left;"><code>CrimeCategoryIndex</code></td>
+<td style="text-align: left;">ordinal 1–8 over the eight Part 1 categories</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><code>WeaponSeverityIndex</code></td>
+<td style="text-align: left;">lethality gradient 1–5; <code>Unknown</code> and <code>Not Applicable</code> both at the floor, the string column keeping them distinct</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><code>CrimeSeverityScore</code></td>
+<td style="text-align: left;"><code>(BaseCrimeSeverity × 10) + WeaponSeverityIndex</code>; range 11–55</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Spatial (1)</td>
+<td style="text-align: left;"><code>HasValidCoordinates</code></td>
+<td style="text-align: left;">both coordinates non-null — uniformly <code>True</code> in the final cohort</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Behavioural (2)</td>
+<td style="text-align: left;"><code>InsideOutsideIndex</code></td>
+<td style="text-align: left;">Inside = 1 · Outside = 2 · Unknown = 3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><code>IsRepeatLocation</code></td>
+<td style="text-align: left;"><code>True</code> where the <code>location</code> string occurs more than once in the cohort</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> The mixed-case naming deliberately marks these as engineered, distinguishing them from the <code>snake_case</code> source-derived columns. <code>CrimeCategoryIndex</code> and <code>InsideOutsideIndex</code> inherit a <code>category</code> dtype from <code>map()</code> over a categorical source; a downstream <code>.astype(int)</code> is needed before model training.</p>
+</section>
+<section id="dimensions-and-the-consolidated-fact" class="level2">
+<h2 class="anchored" data-anchor-id="dimensions-and-the-consolidated-fact">Dimensions and the consolidated fact</h2>
+<p>Twelve dimension tables wrap the fact grain (Figure 6). Ten are thin <code>drop_duplicates</code> constructions with a 1-indexed surrogate key; <code>dim_crime_codes</code> is a Silver pass-through; <code>dim_date</code> (3,997 rows, one per calendar date) and <code>dim_time</code> (1,440 rows, one per minute of the day) carry pre-computed calendar and clock attributes. The consolidated <code>fact_crimes_gold</code> merges every dimension’s surrogate key back onto the enriched rows, assigns its own <code>crime_event_id</code> primary key, and drops the descriptive columns and the two free-form text fields (<code>address</code>, <code>location</code>). Result: <strong>407,826 × 35</strong>, integer-keyed, with <strong>zero</strong> missing surrogate keys across all 12 key columns — no join in the chain relies on <code>NaN == NaN</code>.</p>
+<p><strong>Figure 6</strong></p>
+<p><em>The Star Schema — <code>fact_crimes_gold</code> and 12 Conformed Dimensions</em></p>
+<p><img src="assets/fig6_star_schema.png" class="img-fluid" alt="A star-schema diagram: fact_crimes_gold at the centre (crime_event_id primary key, 9 foreign keys plus date_key and time_key) with twelve dimension boxes radiating outward: dim_date 3,997 rows, dim_time 1,440, dim_crime_codes 88, dim_crime_type 2, dim_crime_category 8, dim_crime_subcategory 13, dim_district 10, dim_neighbourhood 279, dim_premise 128, dim_race 6, dim_ethnicity 6, dim_weapon 24."></p>
+<p><em>Note.</em> <code>dim_district</code> and <code>dim_neighbourhood</code> each include an explicit <code>Unknown</code> member (rows 10 and 279 respectively) that absorbs the small structural null arm Silver preserved.</p>
+<p>The complete Gold layer is 14 Parquet files, 56.3 MB (Table 4).</p>
+<p><strong>Table 4</strong></p>
+<p><em>Gold Layer Inventory</em></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Table</th>
+<th style="text-align: right;">Rows</th>
+<th style="text-align: right;">Columns</th>
+<th style="text-align: right;">Size</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>crimes_incidents_gold</code></td>
+<td style="text-align: right;">407,826</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">32.53 MB</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>fact_crimes_gold</code></td>
+<td style="text-align: right;">407,826</td>
+<td style="text-align: right;">35</td>
+<td style="text-align: right;">23.60 MB</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>dim_date_gold</code></td>
+<td style="text-align: right;">3,997</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.08 MB</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>dim_time_gold</code></td>
+<td style="text-align: right;">1,440</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.02 MB</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>dim_neighbourhood_gold</code></td>
+<td style="text-align: right;">279</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.01 MB</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>dim_premise_gold</code></td>
+<td style="text-align: right;">128</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">&lt; 0.01 MB</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>dim_crime_codes_gold</code></td>
+<td style="text-align: right;">88</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">0.01 MB</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>dim_weapon_gold</code></td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">&lt; 0.01 MB</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>dim_crime_subcategory_gold</code></td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">&lt; 0.01 MB</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>dim_district_gold</code></td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">&lt; 0.01 MB</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>dim_crime_category_gold</code></td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">&lt; 0.01 MB</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>dim_race_gold</code> · <code>dim_ethnicity_gold</code></td>
+<td style="text-align: right;">6 each</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">&lt; 0.01 MB</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>dim_crime_type_gold</code></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">&lt; 0.01 MB</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Persistence uses <code>use_dictionary=False</code> so that <code>category</code>-dtype columns survive the Parquet round-trip intact — across some PyArrow versions the pandas categorical metadata is lost when Parquet’s own dictionary encoding is also active, and the column returns as plain <code>object</code>.</p>
+</section>
+<section id="validation" class="level2">
+<h2 class="anchored" data-anchor-id="validation">Validation</h2>
+<p>Nine pre-conditions are asserted before the layer is released to the downstream notebooks (Table 5). All pass.</p>
+<p><strong>Table 5</strong></p>
+<p><em>Pipeline Validation Checks</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">#</th>
+<th style="text-align: left;">Check</th>
+<th style="text-align: left;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Fact grain is non-empty</td>
+<td style="text-align: left;">407,826 rows</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Every surrogate key on the consolidated fact is populated</td>
+<td style="text-align: left;">0 missing across 12 key columns</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>crime_event_id</code> is uniquely 1-indexed</td>
+<td style="text-align: left;">407,826 unique / 407,826 rows</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">Every non-null coordinate is inside the city bounding box</td>
+<td style="text-align: left;">407,826 in box / 407,826 with coordinates</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">Temporal range is inside 2012–2022</td>
+<td style="text-align: left;">2012-01-01 → 2022-12-10</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">6</td>
+<td style="text-align: left;"><code>WeaponSeverityIndex</code> carries its full gradient</td>
+<td style="text-align: left;">5 distinct values</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">7</td>
+<td style="text-align: left;"><code>inside_outside</code> is a three-state vocabulary with no <code>NaN</code></td>
+<td style="text-align: left;"><code>{Inside, Outside, Unknown}</code>, 0 nulls</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">No nullable extension dtypes in the fact grain</td>
+<td style="text-align: left;">none</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">9</td>
+<td style="text-align: left;">Parquet round-trip preserves the <code>category</code> dtype</td>
+<td style="text-align: left;"><code>weapon_unified</code> returns as <code>category</code></td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Check 6 guards a specific prior bug: the severity function once compared against upper-case strings while the upstream chain produced Title Case, silently collapsing every row to severity 1. Aligning the comparison vocabulary with the actual output fixed it, and this check keeps it fixed.</p>
+<p>A shape verification also asserts all 14 tables against hardcoded expected dimensions — a deviation is a pipeline bug, not a configuration value.</p>
+</section>
+<section id="carry-forward-findings" class="level2">
+<h2 class="anchored" data-anchor-id="carry-forward-findings">Carry-forward findings</h2>
+<p>Five facts the downstream notebooks inherit and must account for.</p>
+<ol type="1">
+<li><p><strong>The cohort is fully geocoded.</strong> <code>HasValidCoordinates</code> is uniformly <code>True</code> across all 407,826 rows; spatial analyses can treat the coordinate pair as complete without a pre-filter. The final composition is 63.7% property crime (259,660) and 36.3% violent crime (148,166), across eight categories from <code>Larceny</code> (175,484) down to <code>Arson</code> (2,158) — the class balance that the binary-classification notebook works from (Figure 7).</p></li>
+<li><p><strong><code>weapon_unified</code> has two operator-truth tokens.</strong> <code>Not Applicable</code> (281,645; 69.1%) and <code>Unknown</code> (20,049; 4.9%) are distinct categories. Any weapon analysis that merges them merges an affirmative “no weapon” with an absence of information.</p></li>
+<li><p><strong><code>district</code> and <code>neighbourhood</code> carry an explicit <code>Unknown</code> member.</strong> 1,452 and 1,483 rows respectively resolve to it. Spatial aggregations produce an <code>Unknown</code> group that should be acknowledged, not silently dropped.</p></li>
+<li><p><strong><code>ethnicity</code> is 96.5% <code>Unknown</code> and <code>vri_name</code> 88.4% missing.</strong> These are collection gaps. <code>ethnicity</code> cannot support a stratification analysis; treat its missingness rate as a hard ceiling on what the column can do.</p></li>
+<li><p><strong><code>age</code> is the only imputed column.</strong> Its residual nulls were mean-filled at Silver. Models that lean on <code>age</code> should carry a note that a minority of values are imputed, not observed.</p></li>
+</ol>
+<p><strong>Figure 7</strong></p>
+<p><em>What the Gold Layer Hands Downstream</em></p>
+<p><img src="assets/fig7_final_cohort_composition.png" class="img-fluid" alt="Left panel: a two-bar chart of binary crime type — Property 259,660 (63.7%) and Violent 148,166 (36.3%). Right panel: horizontal bars of the eight Part 1 categories — Larceny 175,484, Burglary 68,163, Aggravated Assault 62,871, Robbery 50,251, Auto Theft 42,283, Homicide 3,309, Rape 3,307, Arson 2,158."></p>
+<p><em>Note.</em> Counts are read from the persisted <code>fact_crimes_gold</code> joined to its category dimensions.</p>
+</section>
+<section id="tools-and-references" class="level2">
+<h2 class="anchored" data-anchor-id="tools-and-references">Tools and references</h2>
+<p>Built in Python with <code>pandas</code> and <code>pyarrow</code> for the medallion layers and Parquet persistence, <code>geopandas</code> for the GeoJSON source read, and <code>pyreadr</code> for the two R-serialised geocoding assets. The dimensional model follows the Kimball star-schema method. The <em>Part 1</em> offence grouping is the Uniform Crime Reporting Program’s index-crime definition.</p>
+<p>Harris, C. R., Millman, K. J., van der Walt, S. J., Gommers, R., Virtanen, P., Cournapeau, D., Wieser, E., Taylor, J., Berg, S., Smith, N. J., Kern, R., Picus, M., Hoyer, S., van Kerkwijk, M. H., Brett, M., Haldane, A., del Río, J. F., Wiebe, M., Peterson, P., … Oliphant, T. E. (2020). Array programming with NumPy. <em>Nature, 585</em>, 357–362. https://doi.org/10.1038/s41586-020-2649-2</p>
+<p>Jordahl, K., Van den Bossche, J., Fleischmann, M., Wasserman, J., McBride, J., Gerard, J., Tratner, J., Perry, M., Badaracco, A. G., Farmer, C., Hjelle, G. A., Snow, A. D., Cochran, M., Gillies, S., Culbertson, L., Bartos, M., Eubank, N., Bilogur, A., Rey, S., … Leblanc, F. (2020). <em>geopandas/geopandas: v0.8.1</em> [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.3946761</p>
+<p>Kimball, R., &amp; Ross, M. (2013). <em>The data warehouse toolkit: The definitive guide to dimensional modeling</em> (3rd ed.). Wiley.</p>
+<p>The pandas development team. (2020). <em>pandas-dev/pandas: Pandas</em> [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.3509134</p>
+<p>United States Department of Justice, Federal Bureau of Investigation. (2004). <em>Uniform Crime Reporting handbook</em>. U.S. Department of Justice.</p>
+<p>Baltimore Police Department. (2022). <em>Part 1 crime data</em> [Data set]. Open Baltimore. Retrieved December 13, 2022, from https://data.baltimorecity.gov/</p>
+<hr>
+<p><em>Pipeline and figures by the author. Every headline figure in this article was reproduced from the raw sources by replaying the full Bronze → Silver → Gold chain; the 14 Gold Parquet tables described here are the sole data input for every downstream notebook in the project.</em></p>
+
+
+<div id="contact" class="connect-section" style="text-align: center; padding: 50px 20px; background: #f9f9f9; border-radius: 15px; border: 1px solid #eaeaea; margin-top: 40px;">
+<h3 style="color: #2c3e50; font-weight: 700; margin-bottom: 15px; border: none;" class="anchored">Let's Collaborate</h3>
+<p style="color: #666; max-width: 650px; margin: 0 auto 30px auto; font-size: 1.05rem; line-height: 1.6;">Available for high-impact <strong>Business Intelligence, Power BI Engineering, and Advanced Data Analytics</strong> projects. Connect with me or hire me directly through the platforms below.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
+<a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-linkedin"></i> LinkedIn</a>
+<a href="https://github.com/mkhanmuneer" class="btn btn-dark" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-github"></i> GitHub</a>
+<a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" target="_blank" rel="noopener" style="color: white; padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-graph-up"></i> Kaggle</a>
+<a href="https://www.upwork.com/freelancers/~018de8553286a1d00c" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-briefcase"></i> Upwork</a>
+<a href="https://www.fiverr.com/neuronvision" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-lightning-charge"></i> Fiverr</a>
+</div>
+</div>
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/mkhanmuneer\.github\.io\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 Muhammad Khan Muneer</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.upwork.com/freelancers/~018de8553286a1d00c">
+<p>Hire on Upwork</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.fiverr.com/neuronvision">
+<p>Hire on Fiverr</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

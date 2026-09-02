@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Muhammad Khan Muneer">
+<meta name="keywords" content="medallion architecture, bronze silver gold, ETL pipeline, sentinel encoding, missing data, ICD-9 grouping, hospital readmission, diabetes, GroupKFold, patient-disjoint splits, data leakage, cross-validation, feature engineering, Parquet, pandas, Python">
+<meta name="description" content="A four-tier medallion ETL pipeline for ten years of inpatient encounters among diabetic patients at 130 US hospitals. Sentinel discipline: the ? token that encodes “not recorded” across seven columns is resolved to a true null before any business logic runs; HbA1c and serum-glucose results are missing on 83% and 95% of admissions because the tests are simply not ordered, and that absence is preserved as a signal. Diagnosis grouping: 700+ distinct ICD-9 codes per diagnosis field collapse to the nine clinical groups of Strack et al.&nbsp;(2014). Leakage control: five cross-validation folds are pre-computed with GroupKFold on the patient identifier, so a patient’s repeat admissions never straddle the split. Output: six validated Parquet tables — a feature-engineered fact grain, a 99,340-admission modelling cohort, and a 69,979-patient cohort built to carry a downstream causal question about HbA1c testing.">
+
+<title>A Medallion ETL Pipeline for a Diabetic Inpatient Cohort: ICD-9 Diagnosis Grouping and Patient-Disjoint Cross-Validation Folds – Muhammad Khan Muneer</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-ca0cfe78a00f84493d894d8af57a3a20.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": true,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="../../styles/custom.css">
+<meta property="og:title" content="Muhammad Khan Muneer — Data Science &amp; BI Portfolio">
+<meta property="og:description" content="Engineering ML-driven analytics and automated decision systems.">
+<meta property="og:image" content="https://mkhanmuneer.github.io/projects/diabetic-inpatient-readmission-medallion-etl-icd9-diagnosis-grouping-and-patient-disjoint-cross-validation-folds/assets/fig1_medallion_architecture.png">
+<meta property="og:site_name" content="M. Khan Muneer Portfolio">
+<meta property="og:image:height" content="954">
+<meta property="og:image:width" content="1559">
+<meta name="twitter:title" content="A Medallion ETL Pipeline for a Diabetic Inpatient Cohort: ICD-9 Diagnosis Grouping and Patient-Disjoint Cross-Validation Folds – Muhammad Khan Muneer">
+<meta name="twitter:description" content="A four-tier medallion ETL pipeline for ten years of inpatient encounters among diabetic patients at 130 US hospitals. Sentinel discipline: the ? token that encodes “not recorded” across seven columns is resolved to a true null before any business logic runs; HbA1c and serum-glucose results are missing on 83% and 95% of admissions because the tests are simply not ordered, and that absence is preserved as a signal. Diagnosis grouping: 700+ distinct ICD-9 codes per diagnosis field collapse to the nine clinical groups of Strack et al.&nbsp;(2014). Leakage control: five cross-validation folds are pre-computed with GroupKFold on the patient identifier, so a patient’s repeat admissions never straddle the split. Output: six validated Parquet tables — a feature-engineered fact grain, a 99,340-admission modelling cohort, and a 69,979-patient cohort built to carry a downstream causal question about HbA1c testing.">
+<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/diabetic-inpatient-readmission-medallion-etl-icd9-diagnosis-grouping-and-patient-disjoint-cross-validation-folds/assets/fig1_medallion_architecture.png">
+<meta name="twitter:creator" content="@iMKhanMuneer">
+<meta name="twitter:site" content="@iMKhanMuneer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image-height" content="954">
+<meta name="twitter:image-width" content="1559">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#featured-projects"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/iMKhanMuneer"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.kaggle.com/muhammadkhanmuneer"> <i class="bi bi-graph-up" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#contact"> 
+<span class="menu-text">Contact</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#pipeline-architecture" id="toc-pipeline-architecture" class="nav-link" data-scroll-target="#pipeline-architecture">Pipeline architecture</a>
+  <ul class="collapse">
+  <li><a href="#raw-the-source-and-its-one-structural-oddity" id="toc-raw-the-source-and-its-one-structural-oddity" class="nav-link" data-scroll-target="#raw-the-source-and-its-one-structural-oddity">Raw: the source and its one structural oddity</a></li>
+  <li><a href="#bronze-structural-cleaning-and-the-sentinel-contract" id="toc-bronze-structural-cleaning-and-the-sentinel-contract" class="nav-link" data-scroll-target="#bronze-structural-cleaning-and-the-sentinel-contract">Bronze: structural cleaning and the sentinel contract</a></li>
+  <li><a href="#silver-business-logic" id="toc-silver-business-logic" class="nav-link" data-scroll-target="#silver-business-logic">Silver: business logic</a></li>
+  <li><a href="#gold-features-dimensions-and-cohorts" id="toc-gold-features-dimensions-and-cohorts" class="nav-link" data-scroll-target="#gold-features-dimensions-and-cohorts">Gold: features, dimensions, and cohorts</a></li>
+  <li><a href="#the-two-cohorts-and-the-fold-structure" id="toc-the-two-cohorts-and-the-fold-structure" class="nav-link" data-scroll-target="#the-two-cohorts-and-the-fold-structure">The two cohorts and the fold structure</a></li>
+  </ul></li>
+  <li><a href="#validation" id="toc-validation" class="nav-link" data-scroll-target="#validation">Validation</a></li>
+  <li><a href="#carry-forward-findings" id="toc-carry-forward-findings" class="nav-link" data-scroll-target="#carry-forward-findings">Carry-forward findings</a></li>
+  <li><a href="#tools-and-reproducibility" id="toc-tools-and-reproducibility" class="nav-link" data-scroll-target="#tools-and-reproducibility">Tools and reproducibility</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">A Medallion ETL Pipeline for a Diabetic Inpatient Cohort: ICD-9 Diagnosis Grouping and Patient-Disjoint Cross-Validation Folds</h1>
+<p class="subtitle lead">Turning a 101,766-row hospital extract and a three-in-one code lookup into two purpose-built analytical substrates — a leakage-aware Bronze → Silver → Gold contract, an eight-plus-one ICD-9 grouping that collapses 700+ diagnosis codes, and pre-computed folds where no patient is ever split across train and test.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Data Engineering</div>
+    <div class="quarto-category">ETL Pipeline</div>
+    <div class="quarto-category">Medallion Architecture</div>
+    <div class="quarto-category">Dimensional Modelling</div>
+    <div class="quarto-category">Star Schema</div>
+    <div class="quarto-category">Data Quality</div>
+    <div class="quarto-category">Feature Engineering</div>
+    <div class="quarto-category">Cross-Validation</div>
+    <div class="quarto-category">Data Leakage</div>
+    <div class="quarto-category">Healthcare Analytics</div>
+    <div class="quarto-category">Clinical Research</div>
+    <div class="quarto-category">Python</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>A four-tier medallion ETL pipeline for ten years of inpatient encounters among diabetic patients at 130 US hospitals. <strong>Sentinel discipline:</strong> the <code>?</code> token that encodes “not recorded” across seven columns is resolved to a true null before any business logic runs; HbA1c and serum-glucose results are missing on 83% and 95% of admissions because the tests are simply not ordered, and that absence is preserved as a signal. <strong>Diagnosis grouping:</strong> 700+ distinct ICD-9 codes per diagnosis field collapse to the nine clinical groups of Strack et al.&nbsp;(2014). <strong>Leakage control:</strong> five cross-validation folds are pre-computed with <code>GroupKFold</code> on the patient identifier, so a patient’s repeat admissions never straddle the split. <strong>Output:</strong> six validated Parquet tables — a feature-engineered fact grain, a 99,340-admission modelling cohort, and a 69,979-patient cohort built to carry a downstream causal question about HbA1c testing.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Muhammad Khan Muneer </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">March 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+<div>
+  <div class="keywords">
+    <div class="block-title">Keywords</div>
+    <p>medallion architecture, bronze silver gold, ETL pipeline, sentinel encoding, missing data, ICD-9 grouping, hospital readmission, diabetes, GroupKFold, patient-disjoint splits, data leakage, cross-validation, feature engineering, Parquet, pandas, Python</p>
+  </div>
+</div>
+
+</header>
+
+
+<section id="overview" class="level2">
+<h2 class="anchored" data-anchor-id="overview">Overview</h2>
+<p>This is the extract–transform–load (ETL) stage of a seven-part project on hospital readmission among diabetic patients. It has one job: turn a raw clinical extract — 101,766 inpatient encounters in a single CSV, plus a small three-in-one code lookup — into an analysis-ready set of Parquet tables that the exploratory, predictive-modelling, causal, decision-analysis, clustering, and length-of-stay notebooks each load without re-running any upstream logic.</p>
+<p>The source is the widely used <strong>Diabetes 130-US Hospitals</strong> dataset (Strack et al., 2014; Clore et al., 2014), an extract of inpatient encounters between 1999 and 2008 across 130 US hospitals and integrated delivery networks. Every row is one hospital admission of a patient with diabetes listed as a diagnosis; the 101,766 admissions belong to 71,518 distinct patients, so repeat admissions are common and consequential. The analytical target throughout the project is <strong>readmission within 30 days of discharge</strong>, derived from the source’s three-level <code>readmitted</code> field.</p>
+<p>The pipeline follows a <strong>four-tier medallion architecture</strong> (Raw → Bronze → Silver → Gold). Each tier has a strict contract, a distinct fault-isolation boundary, and a persisted Parquet snapshot any downstream consumer can reload independently (Figure 1). Two design commitments shape everything that follows:</p>
+<ol type="1">
+<li><strong>A missing lab result is a clinical decision, not a data-quality defect.</strong> The HbA1c result is absent on 83% of admissions and the serum-glucose result on 95% — not because the data is corrupted, but because a clinician chose not to order the test. That choice is itself informative, and one downstream notebook treats <em>whether HbA1c was measured</em> as a causal exposure. The pipeline therefore preserves the not-ordered state as an explicit category rather than discarding those rows.</li>
+<li><strong>The unit of independence is the patient, not the admission.</strong> Because 30% of admissions are repeat visits, a naive row-level train/test split would place the same patient on both sides and let a model memorise patient-specific patterns. The Gold layer pre-computes five cross-validation folds with <code>GroupKFold</code> on the patient identifier, so every downstream notebook inherits a leakage-controlled split by construction.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig1_medallion_architecture.png" class="img-fluid figure-img"></p>
+<figcaption>The four-tier medallion pipeline. Each tier persists a Parquet snapshot; the Gold layer additionally carves two analytical cohorts — a 99,340-admission modelling cohort with pre-computed patient-disjoint folds, and a 69,979-patient cohort for the causal analysis of HbA1c testing.</figcaption>
+</figure>
+</div>
+</section>
+<section id="pipeline-architecture" class="level2">
+<h2 class="anchored" data-anchor-id="pipeline-architecture">Pipeline architecture</h2>
+<p><strong>Table 1</strong> summarises the four tiers and the shape of the main admissions table at each stage. Row count is preserved from Raw through Gold — every tier is a transformation, not a filter. Filtering happens only when the Gold layer carves its cohorts, and every dropped admission is attributed to exactly one exclusion (Figure 2).</p>
+<p><strong>Table 1</strong></p>
+<p><em>The Four Medallion Tiers and the Admissions Table at Each Stage</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tier</th>
+<th>Contract</th>
+<th>Admissions table</th>
+<th>Persisted to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Raw</td>
+<td>Immutable byte-for-byte snapshot of the source, converted to Parquet for a typed audit trail</td>
+<td>101,766 × 50</td>
+<td><code>data/raw/parquet/</code></td>
+</tr>
+<tr class="even">
+<td>Bronze</td>
+<td>Structural cleaning only — column-name normalisation, dtype enforcement, <code>?</code> → null on seven columns, defensive de-duplication</td>
+<td>101,766 × 50</td>
+<td><code>data/bronze/</code></td>
+</tr>
+<tr class="odd">
+<td>Silver</td>
+<td>Business logic — age-band parsing, ICD-9 grouping, medication aggregates, lab-result encoding, 30-day target derivation</td>
+<td>101,766 × 64</td>
+<td><code>data/silver/</code></td>
+</tr>
+<tr class="even">
+<td>Gold</td>
+<td>Analytical feature engineering, dimension tables, and the two cohorts with pre-computed folds</td>
+<td>101,766 × 80</td>
+<td><code>data/gold/</code></td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Silver is persisted rather than held in memory so that a business-logic bug can be debugged without re-running the Bronze chain. All feature engineering lives in Gold, so downstream notebooks never re-implement a transformation or risk diverging from one another’s definitions.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig2_cohort_funnel.png" class="img-fluid figure-img"></p>
+<figcaption>Row accounting from the raw extract to the two cohorts. The modelling cohort drops 2,423 terminal discharges and 3 invalid-gender rows; the HbA1c cohort additionally requires a coded primary diagnosis and keeps one row — the first admission — per patient.</figcaption>
+</figure>
+</div>
+<section id="raw-the-source-and-its-one-structural-oddity" class="level3">
+<h3 class="anchored" data-anchor-id="raw-the-source-and-its-one-structural-oddity">Raw: the source and its one structural oddity</h3>
+<p>The main file loads cleanly as 101,766 rows by 50 columns. The second file, <code>IDS_mapping.csv</code>, is 2,479 characters and is not a single table: it is <strong>three stacked sub-tables</strong> — for admission type, discharge disposition, and admission source — each with its own header row, separated by a line containing a single comma. A standard CSV read picks up only the first sub-table and treats the other two as malformed rows; a byte-level check confirms the separator is <code>\n,\n</code>, not the blank line the documentation implies, and that splitting on a true blank line returns one block instead of three. The Bronze parser splits on the regular expression <code>\n[\s,]*\n</code>, which absorbs the comma-only separator and any whitespace-only line a future export might introduce, then parses each block as its own mini-CSV. A defensive assertion confirms exactly three sub-tables come back, in the expected order, before any Gold join can fail silently.</p>
+</section>
+<section id="bronze-structural-cleaning-and-the-sentinel-contract" class="level3">
+<h3 class="anchored" data-anchor-id="bronze-structural-cleaning-and-the-sentinel-contract">Bronze: structural cleaning and the sentinel contract</h3>
+<p>Bronze does the unglamorous structural work and nothing else: it normalises the 50 column names to <code>snake_case</code> with acronym-aware splitting (<code>A1Cresult</code> → <code>a1c_result</code>, <code>glyburide-metformin</code> → <code>glyburide_metformin</code>), enforces integer dtypes on the identifier and count columns, trims whitespace from every string field, and de-duplicates on the encounter identifier (defensive — the source has no duplicates). Medication fields keep their raw <code>{No, Steady, Up, Down}</code> values; the target keeps its raw <code>{&lt;30, &gt;30, NO}</code> values. Nothing domain-specific happens yet.</p>
+<p>The one contract that matters here is the <strong>sentinel</strong>. The source encodes “not recorded” as the literal string <code>?</code> in seven columns. Bronze converts <code>?</code> to a true null in exactly those seven and leaves every other <code>?</code>-free column untouched. <strong>Table 2</strong> shows where the missingness lands after that conversion, and Figure 3 makes the shape unmistakable: it is bimodal. Five columns are missing on a third or more of admissions — two of them on more than 90%; the remaining fields are near-complete.</p>
+<p><strong>Table 2</strong></p>
+<p><em>Missingness After Sentinel Resolution (n = 101,766)</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Missing</th>
+<th>%</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>weight</code></td>
+<td>98,569</td>
+<td>96.9</td>
+<td>Not routinely recorded; unusable, retained for transparency</td>
+</tr>
+<tr class="even">
+<td><code>max_glu_serum</code></td>
+<td>96,420</td>
+<td>94.8</td>
+<td>Serum glucose test not ordered</td>
+</tr>
+<tr class="odd">
+<td><code>a1c_result</code></td>
+<td>84,748</td>
+<td>83.3</td>
+<td>HbA1c test not ordered</td>
+</tr>
+<tr class="even">
+<td><code>medical_specialty</code></td>
+<td>49,949</td>
+<td>49.1</td>
+<td>Admitting specialty not coded</td>
+</tr>
+<tr class="odd">
+<td><code>payer_code</code></td>
+<td>40,256</td>
+<td>39.6</td>
+<td>Payer not coded</td>
+</tr>
+<tr class="even">
+<td><code>race</code></td>
+<td>2,273</td>
+<td>2.2</td>
+<td>Genuinely missing</td>
+</tr>
+<tr class="odd">
+<td><code>diag_3</code></td>
+<td>1,423</td>
+<td>1.4</td>
+<td>No third diagnosis assigned</td>
+</tr>
+<tr class="even">
+<td><code>diag_2</code></td>
+<td>358</td>
+<td>0.4</td>
+<td>No secondary diagnosis assigned</td>
+</tr>
+<tr class="odd">
+<td><code>diag_1</code></td>
+<td>21</td>
+<td>0.02</td>
+<td>No primary diagnosis (excluded from the causal cohort)</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> <code>weight</code> is kept through Gold for auditability and excluded from every modelling feature set without further analysis. The <code>a1c_result</code> and <code>max_glu_serum</code> gaps are treated as clinical decisions, not defects.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig3_missingness_landscape.png" class="img-fluid figure-img"></p>
+<figcaption>Missingness is bimodal. Body weight, serum-glucose result, and HbA1c result are absent on most admissions because the measurement was not taken; the remaining fields are near-complete. Percentages are of all 101,766 admissions.</figcaption>
+</figure>
+</div>
+</section>
+<section id="silver-business-logic" class="level3">
+<h3 class="anchored" data-anchor-id="silver-business-logic">Silver: business logic</h3>
+<p>Silver is where domain knowledge enters. Six transformations do the substantive work:</p>
+<ul>
+<li><strong>Age-band parsing.</strong> The raw <code>age</code> field is a string bucket such as <code>[70-80)</code>. Silver keeps it as an ordered categorical <em>and</em> derives a numeric midpoint, so tree models get the ordering and linear models get a continuous value.</li>
+<li><strong>ICD-9 clinical grouping.</strong> Each of the three diagnosis fields (<code>diag_1</code>, <code>diag_2</code>, <code>diag_3</code>) carries 700–800 distinct ICD-9 codes. Silver maps each to the <strong>nine-category grouping of Strack et al.&nbsp;(2014)</strong> — Circulatory, Respiratory, Digestive, Diabetes, Injury, Musculoskeletal, Genitourinary, Neoplasms, and a residual Other that also absorbs V- and E-codes. Figure 4 shows the primary-diagnosis distribution: circulatory conditions dominate at 30,437 admissions, and diabetes is the <em>primary</em> diagnosis in only 8,757 — in the rest it is comorbid, which is consistent with how the dataset was assembled.</li>
+<li><strong>Terminal-discharge flag.</strong> Discharge disposition IDs 11, 13, 14, 19, 20, and 21 denote death or hospice transfer — patients who cannot, by definition, be readmitted. Silver flags these 2,423 admissions rather than dropping them, so the exploratory analysis still sees the full population while the modelling cohort can exclude them.</li>
+<li><strong>Medication aggregates.</strong> The 23 individual drug columns collapse into five counts — drugs started, increased, decreased, held steady, and changed in either direction — plus a <code>change</code> flag and a <code>diabetes_med</code> flag. Figure 5 is the justification: 15 of the 23 columns take their most common value on 99% or more of admissions, and two (<code>examide</code>, <code>citoglipton</code>) are constant. Used individually they are noise; aggregated they are a usable measure of regimen intensity.</li>
+<li><strong>Lab-result encoding.</strong> The source documentation describes the not-measured state of <code>a1c_result</code> and <code>max_glu_serum</code> as the string <code>None</code>, but the raw CSV encodes it as an empty cell. Silver fills it to the string <code>None</code> <em>before</em> building the ordered categorical, so the Gold-layer comparison that derives the “was HbA1c tested” flag tests against a real value rather than falling into null-comparison semantics.</li>
+<li><strong>Target derivation.</strong> <code>readmitted_30d</code> is 1 when the source <code>readmitted</code> field is <code>&lt;30</code>, else 0. Deriving it once, here, guarantees every downstream notebook shares an identical target definition. The Silver-level base rate is <strong>11.16%</strong> (11,357 of 101,766).</li>
+</ul>
+<p><strong>Table 3</strong> lists the engineered columns Silver adds.</p>
+<p><strong>Table 3</strong></p>
+<p><em>Columns Engineered in the Silver Layer</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Type</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>age_midpoint</code></td>
+<td>numeric</td>
+<td>Midpoint of the raw age band (e.g.&nbsp;<code>[70-80)</code> → 75)</td>
+</tr>
+<tr class="even">
+<td><code>diag_{1,2,3}_group</code></td>
+<td>categorical</td>
+<td>ICD-9 code mapped to one of nine clinical groups</td>
+</tr>
+<tr class="odd">
+<td><code>is_terminal_discharge</code></td>
+<td>flag</td>
+<td>Discharge disposition in {11, 13, 14, 19, 20, 21}</td>
+</tr>
+<tr class="even">
+<td><code>n_meds_{up, down, steady, changed, prescribed}</code></td>
+<td>counts</td>
+<td>Aggregates over the 23 drug columns</td>
+</tr>
+<tr class="odd">
+<td><code>change_flag</code>, <code>diabetes_med_flag</code></td>
+<td>flags</td>
+<td>Any regimen change; any diabetes medication prescribed</td>
+</tr>
+<tr class="even">
+<td><code>n_prior_visits_total</code></td>
+<td>count</td>
+<td>Outpatient + emergency + inpatient visits in the prior year</td>
+</tr>
+<tr class="odd">
+<td><code>readmitted_30d</code></td>
+<td>target</td>
+<td>1 if <code>readmitted</code> = <code>&lt;30</code>, else 0</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> The three IDS lookup sub-tables are also cleaned here — rows whose description is the literal <code>NULL</code> are dropped, taking the tables from 8/30/25 rows to 7/29/24.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig4_icd9_groups.png" class="img-fluid figure-img"></p>
+<figcaption>Primary diagnosis after ICD-9 grouping. The nine clinical groups of Strack et al.&nbsp;(2014) collapse more than 700 distinct primary-diagnosis codes; circulatory disease leads, and diabetes is the primary reason for admission in fewer than 1 in 11 encounters.</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig5_medication_variance.png" class="img-fluid figure-img"></p>
+<figcaption>Regimen-intensity rationale. Fifteen of the 23 drug columns take their most common value on at least 99% of admissions, and <code>examide</code> and <code>citoglipton</code> never vary at all. Silver folds all 23 into five count features rather than carrying them individually.</figcaption>
+</figure>
+</div>
+</section>
+<section id="gold-features-dimensions-and-cohorts" class="level3">
+<h3 class="anchored" data-anchor-id="gold-features-dimensions-and-cohorts">Gold: features, dimensions, and cohorts</h3>
+<p>Gold begins with a dtype-sanitisation pass that resolves the tensions Silver deliberately left in place: nullable string columns with real nulls become plain-object columns with <code>"Missing"</code> filled (so <code>scikit-learn</code> encoders do not raise on ambiguous nulls), categoricals become plain objects (so category-unaware encoders do not silently pass them through), and nullable integer and float columns become NumPy primitives (so SMOTE, <code>statsmodels</code>, and variance-inflation computations work). It then adds analytical features — a quadratic age term, the binary <code>has_hba1c_tested</code> exposure flag, elevated-HbA1c and elevated-glucose indicators, a comorbidity-count across the nine diagnosis groups, an age × prior-utilisation interaction, a medication-change ratio, and nine primary-diagnosis dummy columns — taking the fact table to 101,766 × 80.</p>
+<p>From that fact table Gold carves <strong>six persisted tables</strong> (Table 4): three thin dimension lookups, the full fact grain, and the two analytical cohorts.</p>
+<p><strong>Table 4</strong></p>
+<p><em>The Six Gold Tables</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Table</th>
+<th>Shape</th>
+<th>Size</th>
+<th>Consumed by</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>dim_admission_gold</code></td>
+<td>7 × 2</td>
+<td>&lt;0.01 MB</td>
+<td>Reference joins</td>
+</tr>
+<tr class="even">
+<td><code>dim_discharge_gold</code></td>
+<td>29 × 3</td>
+<td>&lt;0.01 MB</td>
+<td>Reference joins (carries an <code>is_terminal</code> flag)</td>
+</tr>
+<tr class="odd">
+<td><code>dim_admission_source_gold</code></td>
+<td>24 × 2</td>
+<td>&lt;0.01 MB</td>
+<td>Reference joins</td>
+</tr>
+<tr class="even">
+<td><code>hospital_admissions_gold</code></td>
+<td>101,766 × 80</td>
+<td>8.56 MB</td>
+<td>Exploratory analysis</td>
+</tr>
+<tr class="odd">
+<td><code>modelling_cohort_gold</code></td>
+<td>99,340 × 81</td>
+<td>8.52 MB</td>
+<td>Predictive modelling, clustering, length-of-stay regression</td>
+</tr>
+<tr class="even">
+<td><code>hba1c_cohort_gold</code></td>
+<td>69,979 × 30</td>
+<td>3.16 MB</td>
+<td>Causal analysis of HbA1c testing</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Parquet is written without dictionary encoding for stable, portable column types. On-disk sizes are read back from disk after writing, so a serialisation anomaly would be visible immediately.</p>
+</section>
+<section id="the-two-cohorts-and-the-fold-structure" class="level3">
+<h3 class="anchored" data-anchor-id="the-two-cohorts-and-the-fold-structure">The two cohorts and the fold structure</h3>
+<p>The <strong>modelling cohort</strong> applies two exclusions to the fact table: the 2,423 terminal-discharge admissions and the 3 admissions with an invalid gender value. That leaves <strong>99,340 admissions</strong>. Because the excluded terminal discharges are non-readmissions by construction, removing them nudges the base rate up slightly, from 11.16% to <strong>11.39%</strong> (11,314 positives). The cohort then receives its <code>cv_fold</code> column: five folds assigned by <code>GroupKFold</code> on the patient identifier. The folds come out exactly balanced at 19,868 admissions each, the 30-day readmission rate is stable across them (11.19%–11.52%), and — the property that matters — <strong>no patient appears in more than one fold</strong> (Figure 6). Every downstream supervised notebook uses these five columns directly, so none of them can accidentally reintroduce a row-level split.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig6_cv_folds.png" class="img-fluid figure-img"></p>
+<figcaption>Pre-computed patient-disjoint folds. Left: the five folds are equal in size. Right: the 30-day readmission rate varies by less than half a percentage point across folds and brackets the cohort rate of 11.39%. No patient’s admissions are split across folds.</figcaption>
+</figure>
+</div>
+<p>The <strong>HbA1c cohort</strong> is built for a different question. The downstream causal notebook asks whether <em>ordering an HbA1c test</em> during the admission changes the 30-day readmission risk — a question that needs one row per patient (so a patient cannot appear as both treated and untreated), a non-missing primary diagnosis (so the diagnosis covariate is always defined), and a covariate set restricted to variables that plausibly precede the testing decision. Applying those filters and keeping each patient’s first admission yields <strong>69,979 patients</strong>, of whom <strong>12,843</strong> had an HbA1c test ordered and <strong>57,136</strong> did not. The unadjusted readmission rate is <strong>8.39%</strong> in the tested arm and <strong>9.11%</strong> in the untested arm (Figure 7) — a raw 0.72-percentage-point gap. That gap is a marginal contrast, not a causal estimate: the two arms differ on age, comorbidity load, prior utilisation, and primary diagnosis, all of which drive both the testing decision and the readmission risk. Separating the genuine effect from the confounding surface is the downstream notebook’s job; this pipeline’s job is to hand it a well-formed cohort.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig7_hba1c_setup.png" class="img-fluid figure-img"></p>
+<figcaption>The HbA1c cohort. Left: 12,843 patients had the test ordered, 57,136 did not. Right: the unadjusted readmission rate is 0.72 points lower in the tested arm — a difference that is entirely confounded and is left for the causal analysis to resolve.</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="validation" class="level2">
+<h2 class="anchored" data-anchor-id="validation">Validation</h2>
+<p>Before the pipeline is declared complete, six gates check the properties downstream notebooks depend on. All six pass (<strong>Table 5</strong>).</p>
+<p><strong>Table 5</strong></p>
+<p><em>Pipeline Validation Gates</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Gate</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td><code>hospital_admissions_gold</code> is non-empty</td>
+<td>Pass — 101,766 rows</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Modelling cohort contains both classes</td>
+<td>Pass — 11,314 positive (11.4%), 88,026 negative</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Modelling cohort has no missing patient identifier</td>
+<td>Pass — 0 missing</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Every modelling-cohort row has a fold assignment</td>
+<td>Pass — 0 unassigned</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>Both HbA1c arms are non-empty</td>
+<td>Pass — 12,843 tested, 57,136 untested</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>HbA1c cohort is one row per patient</td>
+<td>Pass — 69,979 unique patients across 69,979 rows</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> A failing gate blocks the downstream notebooks rather than producing a warning; each gate is a pre-condition for the analytical work, not a diagnostic.</p>
+</section>
+<section id="carry-forward-findings" class="level2">
+<h2 class="anchored" data-anchor-id="carry-forward-findings">Carry-forward findings</h2>
+<p>Four facts surfaced here that every downstream notebook must account for:</p>
+<ol type="1">
+<li><strong>The 30-day readmission target is imbalanced at roughly 11%.</strong> Default 0.5-threshold classification will collapse to the majority class; the modelling notebook needs class weighting and threshold tuning.</li>
+<li><strong>HbA1c and serum-glucose results are missing because the tests were not ordered</strong> — 83% and 95% of admissions. The binary <em>was-it-tested</em> flag, not the result value, is the analytically useful quantity, and it is the exposure in the causal notebook.</li>
+<li><strong><code>weight</code> is unusable</strong> at 97% missing. It is retained in Gold for transparency and excluded from every feature set.</li>
+<li><strong>The medication columns carry almost no individual signal.</strong> Two are constant and 13 more are near-constant; they are represented only through the five aggregate counts.</li>
+</ol>
+</section>
+<section id="tools-and-reproducibility" class="level2">
+<h2 class="anchored" data-anchor-id="tools-and-reproducibility">Tools and reproducibility</h2>
+<p>The pipeline runs in Python 3.10 with <code>pandas</code> 2.2 for all transformation logic, <code>pyarrow</code> for Parquet I/O, and <code>scikit-learn</code> 1.2 for the <code>GroupKFold</code> fold assignment. Each tier’s logic is transcribed inline in the source notebook so that any reader with the two raw files can reproduce the complete Gold layer without the production <code>etl/</code> package; the Gold outputs are required to be byte-for-byte identical to the package’s output, and a column reorder or a float-precision change counts as a breaking change. Random state is fixed at 42 for the fold assignment. Every headline figure in this article was recomputed from the persisted Bronze, Silver, and Gold tables and the raw CSV.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Clore, J., Cios, K., DeShazo, J., &amp; Strack, B. (2014). <em>Diabetes 130-US Hospitals for Years 1999–2008</em> [Data set]. UCI Machine Learning Repository. https://doi.org/10.24432/C5230J</p>
+<p>Harris, C. R., Millman, K. J., van der Walt, S. J., Gommers, R., Virtanen, P., Cournapeau, D., … Oliphant, T. E. (2020). Array programming with NumPy. <em>Nature, 585</em>(7825), 357–362. https://doi.org/10.1038/s41586-020-2649-2</p>
+<p>Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., … Duchesnay, É. (2011). Scikit-learn: Machine learning in Python. <em>Journal of Machine Learning Research, 12</em>, 2825–2830.</p>
+<p>The pandas development team. (2020). <em>pandas-dev/pandas: Pandas</em> [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.3509134</p>
+<p>Strack, B., DeShazo, J. P., Gennings, C., Olmo, J. L., Ventura, S., Cios, K. J., &amp; Clore, J. N. (2014). Impact of HbA1c measurement on hospital readmission rates: Analysis of 70,000 clinical database patient records. <em>BioMed Research International, 2014</em>, 781670. https://doi.org/10.1155/2014/781670</p>
+<hr>
+<p><em>This is a data-engineering report. All quantities are descriptive properties of a single historical extract (1999–2008); nothing here is a clinical recommendation, and the downstream 30-day readmission target is defined only for the admissions where a subsequent encounter could be observed.</em></p>
+
+
+<div id="contact" class="connect-section" style="text-align: center; padding: 50px 20px; background: #f9f9f9; border-radius: 15px; border: 1px solid #eaeaea; margin-top: 40px;">
+<h3 style="color: #2c3e50; font-weight: 700; margin-bottom: 15px; border: none;" class="anchored">Let's Collaborate</h3>
+<p style="color: #666; max-width: 650px; margin: 0 auto 30px auto; font-size: 1.05rem; line-height: 1.6;">Available for high-impact <strong>Business Intelligence, Power BI Engineering, and Advanced Data Analytics</strong> projects. Connect with me or hire me directly through the platforms below.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
+<a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-linkedin"></i> LinkedIn</a>
+<a href="https://github.com/mkhanmuneer" class="btn btn-dark" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-github"></i> GitHub</a>
+<a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" target="_blank" rel="noopener" style="color: white; padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-graph-up"></i> Kaggle</a>
+<a href="https://www.upwork.com/freelancers/~018de8553286a1d00c" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-briefcase"></i> Upwork</a>
+<a href="https://www.fiverr.com/neuronvision" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-lightning-charge"></i> Fiverr</a>
+</div>
+</div>
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/mkhanmuneer\.github\.io\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 Muhammad Khan Muneer</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.upwork.com/freelancers/~018de8553286a1d00c">
+<p>Hire on Upwork</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.fiverr.com/neuronvision">
+<p>Hire on Fiverr</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

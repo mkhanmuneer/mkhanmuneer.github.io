@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Muhammad Khan Muneer">
+<meta name="keywords" content="health economic evaluation, CHEERS, cost-benefit analysis, probabilistic sensitivity analysis, Monte Carlo, cost-effectiveness acceptability curve, tornado diagram, decision rule, pre-registration, stepped-wedge cluster randomised trial, Hussey-Hughes, transitional care, hospital readmission, fairness-aware allocation, Python">
+<meta name="description" content="Converting a calibrated 30-day readmission scorer into an operational targeting decision for a hospital network’s care-coordination team, framed as a CHEERS-aligned health-economic evaluation. The counterintuitive core: applying RN transitional care (the most effective intervention) at the broad-screening threshold (the largest cohort) destroys about $430k/month of value — its 21% precision cannot justify $900/patient. The recommendation: broad screening (threshold 0.15) with pharmacist medication-reconciliation calls — $587k/month net benefit, ~65 readmissions avoided, 100% coverage — and it is the same cell in all three capacity regimes. Uncertainty: a 10,000-draw PSA puts P(net benefit > 0) at 97% for that cell; a CEAC shows all three interventions clearing 95% cost-effectiveness at a willingness-to-pay of $15k (the AHRQ readmission cost). The trial: a stepped-wedge cluster RCT for the injury/orthopedics HbA1c signal — n ≈ 483, 8 sites, 18 months, ~$1.75M. Fairness: the 2.3× spread in benefit-per-1,000 across payer groups shrinks to 1.5× among the four large groups and reflects real risk, not bias.">
+
+<title>From a Calibrated Readmission Scorer to a Governed Targeting Decision: A CHEERS-Aligned PSA, a Pre-Registered Scenario Grid, and a Stepped-Wedge Trial Proposal – Muhammad Khan Muneer</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-ca0cfe78a00f84493d894d8af57a3a20.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": true,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles/custom.css">
+<meta property="og:title" content="Muhammad Khan Muneer — Data Science &amp; BI Portfolio">
+<meta property="og:description" content="Engineering ML-driven analytics and automated decision systems.">
+<meta property="og:image" content="https://mkhanmuneer.github.io/projects/calibrated-readmission-scorer-to-a-governed-targeting-decision-cheers-psa-scenario-grid-and-stepped-wedge-trial/assets/fig1_base_case_grid.png">
+<meta property="og:site_name" content="M. Khan Muneer Portfolio">
+<meta property="og:image:height" content="807">
+<meta property="og:image:width" content="1584">
+<meta name="twitter:title" content="From a Calibrated Readmission Scorer to a Governed Targeting Decision: A CHEERS-Aligned PSA, a Pre-Registered Scenario Grid, and a Stepped-Wedge Trial Proposal – Muhammad Khan Muneer">
+<meta name="twitter:description" content="Converting a calibrated 30-day readmission scorer into an operational targeting decision for a hospital network’s care-coordination team, framed as a CHEERS-aligned health-economic evaluation. The counterintuitive core: applying RN transitional care (the most effective intervention) at the broad-screening threshold (the largest cohort) destroys about $430k/month of value — its 21% precision cannot justify $900/patient. The recommendation: broad screening (threshold 0.15) with pharmacist medication-reconciliation calls — $587k/month net benefit, ~65 readmissions avoided, 100% coverage — and it is the same cell in all three capacity regimes. Uncertainty: a 10,000-draw PSA puts P(net benefit > 0) at 97% for that cell; a CEAC shows all three interventions clearing 95% cost-effectiveness at a willingness-to-pay of $15k (the AHRQ readmission cost). The trial: a stepped-wedge cluster RCT for the injury/orthopedics HbA1c signal — n ≈ 483, 8 sites, 18 months, ~$1.75M. Fairness: the 2.3× spread in benefit-per-1,000 across payer groups shrinks to 1.5× among the four large groups and reflects real risk, not bias.">
+<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/calibrated-readmission-scorer-to-a-governed-targeting-decision-cheers-psa-scenario-grid-and-stepped-wedge-trial/assets/fig1_base_case_grid.png">
+<meta name="twitter:creator" content="@iMKhanMuneer">
+<meta name="twitter:site" content="@iMKhanMuneer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image-height" content="807">
+<meta name="twitter:image-width" content="1584">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#featured-projects"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/iMKhanMuneer"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.kaggle.com/muhammadkhanmuneer"> <i class="bi bi-graph-up" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#contact"> 
+<span class="menu-text">Contact</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#method" id="toc-method" class="nav-link" data-scroll-target="#method">Method</a>
+  <ul class="collapse">
+  <li><a href="#consumed-inputs" id="toc-consumed-inputs" class="nav-link" data-scroll-target="#consumed-inputs">Consumed inputs</a></li>
+  <li><a href="#cost-benefit-model" id="toc-cost-benefit-model" class="nav-link" data-scroll-target="#cost-benefit-model">Cost-benefit model</a></li>
+  <li><a href="#uncertainty-analysis" id="toc-uncertainty-analysis" class="nav-link" data-scroll-target="#uncertainty-analysis">Uncertainty analysis</a></li>
+  <li><a href="#scenario-grid-and-decision-rule" id="toc-scenario-grid-and-decision-rule" class="nav-link" data-scroll-target="#scenario-grid-and-decision-rule">Scenario grid and decision rule</a></li>
+  <li><a href="#confirmatory-trial-design" id="toc-confirmatory-trial-design" class="nav-link" data-scroll-target="#confirmatory-trial-design">Confirmatory trial design</a></li>
+  <li><a href="#fairness-aware-allocation" id="toc-fairness-aware-allocation" class="nav-link" data-scroll-target="#fairness-aware-allocation">Fairness-aware allocation</a></li>
+  <li><a href="#software" id="toc-software" class="nav-link" data-scroll-target="#software">Software</a></li>
+  </ul></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
+  <ul class="collapse">
+  <li><a href="#the-obvious-choice-is-the-worst-choice" id="toc-the-obvious-choice-is-the-worst-choice" class="nav-link" data-scroll-target="#the-obvious-choice-is-the-worst-choice">The obvious choice is the worst choice</a></li>
+  <li><a href="#uncertainty-does-not-change-the-ranking" id="toc-uncertainty-does-not-change-the-ranking" class="nav-link" data-scroll-target="#uncertainty-does-not-change-the-ranking">Uncertainty does not change the ranking</a></li>
+  <li><a href="#the-recommendation-is-robust-to-capacity" id="toc-the-recommendation-is-robust-to-capacity" class="nav-link" data-scroll-target="#the-recommendation-is-robust-to-capacity">The recommendation is robust to capacity</a></li>
+  <li><a href="#a-trial-for-the-surviving-causal-signal" id="toc-a-trial-for-the-surviving-causal-signal" class="nav-link" data-scroll-target="#a-trial-for-the-surviving-causal-signal">A trial for the surviving causal signal</a></li>
+  <li><a href="#allocation-is-not-systematically-unfair" id="toc-allocation-is-not-systematically-unfair" class="nav-link" data-scroll-target="#allocation-is-not-systematically-unfair">Allocation is not systematically unfair</a></li>
+  </ul></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">From a Calibrated Readmission Scorer to a Governed Targeting Decision: A CHEERS-Aligned PSA, a Pre-Registered Scenario Grid, and a Stepped-Wedge Trial Proposal</h1>
+<p class="subtitle lead">The most effective intervention applied to the broadest cohort is the worst cell in the grid. A 10,000-draw probabilistic sensitivity analysis, a 3×3 capacity grid with a decision rule fixed in advance, and a confirmatory trial design for the one causal signal that survived.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Health Economics</div>
+    <div class="quarto-category">Cost-Effectiveness Analysis</div>
+    <div class="quarto-category">Decision Analysis</div>
+    <div class="quarto-category">Probabilistic Sensitivity Analysis</div>
+    <div class="quarto-category">Monte Carlo Simulation</div>
+    <div class="quarto-category">Trial Design</div>
+    <div class="quarto-category">Experimental Design</div>
+    <div class="quarto-category">Algorithmic Fairness</div>
+    <div class="quarto-category">Healthcare Analytics</div>
+    <div class="quarto-category">Hospital Readmission</div>
+    <div class="quarto-category">Python</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>Converting a calibrated 30-day readmission scorer into an operational targeting decision for a hospital network’s care-coordination team, framed as a CHEERS-aligned health-economic evaluation. <strong>The counterintuitive core:</strong> applying RN transitional care (the most effective intervention) at the broad-screening threshold (the largest cohort) destroys about $430k/month of value — its 21% precision cannot justify $900/patient. <strong>The recommendation:</strong> broad screening (threshold 0.15) with pharmacist medication-reconciliation calls — <strong>$587k/month net benefit, ~65 readmissions avoided, 100% coverage</strong> — and it is the same cell in all three capacity regimes. <strong>Uncertainty:</strong> a 10,000-draw PSA puts P(net benefit &gt; 0) at 97% for that cell; a CEAC shows all three interventions clearing 95% cost-effectiveness at a willingness-to-pay of $15k (the AHRQ readmission cost). <strong>The trial:</strong> a stepped-wedge cluster RCT for the injury/orthopedics HbA1c signal — n ≈ 483, 8 sites, 18 months, ~$1.75M. <strong>Fairness:</strong> the 2.3× spread in benefit-per-1,000 across payer groups shrinks to 1.5× among the four large groups and reflects real risk, not bias.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Muhammad Khan Muneer </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+<div>
+  <div class="keywords">
+    <div class="block-title">Keywords</div>
+    <p>health economic evaluation, CHEERS, cost-benefit analysis, probabilistic sensitivity analysis, Monte Carlo, cost-effectiveness acceptability curve, tornado diagram, decision rule, pre-registration, stepped-wedge cluster randomised trial, Hussey-Hughes, transitional care, hospital readmission, fairness-aware allocation, Python</p>
+  </div>
+</div>
+
+</header>
+
+
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+<p>This study converts a calibrated 30-day readmission risk scorer into an operational targeting decision for a hospital network’s care-coordination team, using a CHEERS-aligned health-economic framework. Three intervention tiers — automated outreach ($35/patient, 8% relative risk reduction), pharmacist medication reconciliation ($200, 15%), and RN transitional care ($900, 25%), each with a literature-sourced uncertainty range — are evaluated at three operating points from the model’s clinical-impact analysis and across three capacity regimes. The deterministic model surfaces a counterintuitive result: the RN-transitional-care intervention applied at the broad-screening threshold, the largest and most expensive cell, produces a monthly net benefit of about <strong>−$430,000</strong>, because a 21% positive predictive value cannot justify a $900-per-patient outlay even at a 25% relative risk reduction. A one-way tornado analysis identifies the relative risk reduction and the cost of a readmission as the two dominant swing parameters. A 10,000-draw probabilistic sensitivity analysis, and a cost-effectiveness acceptability curve over willingness-to-pay thresholds, confirm the deterministic ranking under joint parameter uncertainty. A decision rule fixed before the scenario grid was computed selects the same cell in every capacity regime: <strong>broad screening (threshold 0.15) with pharmacist medication-reconciliation calls — a projected $587,000/month net benefit, about 65 readmissions avoided, 100% coverage of the flagged cohort</strong>. Because an earlier causal analysis returned a population-level null for the originally-hypothesised HbA1c-testing lever, the intervention effect sizes are drawn from the published transitional-care RCT literature, not from the internal estimate. The one causal signal that survived — a protective effect in injury and orthopedic admissions — is scoped as a stepped-wedge cluster randomised trial (n ≈ 483, 8 sites, 18 months, ~$1.75M), not deployed. A fairness-aware allocation check finds the raw 2.3× spread in benefit-per-1,000-eligible across payer groups shrinks to 1.5× among the four large groups and reflects genuine baseline-risk variation.</p>
+<p><em>Keywords:</em> health economic evaluation, CHEERS, probabilistic sensitivity analysis, cost-effectiveness acceptability curve, decision rule, pre-registration, stepped-wedge cluster randomised trial, fairness-aware allocation</p>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>A calibrated risk score is not a decision. The modelling stage of this project produced a LightGBM scorer for 30-day readmission (held-out ROC-AUC 0.67, Brier 0.097 after isotonic calibration), with a fully-characterised operating envelope — a threshold grid, a top-K targeting analysis, a decision curve. Turning that into an operational plan requires a second set of choices: <em>which</em> patients to flag, <em>which</em> intervention to apply, and <em>whether the projected cost-benefit justifies the programme</em>.</p>
+<p>Those choices are made here as a health-economic evaluation. The discipline is to declare every parameter with a published source and a plausible range before any inferential code runs, then to carry the full joint uncertainty through to the recommendation — a single point-estimate cost-benefit chart hides whether its spread is real literature uncertainty or arbitrary assumption. The evaluation runs a deterministic base case, a one-way sensitivity analysis, a 10,000-draw probabilistic sensitivity analysis, a cost-effectiveness acceptability curve, and a scenario grid whose decision rule is fixed in writing before the grid is computed.</p>
+<p>One constraint shapes everything. An earlier causal analysis tested whether the project’s originally-hypothesised lever — ordering an HbA1c test during the admission — causally reduces readmission, and returned a population-level null (every adjusted confidence interval crossed zero; the effect was not robust to a mild unmeasured confounder). The intervention effect sizes in this evaluation therefore come from the published transitional-care RCT literature, not from the internal estimate. The one causal signal that did survive adjustment — a large protective effect in injury and orthopedic admissions — is treated as the basis for a confirmatory trial, not as a deployment target.</p>
+</section>
+<section id="method" class="level2">
+<h2 class="anchored" data-anchor-id="method">Method</h2>
+<section id="consumed-inputs" class="level3">
+<h3 class="anchored" data-anchor-id="consumed-inputs">Consumed inputs</h3>
+<p>The evaluation consumes upstream artefacts without re-running anything: the calibrated scorer and its clinical-impact tables from the modelling stage, and the causal-estimate and subgroup tables from the causal analysis. A sanity gate reproduces the held-out Brier (0.097) and ROC-AUC (0.671) before any downstream code runs. Three operating points are read from the clinical-impact tables — a broad screen at threshold 0.15 (PPV 0.21, 4,978 test-set flags, 25% flag rate), a medium target at 0.20 (PPV 0.27, 2,309 flags), and a high-touch top-1% cut (PPV 0.47, 201 flags).</p>
+</section>
+<section id="cost-benefit-model" class="level3">
+<h3 class="anchored" data-anchor-id="cost-benefit-model">Cost-benefit model</h3>
+<p>The per-cell monthly net benefit is</p>
+<p><span class="math display">\[
+\text{NB} = (n_\text{flagged} \times \text{PPV} \times \text{RRR}) \times C_\text{readmit} - n_\text{flagged} \times c_\text{intervention},
+\]</span></p>
+<p>where the first term is the dollar value of expected readmissions avoided (true positives among the flagged cohort, scaled by the intervention’s relative risk reduction) and the second is the intervention cost. The incremental cost-effectiveness ratio is the net cost per readmission avoided; a negative ratio means the intervention is dominant — cheaper and more effective than doing nothing.</p>
+<p><strong>Table 1</strong> lists the declared parameters. Intervention costs and effect sizes come from published RCTs and meta-analyses (Jack et al., 2009; Naylor et al., 2011; Coleman et al., 2006; Kripalani et al., 2012; Verhaegh et al., 2014); the cost of a prevented readmission is anchored at $15,200 (range $10,000–$22,000) from AHRQ HCUP data, CPI-adjusted to 2024. The perspective is hospital/payer, the currency 2024 USD, the horizon 30 days (no discounting).</p>
+<p><strong>Table 1</strong></p>
+<p><em>Declared Model Parameters (2024 USD)</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Base</th>
+<th>Range</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Automated outreach — cost/patient</td>
+<td>$35</td>
+<td>$20–$75</td>
+<td>Piette (2013); Krumholz et al.&nbsp;(2002)</td>
+</tr>
+<tr class="even">
+<td>Automated outreach — relative risk reduction</td>
+<td>8%</td>
+<td>3%–15%</td>
+<td>as above</td>
+</tr>
+<tr class="odd">
+<td>Pharmacist medication reconciliation — cost/patient</td>
+<td>$200</td>
+<td>$100–$400</td>
+<td>Kripalani et al.&nbsp;(2012); Jack et al.&nbsp;(2009)</td>
+</tr>
+<tr class="even">
+<td>Pharmacist medication reconciliation — relative risk reduction</td>
+<td>15%</td>
+<td>8%–22%</td>
+<td>as above</td>
+</tr>
+<tr class="odd">
+<td>RN transitional care — cost/visit</td>
+<td>$900</td>
+<td>$500–$1,500</td>
+<td>Naylor et al.&nbsp;(2011); Coleman et al.&nbsp;(2006); Verhaegh et al.&nbsp;(2014)</td>
+</tr>
+<tr class="even">
+<td>RN transitional care — relative risk reduction</td>
+<td>25%</td>
+<td>15%–35%</td>
+<td>as above</td>
+</tr>
+<tr class="odd">
+<td>Cost of a prevented 30-day readmission</td>
+<td>$15,200</td>
+<td>$10,000–$22,000</td>
+<td>AHRQ HCUP Statistical Brief #278 (CPI-adjusted)</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> The relative-risk-reduction ranges carry the transportability uncertainty of applying trial estimates measured in other populations to a multi-site diabetic-inpatient cohort; the probabilistic sensitivity analysis propagates them explicitly.</p>
+</section>
+<section id="uncertainty-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="uncertainty-analysis">Uncertainty analysis</h3>
+<p>The one-way tornado varies each parameter across its declared range at a fixed anchor cell (top-1% + RN transitional care) and ranks the parameters by swing. The <strong>probabilistic sensitivity analysis</strong> draws each parameter 10,000 times from a published-uncertainty distribution — costs from a Gamma (right-skewed, positive), effect sizes from a Beta (bounded), the operating-point PPV from a Beta with an effective sample size of 500 — and reports the net-benefit distribution, its P(net benefit &gt; 0), and the incremental cost-effectiveness (Briggs et al., 2012). The <strong>cost-effectiveness acceptability curve</strong> translates that distribution into P(cost-effective) as a function of willingness-to-pay per readmission avoided (Fenwick et al., 2004). Reporting follows CHEERS 2022 (Husereau et al., 2022) and the Second Panel on Cost-Effectiveness (Sanders et al., 2016).</p>
+</section>
+<section id="scenario-grid-and-decision-rule" class="level3">
+<h3 class="anchored" data-anchor-id="scenario-grid-and-decision-rule">Scenario grid and decision rule</h3>
+<p>The grid crosses three intervention tiers with three capacity regimes (flexible; realistic — 100 RN full-time-equivalents, 500 RN-tier patients/month; tight — half of that), evaluated at the three operating points, and projected onto a deployment flow of 8,200 admissions/month. Capacity is modelled as a volume cap on the RN tier, not a binary cliff. The decision rule is <strong>fixed before the grid is computed</strong>: maximise projected monthly net benefit subject to covering at least 80% of the flagged cohort, tie-broken by higher coverage; cells with zero effective capacity or sub-floor coverage are excluded from the recommendation but shown in the grid.</p>
+</section>
+<section id="confirmatory-trial-design" class="level3">
+<h3 class="anchored" data-anchor-id="confirmatory-trial-design">Confirmatory trial design</h3>
+<p>The injury/orthopedics subgroup signal is scoped as a stepped-wedge cluster randomised trial (Hussey &amp; Hughes, 2007; Hemming et al., 2018): protocolised HbA1c testing on admission day 0–1 with an automatic flag when HbA1c ≥ 8%, plus a diabetes-care-activation bundle, versus usual care, with 30-day all-cause readmission as the primary endpoint. Sample size uses the two-step procedure — an individually-randomised equivalent at 80% power, α = .05, baseline rate 10%, target 5 percentage-point reduction, then a stepped-wedge design-effect adjustment at an intra-cluster correlation of 0.02 (Adams et al., 2004).</p>
+</section>
+<section id="fairness-aware-allocation" class="level3">
+<h3 class="anchored" data-anchor-id="fairness-aware-allocation">Fairness-aware allocation</h3>
+<p>The modelling stage’s fairness audit found the largest disparity in payer-group flag rates (parity ratio 0.42), with within-payer calibration holding to within 2.2 points. This stage projects per-payer monthly intervention volumes and computes the equal-opportunity counterpart of the value proposition — readmissions avoided per 1,000 eligible group members — to check that no group is systematically under-served.</p>
+</section>
+<section id="software" class="level3">
+<h3 class="anchored" data-anchor-id="software">Software</h3>
+<p>Python 3.10 with <code>numpy</code>, <code>pandas</code>, <code>scipy</code>, and <code>matplotlib</code>. The PSA random seed is fixed at 42; all headline numbers were recomputed from the consumed artefacts and the declared parameters.</p>
+</section>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<section id="the-obvious-choice-is-the-worst-choice" class="level3">
+<h3 class="anchored" data-anchor-id="the-obvious-choice-is-the-worst-choice">The obvious choice is the worst choice</h3>
+<p>The 9-cell deterministic base case (<strong>Table 2</strong>, Figure 1) makes the central point immediately. At the broad-screening operating point, <strong>pharmacist medication reconciliation returns the largest net benefit — about $1.43M/month</strong> on the test-set scale (160 readmissions avoided, valued at $2.43M, against $996k of intervention cost; incremental cost-effectiveness −$9,000 per readmission avoided, strongly dominant). But <strong>RN transitional care at the same operating point returns about −$430,000/month</strong> — the single worst cell. The reason is arithmetic: at a 21% PPV, four of every five flagged patients will not readmit, so applying a $900 intervention across 4,978 patients spends $4.5M to act on roughly 1,000 true positives, and even a 25% relative reduction on those recovers less than the outlay. The pattern reverses at the top-1% operating point, where a 47% PPV makes RN transitional care competitive: every intervention there is positive, capped only by the small flagged volume. Cheap interventions win by scale at low precision; expensive interventions win by precision at low volume.</p>
+<p><strong>Table 2</strong></p>
+<p><em>Deterministic Monthly Net Benefit by Operating Point and Intervention (test-set scale)</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Operating point</th>
+<th>Automated outreach</th>
+<th>Pharmacist med-rec</th>
+<th>RN transitional care</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Broad screen (thr 0.15)</td>
+<td>+$1.12M</td>
+<td><strong>+$1.43M</strong></td>
+<td><strong>−$0.43M</strong></td>
+</tr>
+<tr class="even">
+<td>Medium (thr 0.20)</td>
+<td>+$0.68M</td>
+<td>+$0.96M</td>
+<td>+$0.30M</td>
+</tr>
+<tr class="odd">
+<td>High-touch (top 1%)</td>
+<td>+$0.11M</td>
+<td>+$0.18M</td>
+<td>+$0.18M</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Values at literature base-case parameters. The broad-screen RN-transitional-care cell (bold negative) is the worst in the grid; the broad-screen medication-reconciliation cell (bold positive) is the best.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig1_base_case_grid.png" class="img-fluid figure-img"></p>
+<figcaption>Deterministic monthly net benefit by operating point (rows) and intervention (columns), test-set scale. Every cell is positive except one — the most effective intervention applied to the broadest cohort.</figcaption>
+</figure>
+</div>
+<p>A one-way tornado at the high-touch anchor (Figure 2) ranks the parameters by how far each moves the base-case net benefit across its declared range: the <strong>relative risk reduction ($289k swing)</strong> and the <strong>cost of a readmission ($285k swing)</strong> dominate, together exceeding the next three parameters combined. Those are the epistemic uncertainties — what happens if the literature is later revised. The PPV and cohort-size swings, smaller, are the operational uncertainties — what happens if the model drifts in deployment.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig2_tornado.png" class="img-fluid figure-img"></p>
+<figcaption>One-way sensitivity at the top-1% + RN-transitional-care anchor. Bars span each parameter’s range projected onto monthly net benefit; the relative risk reduction and the readmission cost produce the two largest swings.</figcaption>
+</figure>
+</div>
+</section>
+<section id="uncertainty-does-not-change-the-ranking" class="level3">
+<h3 class="anchored" data-anchor-id="uncertainty-does-not-change-the-ranking">Uncertainty does not change the ranking</h3>
+<p>The 10,000-draw probabilistic sensitivity analysis (Figure 3) confirms the deterministic picture under joint uncertainty. The broad-screen medication-reconciliation cell has a mean net benefit of about <strong>$1.44M/month with P(net benefit &gt; 0) ≈ 97%</strong>. The high-touch RN-transitional-care cell is smaller but robust — mean <strong>≈$180k/month, P(net benefit &gt; 0) ≈ 96%</strong>, 95% interval roughly [−$22k, +$436k], with the cost-effectiveness cloud sitting overwhelmingly in the dominant (money-saving) quadrant. Only the broad-screen RN-transitional-care cell is negative in expectation under the PSA — mean ≈ −$430k, positive in only ~40% of draws.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig3_psa_ce_plane.png" class="img-fluid figure-img"></p>
+<figcaption>The 10,000-draw probabilistic sensitivity analysis for the top-1% + RN-transitional-care cell. Left: the cost-effectiveness plane — draws concentrate in the lower-right (readmissions avoided, net cost negative). Right: the net-benefit distribution, positive in ~96% of draws.</figcaption>
+</figure>
+</div>
+<p>The cost-effectiveness acceptability curve (Figure 4) reads the same uncertainty as a payer question. At a willingness-to-pay of <strong>$5,000 per readmission avoided</strong> — a third of the AHRQ readmission cost — automated outreach is ~100% likely cost-effective, medication reconciliation ~91%, and RN transitional care only ~13%. By <strong>$15,000</strong> (essentially the readmission cost itself), all three clear the 95% high-confidence threshold. A payer whose willingness-to-pay is at least the cost of one readmission gets a near-certain cost-effectiveness signal for every intervention.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig4_ceac.png" class="img-fluid figure-img"></p>
+<figcaption>Cost-effectiveness acceptability curve at the high-touch anchor. Probability each intervention is cost-effective against willingness-to-pay per readmission avoided; all three clear 95% by a willingness-to-pay of $15,200 (the AHRQ readmission cost).</figcaption>
+</figure>
+</div>
+</section>
+<section id="the-recommendation-is-robust-to-capacity" class="level3">
+<h3 class="anchored" data-anchor-id="the-recommendation-is-robust-to-capacity">The recommendation is robust to capacity</h3>
+<p>Projected onto the deployment flow (8,200 admissions/month → ~2,038 flagged at broad screening, ~945 at medium, ~82 at top-1%), the decision rule fixed before the grid was computed selects the <strong>same cell in all three capacity regimes: broad screening with pharmacist medication-reconciliation calls — a projected $587,000/month net benefit, ~65 readmissions avoided, 2,038 patients served at 100% coverage</strong> (Figure 5). The regime never binds, because medication reconciliation is not RN-capacity-limited; the flexible, realistic, and tight regimes return identical results for the two lower tiers. The worst cell is again broad-screening RN transitional care (about −$176,000/month projected), which the rule rejects cleanly. Eight of nine cells are positive in every regime.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig5_scenario_grid.png" class="img-fluid figure-img"></p>
+<figcaption>The projected monthly net-benefit grid at 8,200 admissions/month. The recommended cell (boxed) is broad-screening medication reconciliation, selected identically in all three capacity regimes by the pre-fixed decision rule.</figcaption>
+</figure>
+</div>
+</section>
+<section id="a-trial-for-the-surviving-causal-signal" class="level3">
+<h3 class="anchored" data-anchor-id="a-trial-for-the-surviving-causal-signal">A trial for the surviving causal signal</h3>
+<p>The injury and orthopedic subgroups are the only strata where the causal analysis found a protective HbA1c effect whose confidence interval excluded zero (−6.5 and −8.2 percentage points). These are exploratory observational findings; the analysis scopes a stepped-wedge cluster randomised trial to test them confirmatorily (<strong>Table 3</strong>, Figure 6). Powered conservatively for a 5-point reduction (below the observational point estimates), the individually-randomised equivalent is 432 per arm; the stepped-wedge design effect at an intra-cluster correlation of 0.02 is 0.56, so the required total is <strong>n ≈ 483</strong> — the design is more efficient than an equivalently-sized parallel trial because within-cluster repeated measures dominate the loss from clustering. At the network’s throughput (15% injury/orthopedic fraction, 60% consent) recruitment clears that target in under a month, so the binding constraint is the design’s 12-month stepped rollout plus a 6-month close-out — <strong>18 months, ~$1.75M</strong>.</p>
+<p><strong>Table 3</strong></p>
+<p><em>Proposed Stepped-Wedge Cluster Randomised Trial at a Glance</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Element</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Population</td>
+<td>Diabetic inpatients admitted for injury (ICD-9 800–999) or under orthopedic care, age ≥ 18</td>
+</tr>
+<tr class="even">
+<td>Intervention</td>
+<td>Protocolised HbA1c on day 0–1 + auto-flag at HbA1c ≥ 8% + diabetes-care-activation bundle</td>
+</tr>
+<tr class="odd">
+<td>Comparator</td>
+<td>Usual care (HbA1c at attending discretion)</td>
+</tr>
+<tr class="even">
+<td>Primary outcome</td>
+<td>30-day all-cause readmission</td>
+</tr>
+<tr class="odd">
+<td>Design</td>
+<td>Stepped-wedge cluster RCT, 8 sites, 4 step-ups at 3-month intervals</td>
+</tr>
+<tr class="even">
+<td>Sample size</td>
+<td>n ≈ 483 (80% power, α = .05, baseline 10%, target 5 pp, ICC 0.02)</td>
+</tr>
+<tr class="odd">
+<td>Primary analysis</td>
+<td>GLMM, binomial logit, fixed effects for period and time-step, random effect for site, intention-to-treat</td>
+</tr>
+<tr class="even">
+<td>Duration / budget</td>
+<td>18 months (12-month rollout + 6-month close-out); ~$1.75M</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> The 5-percentage-point target is deliberately smaller than the observational point estimates (6.5–8.2 pp), so the trial is powered for a conservative effect.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig6_stepped_wedge.png" class="img-fluid figure-img"></p>
+<figcaption>The proposed stepped-wedge rollout: eight sites cross from control to the protocolised-HbA1c arm in four steps over 12 months, followed by a 6-month close-out so late-step patients complete their 30-day window.</figcaption>
+</figure>
+</div>
+</section>
+<section id="allocation-is-not-systematically-unfair" class="level3">
+<h3 class="anchored" data-anchor-id="allocation-is-not-systematically-unfair">Allocation is not systematically unfair</h3>
+<p>Projecting the recommended targeting across payer groups (Figure 7), the raw spread in readmissions avoided per 1,000 eligible members is <strong>7.4 to 17.3 — a 2.3× ratio</strong>. But the extremes are the smallest, noisiest groups (each ~500 test patients). Restricted to the four large payer groups, the spread is <strong>9.6 to 14.3 — a 1.5× ratio</strong> — within the range a calibration-confirmed model produces on populations with genuinely different baseline risk. The recommendation does not systematically under-serve any group; the appropriate safeguard is monitoring the small-group ratios in deployment and a payer-stratified efficacy audit annually.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig7_fairness_allocation.png" class="img-fluid figure-img"></p>
+<figcaption>Fairness-aware allocation across payer groups. Left: model flag rate, a 2.4× spread. Right: readmissions avoided per 1,000 eligible members — the raw 2.3× spread (rose: the smallest, noisiest groups) shrinks to 1.5× among the four large groups.</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<p><strong>Principal findings.</strong> The economically optimal deployment is a cheap intervention at a broad operating point, not an expensive one at a narrow one: broad-screening medication reconciliation, ~$587,000/month projected net benefit, robust to capacity and to joint parameter uncertainty. The intuitive choice — the most effective intervention on the largest cohort — is the worst cell in the grid, because low precision multiplies a high per-patient cost across a mostly-false-positive population. The recommendation depends on literature-sourced effect sizes; the tornado shows the relative risk reduction is the parameter that would most change it.</p>
+<p><strong>What survives regardless.</strong> Even if the transitional-care literature is later revised downward, the reusable output of this stage stands: a calibrated scorer with a characterised operating envelope, a parameterised cost-benefit model with declared sources, the scenario grid, the CHEERS-aligned PSA and acceptability curve, a monitoring and re-training specification, the fairness-aware allocation check, and a fundable confirmatory trial design for the injury/orthopedics signal.</p>
+<p><strong>Monitoring.</strong> A deployment of this model needs seven tracked metrics: input drift and score drift (population stability index), calibration decay (Brier, monthly — the load-bearing check, because the threshold logic is absolute-risk-based), discrimination decay (ROC-AUC), fairness drift (per-payer recall gap), and two operational metrics (flagged volume against capacity, intervention completion rate). Re-training is quarterly for calibration (isotonic re-fit on the last 90 days) and annual for the full model (rolling 24-month window), with shadow-mode evaluation before any version reaches production.</p>
+<p><strong>Limitations.</strong> The effect sizes are transported from trial populations that differ from this cohort; the transportability assumption is untested and the PSA carries its uncertainty but cannot remove it. The operating-point PPVs and the calibration are single-split diagnostics from the modelling stage. The 8,200-admissions/month deployment flow and the capacity regimes are illustrative, not measured from a specific network. The cost model takes the hospital/payer perspective only; a societal perspective would value a prevented readmission higher. The trial design is a proposal with an order-of-magnitude budget, not a costed protocol.</p>
+<p><strong>Conclusion.</strong> The recommendation is broad-screening medication reconciliation, and it is stable. The high-touch RN-transitional-care scenario remains the right choice where selectivity matters or transitional-care infrastructure is already built, but it is not the net-benefit-maximising option at this network’s volume. The HbA1c question is deferred to a trial. The value of the stage is the governed decision framework, not any single dollar figure that a literature update could move.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Adams, G., Gulliford, M. C., Ukoumunne, O. C., Eldridge, S., Chinn, S., &amp; Campbell, M. J. (2004). Patterns of intra-cluster correlation from primary care research to inform study design and analysis. <em>Journal of Clinical Epidemiology, 57</em>(8), 785–794. https://doi.org/10.1016/j.jclinepi.2003.12.013</p>
+<p>Briggs, A. H., Weinstein, M. C., Fenwick, E. A. L., Karnon, J., Sculpher, M. J., &amp; Paltiel, A. D. (2012). Model parameter estimation and uncertainty analysis: A report of the ISPOR-SMDM Modeling Good Research Practices Task Force-6. <em>Value in Health, 15</em>(6), 835–842. https://doi.org/10.1016/j.jval.2012.04.014</p>
+<p>Coleman, E. A., Parry, C., Chalmers, S., &amp; Min, S.-J. (2006). The Care Transitions Intervention: Results of a randomized controlled trial. <em>Archives of Internal Medicine, 166</em>(17), 1822–1828. https://doi.org/10.1001/archinte.166.17.1822</p>
+<p>Fenwick, E., O’Brien, B. J., &amp; Briggs, A. (2004). Cost-effectiveness acceptability curves — facts, fallacies and frequently asked questions. <em>Health Economics, 13</em>(5), 405–415. https://doi.org/10.1002/hec.903</p>
+<p>Hemming, K., Taljaard, M., McKenzie, J. E., Hooper, R., Copas, A., Thompson, J. A., … Weijer, C. (2018). Reporting of stepped wedge cluster randomised trials: Extension of the CONSORT 2010 statement with explanation and elaboration. <em>BMJ, 363</em>, k1614. https://doi.org/10.1136/bmj.k1614</p>
+<p>Husereau, D., Drummond, M., Augustovski, F., de Bekker-Grob, E., Briggs, A. H., Carswell, C., … Staniszewska, S. (2022). Consolidated Health Economic Evaluation Reporting Standards 2022 (CHEERS 2022). <em>Value in Health, 25</em>(1), 3–9. https://doi.org/10.1016/j.jval.2021.11.1351</p>
+<p>Hussey, M. A., &amp; Hughes, J. P. (2007). Design and analysis of stepped wedge cluster randomized trials. <em>Contemporary Clinical Trials, 28</em>(2), 182–191. https://doi.org/10.1016/j.cct.2006.05.007</p>
+<p>Jack, B. W., Chetty, V. K., Anthony, D., Greenwald, J. L., Sanchez, G. M., Johnson, A. E., … Culpepper, L. (2009). A reengineered hospital discharge program to decrease rehospitalization. <em>Annals of Internal Medicine, 150</em>(3), 178–187. https://doi.org/10.7326/0003-4819-150-3-200902030-00007</p>
+<p>Kripalani, S., Roumie, C. L., Dalal, A. K., Cawthon, C., Businger, A., Eden, S. K., … Schnipper, J. L. (2012). Effect of a pharmacist intervention on clinically important medication errors after hospital discharge. <em>Annals of Internal Medicine, 157</em>(1), 1–10. https://doi.org/10.7326/0003-4819-157-1-201207030-00003</p>
+<p>Naylor, M. D., Aiken, L. H., Kurtzman, E. T., Olds, D. M., &amp; Hirschman, K. B. (2011). The importance of transitional care in achieving health reform. <em>Health Affairs, 30</em>(4), 746–754. https://doi.org/10.1377/hlthaff.2011.0041</p>
+<p>Sanders, G. D., Neumann, P. J., Basu, A., Brock, D. W., Feeny, D., Krahn, M., … Ganiats, T. G. (2016). Recommendations for conduct, methodological practices, and reporting of cost-effectiveness analyses: Second Panel on Cost-Effectiveness in Health and Medicine. <em>JAMA, 316</em>(10), 1093–1103. https://doi.org/10.1001/jama.2016.12195</p>
+<p>Strack, B., DeShazo, J. P., Gennings, C., Olmo, J. L., Ventura, S., Cios, K. J., &amp; Clore, J. N. (2014). Impact of HbA1c measurement on hospital readmission rates: Analysis of 70,000 clinical database patient records. <em>BioMed Research International, 2014</em>, 781670. https://doi.org/10.1155/2014/781670</p>
+<p>Verhaegh, K. J., MacNeil-Vroomen, J. L., Eslami, S., Geerlings, S. E., de Rooij, S. E., &amp; Buurman, B. M. (2014). Transitional care interventions prevent hospital readmissions for adults with chronic illnesses. <em>Health Affairs, 33</em>(9), 1531–1539. https://doi.org/10.1377/hlthaff.2014.0160</p>
+<hr>
+<p><em>Decision-analytic model built on literature-sourced parameters and a single-split predictive scorer; projected volumes and capacity regimes are illustrative. Net-benefit figures depend on transitional-care effect sizes transported from other trial populations and would move with a literature update; the recommendation’s robustness, not the point estimate, is the finding.</em></p>
+
+
+<div id="contact" class="connect-section" style="text-align: center; padding: 50px 20px; background: #f9f9f9; border-radius: 15px; border: 1px solid #eaeaea; margin-top: 40px;">
+<h3 style="color: #2c3e50; font-weight: 700; margin-bottom: 15px; border: none;" class="anchored">Let's Collaborate</h3>
+<p style="color: #666; max-width: 650px; margin: 0 auto 30px auto; font-size: 1.05rem; line-height: 1.6;">Available for high-impact <strong>Business Intelligence, Power BI Engineering, and Advanced Data Analytics</strong> projects. Connect with me or hire me directly through the platforms below.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
+<a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-linkedin"></i> LinkedIn</a>
+<a href="https://github.com/mkhanmuneer" class="btn btn-dark" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-github"></i> GitHub</a>
+<a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" target="_blank" rel="noopener" style="color: white; padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-graph-up"></i> Kaggle</a>
+<a href="https://www.upwork.com/freelancers/~018de8553286a1d00c" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-briefcase"></i> Upwork</a>
+<a href="https://www.fiverr.com/neuronvision" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-lightning-charge"></i> Fiverr</a>
+</div>
+</div>
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/mkhanmuneer\.github\.io\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 Muhammad Khan Muneer</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.upwork.com/freelancers/~018de8553286a1d00c">
+<p>Hire on Upwork</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.fiverr.com/neuronvision">
+<p>Hire on Fiverr</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

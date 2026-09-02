@@ -1,0 +1,62 @@
+# ================================================================
+# PORTFOLIO .GITIGNORE - MUHAMMAD KHAN MUNEER
+# ================================================================
+
+# --- 1. THE "IRON DOME" (PROTECTED DATA & ENV) ---
+# Absolute protection against data leaks or local env clutter
+data/
+temp/
+projects/
+projects/**/*.qmd
+projects/**/*.ipynb
+# Review-only projects — never built, never published (see _quarto.yml render scope)
+_staging/
+_freeze/
+.quarto/
+/_freeze/
+dataco_env/
+.env
+*.csv
+*.parquet
+*.xlsx
+*.pkl
+logs/
+*.log
+
+# --- 2. SOURCE CODE & IP PROTECTION ---
+# Keeps raw analysis scripts and notebooks out of the public repo
+*.qmd
+*.Rmd
+*.ipynb
+*.py
+*.R
+
+# --- 3. QUARTO INTERNALS & R METADATA ---
+/.quarto/
+**/*.quarto_ipynb
+.ipynb_checkpoints/
+__pycache__/
+.Rproj.user
+*.Rproj
+*.Rhistory
+*.RData
+*.RDS
+.vscode/
+.claude/
+.DS_Store
+
+# --- 4. GENERATED ASSETS (THE "GUTS") ---
+# This ignores the index_files and index_copy_files folders
+/*_files/
+
+# --- 5. WHITELISTED DEPLOYMENT ASSETS ---
+# We ignore the site by default, but explicitly track what's needed
+# Note: Only remove /_site/ from here if you deploy via a CI/CD tool
+# !index.qmd
+# !cv.qmd
+!docs/
+!_quarto.yml
+!styles/
+!projects.yml
+!environment.yml
+!deploy.sh

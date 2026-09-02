@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Muhammad Khan Muneer">
+<meta name="keywords" content="customer analytics, RFM, loyalty tiers, revenue concentration, Lorenz curve, Gini coefficient, customer lifetime value, CLV proxy, repeat purchase rate, product breadth, churn, exploratory data analysis, Python, pandas">
+<meta name="description" content="A diagnostic of how revenue distributes across 20,652 customers. The split: 43% placed exactly one order and never returned. The inversion: the loyalty pyramid runs Standard (63% of customers) → Loyal (28%) → Champion (7%) by headcount, but Loyal alone carries 53% of revenue and the combined Loyal + Champion tiers (36% of customers) carry 72%. Concentration: the top 20% of customers generate 50% of revenue (Gini 0.52) — real but moderate. The value axis: product breadth, not segment or discount — categories bought correlates with revenue at r ≈ 0.90, while margin, discount and late rate are decoupled from customer value entirely.">
+
+<title>A Bifurcated Customer Base: A Revenue-Concentration Diagnostic of 20,652 Customers – Muhammad Khan Muneer</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-ca0cfe78a00f84493d894d8af57a3a20.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": true,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="../../styles/custom.css">
+<meta property="og:title" content="Muhammad Khan Muneer — Data Science &amp; BI Portfolio">
+<meta property="og:description" content="Engineering ML-driven analytics and automated decision systems.">
+<meta property="og:image" content="https://mkhanmuneer.github.io/projects/bifurcated-customer-base-revenue-concentration-diagnostic/assets/fig1_behavioural_pyramid.png">
+<meta property="og:site_name" content="M. Khan Muneer Portfolio">
+<meta property="og:image:alt" content="Left: histogram of lifetime orders per customer — a tall bar at 1 (about 8,900 customers), a dip at 2, a secondary rise around 3 to 5, then a steep decline to near zero by 12. Right: the same base in five frequency bands — 1 order 8,884; 2-3 orders 3,351; 4-5 orders 4,496; 6-10 orders 3,805; 10+ orders 116.">
+<meta property="og:image:height" content="812">
+<meta property="og:image:width" content="1882">
+<meta name="twitter:title" content="A Bifurcated Customer Base: A Revenue-Concentration Diagnostic of 20,652 Customers – Muhammad Khan Muneer">
+<meta name="twitter:description" content="A diagnostic of how revenue distributes across 20,652 customers. The split: 43% placed exactly one order and never returned. The inversion: the loyalty pyramid runs Standard (63% of customers) → Loyal (28%) → Champion (7%) by headcount, but Loyal alone carries 53% of revenue and the combined Loyal + Champion tiers (36% of customers) carry 72%. Concentration: the top 20% of customers generate 50% of revenue (Gini 0.52) — real but moderate. The value axis: product breadth, not segment or discount — categories bought correlates with revenue at r ≈ 0.90, while margin, discount and late rate are decoupled from customer value entirely.">
+<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/bifurcated-customer-base-revenue-concentration-diagnostic/assets/fig1_behavioural_pyramid.png">
+<meta name="twitter:creator" content="@iMKhanMuneer">
+<meta name="twitter:site" content="@iMKhanMuneer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Left: histogram of lifetime orders per customer — a tall bar at 1 (about 8,900 customers), a dip at 2, a secondary rise around 3 to 5, then a steep decline to near zero by 12. Right: the same base in five frequency bands — 1 order 8,884; 2-3 orders 3,351; 4-5 orders 4,496; 6-10 orders 3,805; 10+ orders 116.">
+<meta name="twitter:image-height" content="812">
+<meta name="twitter:image-width" content="1882">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#featured-projects"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/iMKhanMuneer"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.kaggle.com/muhammadkhanmuneer"> <i class="bi bi-graph-up" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#contact"> 
+<span class="menu-text">Contact</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#method" id="toc-method" class="nav-link" data-scroll-target="#method">Method</a>
+  <ul class="collapse">
+  <li><a href="#data-source" id="toc-data-source" class="nav-link" data-scroll-target="#data-source">Data source</a></li>
+  <li><a href="#variables-and-measures" id="toc-variables-and-measures" class="nav-link" data-scroll-target="#variables-and-measures">Variables and measures</a></li>
+  <li><a href="#analytical-approach" id="toc-analytical-approach" class="nav-link" data-scroll-target="#analytical-approach">Analytical approach</a></li>
+  <li><a href="#software" id="toc-software" class="nav-link" data-scroll-target="#software">Software</a></li>
+  </ul></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
+  <ul class="collapse">
+  <li><a href="#the-behavioural-pyramid" id="toc-the-behavioural-pyramid" class="nav-link" data-scroll-target="#the-behavioural-pyramid">The behavioural pyramid</a></li>
+  <li><a href="#segments-are-interchangeable" id="toc-segments-are-interchangeable" class="nav-link" data-scroll-target="#segments-are-interchangeable">Segments are interchangeable</a></li>
+  <li><a href="#the-loyalty-inversion" id="toc-the-loyalty-inversion" class="nav-link" data-scroll-target="#the-loyalty-inversion">The loyalty inversion</a></li>
+  <li><a href="#how-concentrated-is-the-revenue-really" id="toc-how-concentrated-is-the-revenue-really" class="nav-link" data-scroll-target="#how-concentrated-is-the-revenue-really">How concentrated is the revenue, really?</a></li>
+  <li><a href="#the-clv-proxy-is-a-velocity-artefact" id="toc-the-clv-proxy-is-a-velocity-artefact" class="nav-link" data-scroll-target="#the-clv-proxy-is-a-velocity-artefact">The CLV proxy is a velocity artefact</a></li>
+  <li><a href="#product-breadth-is-the-value-axis" id="toc-product-breadth-is-the-value-axis" class="nav-link" data-scroll-target="#product-breadth-is-the-value-axis">Product breadth is the value axis</a></li>
+  <li><a href="#late-delivery-exposure-by-tier" id="toc-late-delivery-exposure-by-tier" class="nav-link" data-scroll-target="#late-delivery-exposure-by-tier">Late-delivery exposure by tier</a></li>
+  <li><a href="#what-connects-to-what" id="toc-what-connects-to-what" class="nav-link" data-scroll-target="#what-connects-to-what">What connects to what</a></li>
+  </ul></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a>
+  <ul class="collapse">
+  <li><a href="#principal-findings" id="toc-principal-findings" class="nav-link" data-scroll-target="#principal-findings">Principal findings</a></li>
+  <li><a href="#the-mechanism-worth-naming" id="toc-the-mechanism-worth-naming" class="nav-link" data-scroll-target="#the-mechanism-worth-naming">The mechanism worth naming</a></li>
+  <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations">Limitations</a></li>
+  <li><a href="#modelling-targets" id="toc-modelling-targets" class="nav-link" data-scroll-target="#modelling-targets">Modelling targets</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">A Bifurcated Customer Base: A Revenue-Concentration Diagnostic of 20,652 Customers</h1>
+<p class="subtitle lead">An exploratory customer-grain analysis of a three-year e-commerce dataset — the one-and-done majority, a loyalty pyramid whose revenue ranking inverts its population ranking, and the behavioural axis that actually predicts value.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Exploratory Data Analysis</div>
+    <div class="quarto-category">Descriptive Statistics</div>
+    <div class="quarto-category">Statistical Inference</div>
+    <div class="quarto-category">Customer Analytics</div>
+    <div class="quarto-category">Customer Segmentation</div>
+    <div class="quarto-category">RFM Analysis</div>
+    <div class="quarto-category">Revenue Concentration</div>
+    <div class="quarto-category">Inequality Metrics</div>
+    <div class="quarto-category">Retail Analytics</div>
+    <div class="quarto-category">Python</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>A diagnostic of how revenue distributes across 20,652 customers. <strong>The split:</strong> 43% placed exactly one order and never returned. <strong>The inversion:</strong> the loyalty pyramid runs Standard (63% of customers) → Loyal (28%) → Champion (7%) by headcount, but Loyal alone carries <strong>53% of revenue</strong> and the combined Loyal + Champion tiers (36% of customers) carry <strong>72%</strong>. <strong>Concentration:</strong> the top 20% of customers generate 50% of revenue (Gini 0.52) — real but moderate. <strong>The value axis:</strong> product breadth, not segment or discount — categories bought correlates with revenue at r ≈ 0.90, while margin, discount and late rate are decoupled from customer value entirely.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Muhammad Khan Muneer </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 2024</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+<div>
+  <div class="keywords">
+    <div class="block-title">Keywords</div>
+    <p>customer analytics, RFM, loyalty tiers, revenue concentration, Lorenz curve, Gini coefficient, customer lifetime value, CLV proxy, repeat purchase rate, product breadth, churn, exploratory data analysis, Python, pandas</p>
+  </div>
+</div>
+
+</header>
+
+
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+<p>This study is a descriptive customer-grain analysis of the <em>DataCo</em> e-commerce dataset — 20,652 customers aggregated from three years of order-item transactions (January 2015 – January 2018). The objective is to characterise how revenue, engagement, and lifetime value distribute across the base. The analytical table is the validated Gold layer of a companion medallion pipeline; every measure is recomputed from it. The base is <strong>structurally bifurcated</strong>: 43.0% of customers placed exactly one order and never returned, while the median customer placed three. Revenue is <strong>moderately concentrated</strong> — the top 10% of customers generate 29.2% of revenue, the top 20% generate 49.9% (Gini 0.52) — but the loyalty architecture sharpens the picture: the four RFM-derived tiers run Standard (63.2% of customers) → Loyal (28.5%) → Champion (7.2%) by headcount, yet <strong>the Loyal tier alone carries 52.6% of revenue</strong> and the combined Loyal + Champion tiers (35.7% of customers) carry <strong>71.8%</strong>. The three customer segments (Consumer, Corporate, Home Office) are near-interchangeable: revenue share tracks population share to within 0.3 points, and mean CLV differs by ~8%. The behavioural axis that predicts value is <strong>product breadth</strong> — number of unique categories bought correlates with total revenue at <em>r</em> ≈ 0.90, and mean breadth triples between the Standard and Loyal tiers. Margin ratio, discount rate, and late-delivery rate are decoupled from customer value (all |<em>r</em>| ≤ 0.06). The CLV proxy is unusable as-is: its 20 largest values are all short-tenure customers whose two or three orders are annualised over a one- to two-week window. No causal claim is made.</p>
+<p><em>Keywords:</em> customer analytics, RFM, loyalty tiers, revenue concentration, Lorenz curve, product breadth, repeat purchase</p>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>The companion operations study of this dataset examined the supply chain — how orders flow and why half of them arrive late. This study turns to the people who placed the orders: who they are, how often they return, and where the revenue actually sits.</p>
+<p>The unit of analysis is the <strong>customer</strong>. Every field has been aggregated from the transaction stream to one row per customer: their full order history, RFM position, monetary footprint, product breadth, and the delivery experience accumulated across every order they placed. That aggregation is not a simplification — a customer who orders once and a customer who orders fifteen times are indistinguishable in a transaction table but occupy opposite ends of the base at customer grain.</p>
+<p>One finding surfaces immediately and recurs in every section: the base operates on two economic logics at once. A large majority transacts once and disappears; a compact minority returns repeatedly and generates most of the revenue. The rest of the analysis is a map of that structure — its shape, its financial consequence, and the behavioural signals that separate the two populations.</p>
+</section>
+<section id="method" class="level2">
+<h2 class="anchored" data-anchor-id="method">Method</h2>
+<section id="data-source" class="level3">
+<h3 class="anchored" data-anchor-id="data-source">Data source</h3>
+<p>A single analytical table, <code>customer_features_gold</code> (20,652 rows × 39 columns), one row per customer with a <code>first_order</code> between 1 January 2015 and 31 January 2018. Two columns carry structural missingness: <code>avg_inter_order_days</code> (40.8%) and <code>clv_proxy</code> (43.0%) are undefined for single-order customers and, for <code>clv_proxy</code>, for customers whose orders all fall on one day. Every other column is complete. Sample composition is given in Table 1.</p>
+<p><strong>Table 1</strong></p>
+<p><em>Customer-Base Composition (N = 20,652)</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Dimension</th>
+<th style="text-align: left;">Composition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Order frequency</td>
+<td style="text-align: left;">1 order 8,884 (43.0%) · 2–3 orders 3,351 · 4–5 orders 4,496 · 6–10 orders 3,805 · 10+ orders 116; median 3, max 15</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Customer segment</td>
+<td style="text-align: left;">Consumer 10,695 (51.8%) · Corporate 6,239 (30.2%) · Home Office 3,718 (18.0%)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Loyalty tier</td>
+<td style="text-align: left;">Standard 13,057 (63.2%) · Loyal 5,883 (28.5%) · Champion 1,489 (7.2%) · At Risk 223 (1.1%)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Preferred shipping mode</td>
+<td style="text-align: left;">Standard Class 13,646 (66%) · Second 3,457 · First 2,711 · Same Day 838</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Preferred department</td>
+<td style="text-align: left;">Fan Shop 7,865 · Apparel 6,171 · Discs Shop 2,026 (of 11)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Structural NaNs</td>
+<td style="text-align: left;"><code>clv_proxy</code> 8,884 · <code>avg_inter_order_days</code> 8,435 (both = single-order / single-day customers)</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Tenure (<code>customer_lifetime_days</code>) is 0 for 25% of customers — their first and last orders fall on the same day.</p>
+</section>
+<section id="variables-and-measures" class="level3">
+<h3 class="anchored" data-anchor-id="variables-and-measures">Variables and measures</h3>
+<p><strong>RFM.</strong> Each customer receives recency, frequency, and monetary quintile scores (1–5); their sum, <code>rfm_score</code>, ranges 3–15 (observed maximum 13 — no customer is top-quintile on all three axes). <strong>Loyalty tier</strong> cuts <code>rfm_score</code> into At Risk (≤ 5), Standard (6–9), Loyal (10–12), Champion (&gt; 12). <strong><code>is_high_value_customer</code></strong> flags the top revenue quartile. <strong><code>clv_proxy</code></strong> is annualised revenue: <code>total_revenue / (customer_lifetime_days / 365)</code>. <strong>Product breadth</strong> is the count of distinct products, categories, and departments a customer has ever bought. <strong><code>late_rate</code></strong> is the share of a customer’s orders that arrived late (the operations study’s transaction-level flag, aggregated).</p>
+</section>
+<section id="analytical-approach" class="level3">
+<h3 class="anchored" data-anchor-id="analytical-approach">Analytical approach</h3>
+<p>Descriptive. Distributions are summarised for the volume, tenure, monetary, and breadth families. Revenue concentration is measured with a Lorenz curve, the Gini coefficient, and top-decile revenue shares. Group contrasts (segment, tier) use counts and shares reported together, never one alone. Pairwise Pearson correlations span the 27 numeric features, reported here for a 15-feature focus set. No model is fitted and no hypothesis test is performed; a target-viability scan is summarised in the Discussion.</p>
+</section>
+<section id="software" class="level3">
+<h3 class="anchored" data-anchor-id="software">Software</h3>
+<p>Python 3.10 with <code>pandas</code>, <code>numpy</code>, and <code>matplotlib</code>.</p>
+</section>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<section id="the-behavioural-pyramid" class="level3">
+<h3 class="anchored" data-anchor-id="the-behavioural-pyramid">The behavioural pyramid</h3>
+<p>The base is front-loaded on a single-order population (Figure 1). <strong>8,884 customers — 43.0% — placed exactly one order and never came back.</strong> The remaining 57.0% are repeat buyers; among them the median customer placed 3 orders (IQR 1–5), and a 116-customer apex placed more than ten. Tenure mirrors the shape: a quarter of all customers have a lifetime of zero days (first and last order the same day), the median is 305 days, and the maximum is 1,003. This is the interpretive frame for everything that follows — the pyramid is not a metaphor, it is the literal distribution.</p>
+<p><strong>Figure 1</strong></p>
+<p><em>Orders per Customer and the Order-Frequency Bands</em></p>
+<p><img src="assets/fig1_behavioural_pyramid.png" class="img-fluid" alt="Left: histogram of lifetime orders per customer — a tall bar at 1 (about 8,900 customers), a dip at 2, a secondary rise around 3 to 5, then a steep decline to near zero by 12. Right: the same base in five frequency bands — 1 order 8,884; 2-3 orders 3,351; 4-5 orders 4,496; 6-10 orders 3,805; 10+ orders 116."></p>
+<p><em>Note.</em> The 10+ band (116 customers, 0.6%) is barely visible at this scale yet is financially decisive (see Figure 3).</p>
+</section>
+<section id="segments-are-interchangeable" class="level3">
+<h3 class="anchored" data-anchor-id="segments-are-interchangeable">Segments are interchangeable</h3>
+<p>The base divides into Consumer (51.8%), Corporate (30.2%), and Home Office (18.0%), and on almost every metric these are the same customer wearing three labels (Figure 2). <strong>Revenue share tracks population share to within 0.3 percentage points</strong> for all three. Mean orders per customer differ by 0.02 (3.17–3.19). Mean margin ratio is 0.12 across all three. The revenue <em>distribution</em> — median, IQR, skew — is near-identical segment to segment. The only metric that moves at all is the CLV proxy, and it moves ~8% (Consumer $2,113, Corporate $2,157, Home Office $2,276) — a difference small enough, and entangled enough with the CLV artefact described below, to carry little weight. Segment membership is not a lever in this base.</p>
+<p><strong>Figure 2</strong></p>
+<p><em>Segment Symmetry: Population, Revenue, and CLV</em></p>
+<p><img src="assets/fig2_segment_symmetry.png" class="img-fluid" alt="Left: paired bars of customer share and revenue share by segment — Consumer 51.8% / 51.9%, Corporate 30.2% / 30.3%, Home Office 18.0% / 17.7%. Right: mean CLV proxy by segment — Consumer 2,113, Corporate 2,157, Home Office 2,276, an 8% spread on a zero-based axis."></p>
+<p><em>Note.</em> A later correlation result confirms this: <code>customer_segment</code> carries near-zero independent predictive signal once behavioural features are present.</p>
+</section>
+<section id="the-loyalty-inversion" class="level3">
+<h3 class="anchored" data-anchor-id="the-loyalty-inversion">The loyalty inversion</h3>
+<p>The four RFM-derived tiers form a population pyramid — Standard 13,057, Loyal 5,883, Champion 1,489, At Risk 223 — but the revenue ranking <strong>inverts the top of that pyramid</strong> (Figure 3, Table 2). The <strong>Loyal tier holds 28.5% of customers and 52.6% of revenue</strong>; Champion holds 7.2% and 19.3%; Standard, the 63.2% majority, contributes only 28.0%, at an average of $708 per customer against Loyal’s $2,953 and Champion’s $4,273. A Champion is worth about six Standard customers and fourteen At Risk customers on average — but there are four times more Loyal customers than Champions, so the middle tier, not the apex, carries the revenue. The combined <strong>Loyal + Champion tiers — 35.7% of the base — account for 71.8% of revenue.</strong></p>
+<p><strong>Figure 3</strong></p>
+<p><em>Loyalty Tier: Share of Customers Versus Share of Revenue</em></p>
+<p><img src="assets/fig3_loyalty_inversion.png" class="img-fluid" alt="Paired bars per tier. At Risk: 1.1% of customers, 0.2% of revenue. Standard: 63.2% / 28.0%. Loyal: 28.5% / 52.6%. Champion: 7.2% / 19.3%. Average revenue per customer printed on the axis: At Risk $315, Standard $708, Loyal $2,953, Champion $4,273."></p>
+<p><em>Note.</em> Tiers are ordinal on <code>rfm_score</code>; the revenue figures are sums of <code>total_revenue</code> within each tier.</p>
+<p><strong>Table 2</strong></p>
+<p><em>Revenue Architecture by Loyalty Tier</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Tier</th>
+<th style="text-align: right;">Customers</th>
+<th style="text-align: right;">% of base</th>
+<th style="text-align: right;">Total revenue</th>
+<th style="text-align: right;">% of revenue</th>
+<th style="text-align: right;">Avg revenue / customer</th>
+<th style="text-align: right;">Median revenue</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">At Risk</td>
+<td style="text-align: right;">223</td>
+<td style="text-align: right;">1.1</td>
+<td style="text-align: right;">$70,288</td>
+<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">$315</td>
+<td style="text-align: right;">$192</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Standard</td>
+<td style="text-align: right;">13,057</td>
+<td style="text-align: right;">63.2</td>
+<td style="text-align: right;">$9.25M</td>
+<td style="text-align: right;">28.0</td>
+<td style="text-align: right;">$708</td>
+<td style="text-align: right;">$375</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Loyal</td>
+<td style="text-align: right;">5,883</td>
+<td style="text-align: right;">28.5</td>
+<td style="text-align: right;">$17.37M</td>
+<td style="text-align: right;">52.6</td>
+<td style="text-align: right;">$2,953</td>
+<td style="text-align: right;">$2,815</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Champion</td>
+<td style="text-align: right;">1,489</td>
+<td style="text-align: right;">7.2</td>
+<td style="text-align: right;">$6.36M</td>
+<td style="text-align: right;">19.3</td>
+<td style="text-align: right;">$4,273</td>
+<td style="text-align: right;">$4,043</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Total</strong></td>
+<td style="text-align: right;"><strong>20,652</strong></td>
+<td style="text-align: right;"><strong>100</strong></td>
+<td style="text-align: right;"><strong>$33.05M</strong></td>
+<td style="text-align: right;"><strong>100</strong></td>
+<td style="text-align: right;"><strong>$1,601</strong></td>
+<td style="text-align: right;"><strong>$1,295</strong></td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Champion revenue is the most compact of any tier (IQR $3,528–$4,827) — a behaviourally consistent, financially predictable elite.</p>
+</section>
+<section id="how-concentrated-is-the-revenue-really" class="level3">
+<h3 class="anchored" data-anchor-id="how-concentrated-is-the-revenue-really">How concentrated is the revenue, really?</h3>
+<p>Concentration is real but moderate (Figure 4). The <strong>top 10% of customers by revenue generate 29.2%</strong> of the total; the <strong>top 20% generate 49.9%</strong>; the top quartile — the 5,163 <code>is_high_value_customer</code> flags — generate 58.6%. The Gini coefficient on <code>total_revenue</code> is <strong>0.52</strong>. The Lorenz curve has a visible kink at ~43% of customers: the single-order population forms an almost flat foot contributing very little, and the curve steepens only once the repeat buyers begin. This is not an 80/20 business — it is closer to 50/20 — but combined with the tier structure it means that <strong>protecting the 36% of customers in the Loyal and Champion tiers is equivalent to protecting 72% of revenue.</strong></p>
+<p><strong>Figure 4</strong></p>
+<p><em>Lorenz Curve of Revenue Across the Customer Base</em></p>
+<p><img src="assets/fig4_revenue_lorenz.png" class="img-fluid" alt="Lorenz curve: cumulative share of revenue against cumulative share of customers, ranked low to high. The curve runs almost flat along the bottom to about 40% of customers, then bows up to meet the top-right corner. A box reports Gini 0.52; top 10% of customers to 29% of revenue; top 20% to 50%; top 25% to 59%."></p>
+<p><em>Note.</em> The near-flat foot to ~40% is the single-order population; the diagonal is perfect equality.</p>
+</section>
+<section id="the-clv-proxy-is-a-velocity-artefact" class="level3">
+<h3 class="anchored" data-anchor-id="the-clv-proxy-is-a-velocity-artefact">The CLV proxy is a velocity artefact</h3>
+<p><code>clv_proxy</code> annualises a customer’s revenue over their active tenure, and for short tenures that arithmetic explodes (Figure 5). The proxy has a median of $1,513 but a maximum of <strong>$564,984</strong> — a customer with two orders and $1,548 of revenue placed one day apart. <strong>Every one of the 20 largest CLV values belongs to a customer with two or three orders and a tenure of 14 days or fewer, and 19 of the 20 sit in the Standard tier, not Champion.</strong> Plotted against tenure on a log scale, the proxy is a hyperbola: it collapses toward a stable $1,000–$3,000 band for tenures beyond ~200 days, exactly where the Champion and Loyal customers sit. <code>clv_proxy</code> correlates with <code>customer_lifetime_days</code> at <em>r</em> = −0.18. As a modelling target it needs a minimum-tenure filter and a log transform; as reported, it measures compression, not value.</p>
+<p><strong>Figure 5</strong></p>
+<p><em>CLV Proxy Versus Customer Tenure</em></p>
+<p><img src="assets/fig5_clv_annualisation_artefact.png" class="img-fluid" alt="Scatter of CLV proxy (log scale) against customer tenure in days, coloured by loyalty tier. Points form a hyperbola — extreme values above 100,000 at near-zero tenure, collapsing to a dense band between 1,000 and 3,000 for tenures beyond 200 days. Champion and Loyal points populate that stable band; the extreme short-tenure points are Standard-tier."></p>
+<p><em>Note.</em> The shaded strip (0–20 days) contains the annualisation blow-ups. All 20 largest values are 2–3-order, ≤14-day-tenure customers.</p>
+</section>
+<section id="product-breadth-is-the-value-axis" class="level3">
+<h3 class="anchored" data-anchor-id="product-breadth-is-the-value-axis">Product breadth is the value axis</h3>
+<p>Of all the behavioural features, the one most tightly bound to customer value is <strong>how much of the catalogue a customer has bought</strong> (Figure 6). The distribution of unique categories per customer is bimodal — a spike at 1 (8,453 customers who never left a single category — almost exactly the single-order population) and a broad hump centred near 7–8. Mean breadth rises steeply with tier: At Risk 1.9 categories, Standard 2.8, then a jump to <strong>Loyal 8.3 and Champion 9.8</strong>. The step from Standard to Loyal roughly <strong>triples</strong> breadth — an adoption threshold that separates transient buyers from committed ones. In the correlation matrix (Figure 8), <code>n_unique_categories</code> and <code>n_unique_products</code> correlate with <code>total_revenue</code> at <em>r</em> ≈ 0.90 — nearly as strong as order count itself (<em>r</em> = 0.93).</p>
+<p><strong>Figure 6</strong></p>
+<p><em>Category Breadth: Distribution and the Tier Gradient</em></p>
+<p><img src="assets/fig6_product_breadth_value_axis.png" class="img-fluid" alt="Left: histogram of unique categories bought per customer — a tall spike at 1, a dip at 2 to 3, and a broad hump peaking near 7 to 8. Right: mean unique products, categories, and departments by loyalty tier — At Risk about 1.9, Standard about 2.8, Loyal about 8.3, Champion about 9.8 for categories; departments rise from 1.7 to 4.8."></p>
+<p><em>Note.</em> The gap between the single-category spike and the main hump is the “adoption chasm” — customers who cross it tend to keep expanding.</p>
+</section>
+<section id="late-delivery-exposure-by-tier" class="level3">
+<h3 class="anchored" data-anchor-id="late-delivery-exposure-by-tier">Late-delivery exposure by tier</h3>
+<p>The operations study found the late-delivery rate (54.7%) uniform across shipping mode’s promise and destination region. At customer grain it is uniform across segment too — Consumer 54.6%, Corporate 54.0%, Home Office 56.2% (Figure 7, right). Across tiers the <em>central tendency</em> is uniform, but the <em>spread</em> is not: At Risk customers, with one or two orders each, are bimodal at 0 or 1 (median 1.0); Standard customers span the full 0–1 range; and <strong>Champion and Loyal customers converge tightly on the ~0.55 system rate</strong> (IQR 0.28 and 0.35) — the statistical consequence of placing many orders against a fixed late-delivery probability (Figure 7, left). The most engaged customers are not shielded from the operational failure; they simply have the longest record of absorbing it.</p>
+<p><strong>Figure 7</strong></p>
+<p><em>Customer Late-Delivery Rate by Loyalty Tier and by Segment</em></p>
+<p><img src="assets/fig7_late_exposure_by_tier.png" class="img-fluid" alt="Left: horizontal box plots of customer late-delivery rate by tier. At Risk spans 0 to 1 with median at 1. Standard spans 0 to 1 with median about 0.64. Loyal is tighter, IQR roughly 0.37 to 0.72. Champion tighter still, IQR about 0.41 to 0.69. A dashed line marks the 0.55 system rate. Right: mean late rate by segment — Consumer 54.6%, Corporate 54.0%, Home Office 56.2%."></p>
+<p><em>Note.</em> <code>late_rate</code> correlates with <code>total_revenue</code> at <em>r</em> = 0.00 — value confers no protection.</p>
+</section>
+<section id="what-connects-to-what" class="level3">
+<h3 class="anchored" data-anchor-id="what-connects-to-what">What connects to what</h3>
+<p>The focused correlation matrix (Figure 8) resolves the base into two blocks. A dense <strong>volume / breadth / revenue block</strong> — orders, total items, unique categories, unique products, tenure, RFM score, and the high-value flag — is internally correlated at <em>r</em> = 0.7–0.95, with <code>total_revenue</code> driven by order count (0.93), category breadth (0.90), product breadth (0.90), and tenure (0.80). Separately, <strong><code>avg_margin_ratio</code>, <code>discount_rate</code>, and <code>late_rate</code> form a near-null row</strong> — each correlates with every value feature at |<em>r</em>| ≤ 0.06. Margin ratio is also flat <em>across tiers</em> (mean 0.12 in every tier; the median actually falls from 0.22 in Standard to 0.14 in Champion) — the tier gradient lives in order <em>value</em> and frequency, not in margin. <code>recency_days</code> sits apart with weak positive correlations, an artefact of the observation window (recent joiners have had less time to accumulate orders).</p>
+<p><strong>Figure 8</strong></p>
+<p><em>Customer-Grain Correlation Matrix (15-feature focus set)</em></p>
+<p><img src="assets/fig8_correlation_matrix.png" class="img-fluid" alt="Correlation heatmap of 15 customer features. A large dark-red block covers orders, total revenue, total items, unique categories, unique products, tenure, RFM score, and high-value flag, with values 0.7 to 0.95. The rows for average margin ratio, average discount, discount rate, and late rate are almost entirely white (near zero). CLV proxy correlates negatively with tenure (minus 0.18)."></p>
+<p><em>Note.</em> Pearson <em>r</em>; the near-white margin, discount, and late-rate rows are the visual signature of decoupling from value.</p>
+<p>The discount–margin null is worth isolating (Figure 9). Plotting each customer’s discount rate against their mean margin ratio produces a flat band with no slope (<em>r</em> = −0.01) — discounting intensity does not explain customer profitability. A tail of customers carries deeply negative mean margin (to −2.8) at <em>low</em> discount, which is the fixed-fulfilment-cost mechanism the operations study identified, now visible at customer grain: low-ticket buyers whose per-order economics are underwater regardless of any promotion.</p>
+<p><strong>Figure 9</strong></p>
+<p><em>Customer Discount Rate Versus Mean Margin Ratio</em></p>
+<p><img src="assets/fig9_discount_margin_decoupled.png" class="img-fluid" alt="Scatter of customer mean profit-margin ratio against customer discount rate, coloured by loyalty tier. The point cloud is a flat horizontal band centred near 0.2 with a tail of negative-margin customers below; there is no downward slope with discount. r = minus 0.01."></p>
+<p><em>Note.</em> Colour is loyalty tier; the negative-margin tail is not concentrated in any tier or discount band.</p>
+</section>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<section id="principal-findings" class="level3">
+<h3 class="anchored" data-anchor-id="principal-findings">Principal findings</h3>
+<p>Three results define the base. First, it is <strong>bifurcated</strong>: 43% one-and-done, 57% repeat, with a median of three orders — the business runs an acquisition funnel and a retention engine simultaneously and the two barely overlap. Second, <strong>revenue concentration is moderate but the loyalty structure is sharp</strong>: top 20% → 50% of revenue (Gini 0.52), yet 36% of customers in the Loyal and Champion tiers hold 72%, and within that the <em>middle</em> tier (Loyal) rather than the apex (Champion) is the single largest revenue block. Third, <strong>value is behavioural, not demographic</strong>: it is predicted by order frequency, tenure, and — distinctively — product breadth (<em>r</em> ≈ 0.90 on categories bought), while segment, discount, margin, and late-delivery exposure carry essentially no signal.</p>
+</section>
+<section id="the-mechanism-worth-naming" class="level3">
+<h3 class="anchored" data-anchor-id="the-mechanism-worth-naming">The mechanism worth naming</h3>
+<p>The Standard-to-Loyal boundary is where the money is made. Standard customers average 2.8 unique categories; Loyal customers average 8.3. That single behavioural step — moving a customer from a one- or two-category relationship into a multi-category one — is what the tier jump encodes, and it triples both breadth and per-customer revenue. It is a more actionable target than “increase loyalty” because it names the specific behaviour: catalogue adoption. The single-category spike in Figure 6 (8,453 customers) is the pool that step would draw from, and the 43% single-order population is the pool before that.</p>
+</section>
+<section id="limitations" class="level3">
+<h3 class="anchored" data-anchor-id="limitations">Limitations</h3>
+<p>The analysis is descriptive; no relationship here is shown to be causal, and the direction of the breadth–revenue association is not identified (breadth may drive value, value may enable breadth, or a third factor may drive both). The observation window is left- and right-censored: customers who joined near the end have truncated histories, which inflates the single-order share and depresses tenure for recent cohorts. The <code>clv_proxy</code> field is unusable as reported and was treated only as a diagnostic. <code>avg_margin_ratio</code> and the extreme negative-margin customers are taken as recorded. The <code>late_delivery_risk</code>-based tolerance reading is inferential — the data shows engaged customers <em>have</em> absorbed a high late rate, not that they will continue to. Finally, <code>recency_days</code> and <code>rfm_score</code> inherit the window’s selection effects and should be read as within-dataset positions, not absolute churn measures.</p>
+</section>
+<section id="modelling-targets" class="level3">
+<h3 class="anchored" data-anchor-id="modelling-targets">Modelling targets</h3>
+<p>A target-viability scan of the customer grain ranks <code>total_profit</code>, <code>avg_order_value</code>, and <code>orders_bucket</code> as the cleanest supervised targets (near-zero skew, no structural missingness). <code>loyalty_tier</code> (four-class, 63% majority) and <code>is_high_value_customer</code> (binary, 75% majority) need stratification or reweighting. <code>avg_margin_ratio</code>, <code>avg_profit_per_order</code>, <code>avg_discount</code>, and <code>avg_revenue</code> all carry heavy skew and need a transform. <code>clv_proxy</code> requires a minimum-tenure filter and log transform before it can serve as a regression target. <code>customer_segment</code> scores well on cleanliness but near-zero on mutual information — consistent with the segment symmetry throughout.</p>
+</section>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
+<p>This customer base earns its revenue from about a third of its members, concentrated in a loyalty tier defined by how broadly customers shop rather than by who they are or what they were charged. The operational failure documented in the companion study lands on that revenue-bearing third as heavily as on anyone else. The companion product and clickstream studies extend the picture to the catalogue those customers explore and the sessions in which they explore it.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Constante, F., Silva, F., &amp; Pereira, A. (2019). <em>DataCo smart supply chain for big data analysis</em> (Version 5) [Data set]. Mendeley Data. https://doi.org/10.17632/8gx2fvg2k6.5</p>
+<p>Fader, P. S., &amp; Hardie, B. G. S. (2009). Probability models for customer-base analysis. <em>Journal of Interactive Marketing, 23</em>(1), 61–69. https://doi.org/10.1016/j.intmar.2008.11.003</p>
+<p>Gini, C. (1912). <em>Variabilità e mutabilità: Contributo allo studio delle distribuzioni e delle relazioni statistiche.</em> Tipografia di Paolo Cuppini.</p>
+<p>Harris, C. R., Millman, K. J., van der Walt, S. J., Gommers, R., Virtanen, P., Cournapeau, D., Wieser, E., Taylor, J., Berg, S., Smith, N. J., Kern, R., Picus, M., Hoyer, S., van Kerkwijk, M. H., Brett, M., Haldane, A., del Río, J. F., Wiebe, M., Peterson, P., … Oliphant, T. E. (2020). Array programming with NumPy. <em>Nature, 585</em>, 357–362. https://doi.org/10.1038/s41586-020-2649-2</p>
+<p>The pandas development team. (2020). <em>pandas-dev/pandas: Pandas</em> (Version latest) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.3509134</p>
+<hr>
+<p><em>Analysis and figures by the author. A descriptive customer-base study of one dataset; no estimate here supports a causal claim, and the CLV proxy is reported only as a diagnostic.</em></p>
+
+
+<div id="contact" class="connect-section" style="text-align: center; padding: 50px 20px; background: #f9f9f9; border-radius: 15px; border: 1px solid #eaeaea; margin-top: 40px;">
+<h3 style="color: #2c3e50; font-weight: 700; margin-bottom: 15px; border: none;" class="anchored">Let's Collaborate</h3>
+<p style="color: #666; max-width: 650px; margin: 0 auto 30px auto; font-size: 1.05rem; line-height: 1.6;">Available for high-impact <strong>Business Intelligence, Power BI Engineering, and Advanced Data Analytics</strong> projects. Connect with me or hire me directly through the platforms below.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
+<a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-linkedin"></i> LinkedIn</a>
+<a href="https://github.com/mkhanmuneer" class="btn btn-dark" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-github"></i> GitHub</a>
+<a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" target="_blank" rel="noopener" style="color: white; padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-graph-up"></i> Kaggle</a>
+<a href="https://www.upwork.com/freelancers/~018de8553286a1d00c" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-briefcase"></i> Upwork</a>
+<a href="https://www.fiverr.com/neuronvision" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-lightning-charge"></i> Fiverr</a>
+</div>
+</div>
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/mkhanmuneer\.github\.io\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 Muhammad Khan Muneer</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.upwork.com/freelancers/~018de8553286a1d00c">
+<p>Hire on Upwork</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.fiverr.com/neuronvision">
+<p>Hire on Fiverr</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

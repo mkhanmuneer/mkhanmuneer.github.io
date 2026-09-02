@@ -1,0 +1,85 @@
+---
+title: "Muhammad Khan Muneer"
+description: "Consulting-grade Data Science, BI Engineering, and Operational Intelligence portfolio — ML-driven analytics and automated decision systems."
+image: images/og/portfolio-og.png
+# Appends _includes/_connect.html at the end of the page (same mechanism the
+# project pages use via projects/_metadata.yml) — keeps the raw HTML block
+# intact instead of running it through Markdown.
+filters:
+  - _includes/append-connect.lua
+# Add this block-headings: to hide the default title/author block
+include-in-header:
+  text: |
+    <style>
+      .quarto-title-block {
+        display: none !important;
+      }
+    </style>
+# title-block-style: none
+page-layout: full
+toc: false
+listing:
+  id: sample-listings
+  # Metadata is read directly from each project's own index.qmd front matter.
+  # Add a new project = add a folder under projects/. No manual index to maintain.
+  # Pages under _staging/ are excluded automatically (leading underscore).
+  contents:
+  - "projects/*/index.qmd"
+  type: default
+  categories: true
+  sort: "date desc"
+  sort-ui: [title, date]
+  filter-ui: true
+  fields: [title, subtitle, description, categories, date]
+  date-format: "MMMM YYYY"
+  field-display-names:
+    date: "Date Published"
+  page-size: 40
+---
+
+
+```{=html}
+<div id="custom-hero-banner" class="hero-banner">
+  <div class="hero-container">
+    <h1 class="hero-title">Muhammad Khan Muneer</h1>
+    <h2 class="hero-subtitle">Data Scientist • BI Engineer • Analytics Engineer</h2>
+    <div class="hero-hr"></div>
+    <p class="hero-description">
+  <strong>Engineering ML‑driven analytics and automated decision systems.</strong><br>
+  <span class="hero-subtext">
+    Transforming complex data into <strong>Operational Intelligence</strong> with statistical rigor and scalable architecture.
+  </span>
+</p>
+  </div>
+</div>
+
+```
+
+## Professional Profile {.unnumbered .unlisted}
+
+I am a Data Science and BI Consultant specialising in **ML-driven automation**, **Big Data engineering**, and **end-to-end decision systems**. With over 10 years of hands-on experience and a background in **Statistics (BSc)** and **Big Data Science & Technology (MSc)**, I design solutions that are mathematically sound, business-aligned, and built for long-term scalability.
+
+### 🧠 Core Expertise {.unnumbered .unlisted}
+* **Machine Learning Automation:** Designing end-to-end workflows from feature engineering to model deployment and monitoring (R, Python, MLflow).
+* **BI & Analytics Engineering:** Building automated reporting ecosystems, semantic models, and executive-ready KPI warehouses using the Power Platform and SQL.
+* **Operational Intelligence:** Specialised experience in healthcare operations, patient flow, logistics, and public safety.
+* **Digital & Behavior Analytics:** Advanced funnel modeling and conversion optimization using GA4 and BigQuery.
+
+### 🛠️ Technical Stack {.unnumbered .unlisted}
+* **Programming:** R (Expert), Python, SQL, Spark (PySpark/SparkR).
+* **Cloud & Data:** Azure, GCP, BigQuery, Databricks.
+* **Visualization:** Power BI (Advanced DAX/Power Query), Looker Studio, Tableau.
+* **Workflow:** Git, Docker, Linux/WSL, Quarto.
+
+---
+
+## Featured Projects {.unnumbered .unlisted}
+*Explore a curated selection of analytics, BI engineering, and operational intelligence projects.*
+
+::: {#sample-listings}
+:::
+
+<br>
+
+---
+

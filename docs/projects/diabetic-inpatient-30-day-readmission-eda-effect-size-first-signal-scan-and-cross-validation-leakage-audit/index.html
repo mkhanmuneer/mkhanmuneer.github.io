@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Muhammad Khan Muneer">
+<meta name="keywords" content="exploratory data analysis, effect size, Cramer’s V, rank-biserial correlation, point-biserial correlation, Mann-Whitney U, large-sample paradox, hospital readmission, diabetes, propensity score, confounding, data leakage, GroupKFold, cross-validation, Python">
+<meta name="description" content="A rate-first exploratory analysis of 30-day readmission in a 99,340-admission diabetic inpatient cohort (11.4% positive). Diffuse signal: across 14 continuous and 23 categorical features, only two — prior inpatient visits and total prior visits — cross from negligible into Cohen’s small effect band; no categorical feature clears it. Strongest single signal: discharge disposition (Cramer’s V = 0.11) — rehab and skilled-nursing discharges readmit at 2–3× the home-discharge rate. The large-N trap: with ~99k rows every chi-square is significant, so every claim is read on effect size, not the p-value. Causal setup: HbA1c testing (18% of patients) is heavily confounded — stratifying the naive −0.7-point effect by diagnosis reverses its sign in four of nine strata. Leakage audit: a row-level vs patient-disjoint fold split changes cross-validated AUC by under 0.2 points under both a linear and a gradient-boosted probe.">
+
+<title>Exploratory and Statistical Analysis of a 30-Day Readmission Substrate: Effect-Size-First Signal Scanning, Propensity Confounder Mapping, and a Cross-Validation Leakage Audit – Muhammad Khan Muneer</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-ca0cfe78a00f84493d894d8af57a3a20.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": true,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="../../styles/custom.css">
+<meta property="og:title" content="Muhammad Khan Muneer — Data Science &amp; BI Portfolio">
+<meta property="og:description" content="Engineering ML-driven analytics and automated decision systems.">
+<meta property="og:image" content="https://mkhanmuneer.github.io/projects/diabetic-inpatient-30-day-readmission-eda-effect-size-first-signal-scan-and-cross-validation-leakage-audit/assets/fig2_discharge_disposition.png">
+<meta property="og:site_name" content="M. Khan Muneer Portfolio">
+<meta property="og:image:height" content="874">
+<meta property="og:image:width" content="1763">
+<meta name="twitter:title" content="Exploratory and Statistical Analysis of a 30-Day Readmission Substrate: Effect-Size-First Signal Scanning, Propensity Confounder Mapping, and a Cross-Validation Leakage Audit – Muhammad Khan Muneer">
+<meta name="twitter:description" content="A rate-first exploratory analysis of 30-day readmission in a 99,340-admission diabetic inpatient cohort (11.4% positive). Diffuse signal: across 14 continuous and 23 categorical features, only two — prior inpatient visits and total prior visits — cross from negligible into Cohen’s small effect band; no categorical feature clears it. Strongest single signal: discharge disposition (Cramer’s V = 0.11) — rehab and skilled-nursing discharges readmit at 2–3× the home-discharge rate. The large-N trap: with ~99k rows every chi-square is significant, so every claim is read on effect size, not the p-value. Causal setup: HbA1c testing (18% of patients) is heavily confounded — stratifying the naive −0.7-point effect by diagnosis reverses its sign in four of nine strata. Leakage audit: a row-level vs patient-disjoint fold split changes cross-validated AUC by under 0.2 points under both a linear and a gradient-boosted probe.">
+<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/diabetic-inpatient-30-day-readmission-eda-effect-size-first-signal-scan-and-cross-validation-leakage-audit/assets/fig2_discharge_disposition.png">
+<meta name="twitter:creator" content="@iMKhanMuneer">
+<meta name="twitter:site" content="@iMKhanMuneer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image-height" content="874">
+<meta name="twitter:image-width" content="1763">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#featured-projects"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/iMKhanMuneer"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.kaggle.com/muhammadkhanmuneer"> <i class="bi bi-graph-up" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#contact"> 
+<span class="menu-text">Contact</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#method" id="toc-method" class="nav-link" data-scroll-target="#method">Method</a>
+  <ul class="collapse">
+  <li><a href="#data-source" id="toc-data-source" class="nav-link" data-scroll-target="#data-source">Data source</a></li>
+  <li><a href="#measures" id="toc-measures" class="nav-link" data-scroll-target="#measures">Measures</a></li>
+  <li><a href="#statistical-analysis" id="toc-statistical-analysis" class="nav-link" data-scroll-target="#statistical-analysis">Statistical analysis</a></li>
+  <li><a href="#software" id="toc-software" class="nav-link" data-scroll-target="#software">Software</a></li>
+  </ul></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
+  <ul class="collapse">
+  <li><a href="#the-cohort" id="toc-the-cohort" class="nav-link" data-scroll-target="#the-cohort">The cohort</a></li>
+  <li><a href="#where-the-signal-is-and-how-weak-it-is" id="toc-where-the-signal-is-and-how-weak-it-is" class="nav-link" data-scroll-target="#where-the-signal-is-and-how-weak-it-is">Where the signal is, and how weak it is</a></li>
+  <li><a href="#the-hba1c-testing-question-is-confounded-not-answerable-marginally" id="toc-the-hba1c-testing-question-is-confounded-not-answerable-marginally" class="nav-link" data-scroll-target="#the-hba1c-testing-question-is-confounded-not-answerable-marginally">The HbA1c testing question is confounded, not answerable marginally</a></li>
+  <li><a href="#the-leakage-controlled-fold-split-carries-no-measurable-penalty" id="toc-the-leakage-controlled-fold-split-carries-no-measurable-penalty" class="nav-link" data-scroll-target="#the-leakage-controlled-fold-split-carries-no-measurable-penalty">The leakage-controlled fold split carries no measurable penalty</a></li>
+  </ul></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Exploratory and Statistical Analysis of a 30-Day Readmission Substrate: Effect-Size-First Signal Scanning, Propensity Confounder Mapping, and a Cross-Validation Leakage Audit</h1>
+<p class="subtitle lead">An exploratory analysis of 99,340 diabetic inpatient admissions — where the readmission signal is, how weak every single predictor is, why the HbA1c-testing question needs a causal design, and an empirical check that the patient-disjoint fold split is doing its job.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Exploratory Data Analysis</div>
+    <div class="quarto-category">Biostatistics</div>
+    <div class="quarto-category">Statistical Inference</div>
+    <div class="quarto-category">Effect Size Analysis</div>
+    <div class="quarto-category">Data Leakage</div>
+    <div class="quarto-category">Cross-Validation</div>
+    <div class="quarto-category">Confounding Analysis</div>
+    <div class="quarto-category">Healthcare Analytics</div>
+    <div class="quarto-category">Hospital Readmission</div>
+    <div class="quarto-category">Python</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>A rate-first exploratory analysis of 30-day readmission in a 99,340-admission diabetic inpatient cohort (11.4% positive). <strong>Diffuse signal:</strong> across 14 continuous and 23 categorical features, only two — prior inpatient visits and total prior visits — cross from negligible into Cohen’s small effect band; no categorical feature clears it. <strong>Strongest single signal:</strong> discharge disposition (Cramer’s V = 0.11) — rehab and skilled-nursing discharges readmit at 2–3× the home-discharge rate. <strong>The large-N trap:</strong> with ~99k rows every chi-square is significant, so every claim is read on effect size, not the p-value. <strong>Causal setup:</strong> HbA1c testing (18% of patients) is heavily confounded — stratifying the naive −0.7-point effect by diagnosis reverses its sign in four of nine strata. <strong>Leakage audit:</strong> a row-level vs patient-disjoint fold split changes cross-validated AUC by under 0.2 points under both a linear and a gradient-boosted probe.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Muhammad Khan Muneer </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">March 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+<div>
+  <div class="keywords">
+    <div class="block-title">Keywords</div>
+    <p>exploratory data analysis, effect size, Cramer’s V, rank-biserial correlation, point-biserial correlation, Mann-Whitney U, large-sample paradox, hospital readmission, diabetes, propensity score, confounding, data leakage, GroupKFold, cross-validation, Python</p>
+  </div>
+</div>
+
+</header>
+
+
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+<p>This study is the exploratory and statistical-analysis stage of a project on 30-day hospital readmission among diabetic inpatients. The cohort is 99,340 admissions (11,314 readmitted within 30 days; base rate 11.39%) belonging to 69,987 patients. The analysis is deliberately <strong>effect-size-first</strong>: with roughly 99,000 rows, every chi-square and rank test is statistically significant, so significance is treated as uninformative and every association is judged on a bias-corrected effect size against Cohen’s conventions. Continuous features were screened with Mann–Whitney <em>U</em> tests and rank-biserial correlations; categorical features with chi-square tests and bias-corrected Cramér’s <em>V</em>; binomial rates with Wilson score intervals. Across 14 continuous and 23 categorical features, only two — prior inpatient visits (<em>r</em> = .22) and total prior-year visits (<em>r</em> = .21) — reached Cohen’s small band; the strongest categorical association was discharge disposition (<em>V</em> = 0.11), where discharges to rehabilitation and skilled-nursing facilities readmit at 2–3 times the home-discharge rate. A patient-grain sub-cohort was used to map the confounding around HbA1c testing (measured in 18.4% of patients): a lightweight propensity model reached a McFadden pseudo-<em>R</em>² of about 0.13, and stratifying the naive −0.72-percentage-point tested-versus-untested contrast by primary diagnosis reversed its sign in four of nine strata — establishing that the testing question requires a causal design rather than a marginal comparison. Finally, an empirical leakage audit compared row-level and patient-disjoint five-fold cross-validation under a linear and a gradient-boosted probe; the cross-validated AUC difference was under 0.2 percentage points in both, confirming that the pre-computed patient-disjoint folds carry a negligible measured penalty while removing a structural risk.</p>
+<p><em>Keywords:</em> exploratory data analysis, effect size, large-sample paradox, hospital readmission, Cramér’s V, rank-biserial correlation, propensity score, confounding, data leakage, cross-validation</p>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>A screening analysis of an administrative health dataset has to answer a specific question before any model is built: <em>where is the signal, and how strong is it?</em> For a cohort this size the answer cannot come from hypothesis tests. With about 99,000 admissions, a chi-square test rejects independence for essentially every feature paired with the outcome, and a <em>p</em>-value near zero carries no information about whether the association is large enough to matter. This analysis is therefore organised around <strong>effect sizes</strong> — bias-corrected Cramér’s <em>V</em>, rank-biserial and point-biserial correlations, epsilon-squared — read against Cohen’s (1988) conventional bands (negligible below 0.10, small to 0.30, moderate to 0.50). Every <em>p</em>-value below is reported only for completeness.</p>
+<p>The published literature on this dataset sets the expectation. Models of 30-day readmission on the <em>Diabetes 130-US Hospitals</em> data typically reach a discrimination ceiling of ROC-AUC 0.65–0.70 (Strack et al., 2014). That ceiling is a statement about signal structure: there is no dominant predictor, only a large number of weak ones that a model must combine. The task of this analysis is to locate those weak predictors, rank them honestly, and hand the modelling stage a realistic picture of what is achievable.</p>
+<p>The analysis has three further jobs. It profiles the cohort so that later per-stratum rates are read against the right population baseline. It maps the confounding structure around a specific clinical question — whether measuring HbA1c during the admission is associated with lower readmission — that a downstream study addresses causally. And it verifies, empirically rather than only structurally, that the leakage-controlled cross-validation split inherited from the data-engineering stage behaves as intended.</p>
+</section>
+<section id="method" class="level2">
+<h2 class="anchored" data-anchor-id="method">Method</h2>
+<section id="data-source" class="level3">
+<h3 class="anchored" data-anchor-id="data-source">Data source</h3>
+<p>The data is the <em>Diabetes 130-US Hospitals for Years 1999–2008</em> dataset (Strack et al., 2014; Clore et al., 2014), an extract of inpatient encounters for patients with a diabetes diagnosis across 130 US hospitals. A preceding data-engineering stage produced the analytical tables used here through a medallion extract–transform–load pipeline: a <strong>modelling cohort</strong> of 99,340 admissions (the full 101,766-row extract minus 2,423 death-or-hospice discharges, where readmission is not observable, and 3 records with an invalid gender value), and a patient-grain <strong>HbA1c cohort</strong> of 69,979 patients (one row — the first admission — per patient, restricted to pre-treatment covariates) for the causal-question mapping. The binary outcome, <code>readmitted_30d</code>, is 1 when the source’s three-level readmission field records a readmission within 30 days.</p>
+</section>
+<section id="measures" class="level3">
+<h3 class="anchored" data-anchor-id="measures">Measures</h3>
+<p>Continuous measures are counts and durations: length of stay, laboratory-procedure count, medication count, in-hospital procedure count, prior-year outpatient/emergency/inpatient visit counts and their total, a distinct-diagnosis count, a comorbidity-flag count (how many of circulatory, respiratory, and diabetes appear across the three diagnosis fields), an age-band midpoint, and two engineered medication-intensity terms. Categorical measures include age band, gender, race, payer code, admitting specialty, discharge disposition, admission type and source, primary/secondary/additional diagnosis groups (ICD-9 codes collapsed to nine clinical groups plus “Other” per Strack et al., 2014), the insulin regimen, and the individual and aggregated medication fields. For the HbA1c cohort, the exposure is <code>has_hba1c_tested</code> (whether an HbA1c result was recorded during the admission).</p>
+</section>
+<section id="statistical-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="statistical-analysis">Statistical analysis</h3>
+<p><strong>Rates and intervals.</strong> Readmission rates were computed overall and within every stratum, with 95% Wilson score confidence intervals (Wilson, 1927), chosen over the normal approximation for its coverage near the boundary and at small stratum sizes.</p>
+<p><strong>Continuous features versus the outcome.</strong> Each continuous feature was compared between readmitted and not-readmitted admissions with a Mann–Whitney <em>U</em> test (Mann &amp; Whitney, 1947) and summarised by the rank-biserial correlation (Kerby, 2014), a unit-free effect size on [−1, 1]. Mann–Whitney was preferred over the <em>t</em> test because several features are heavily right-skewed with mass at zero. Each feature also received a point-biserial correlation (Pearson’s <em>r</em> with a binary variable) to confirm direction on the linear scale. Conditional readmission rates were plotted against feature deciles (<code>pd.qcut</code> with duplicate edges dropped, which collapses integer-valued features to fewer bins).</p>
+<p><strong>Categorical features versus the outcome.</strong> Each categorical feature was tested with a chi-square test of independence and summarised by a bias-corrected Cramér’s <em>V</em> (Bergsma, 2013) so that features of different cardinalities are comparable. Ordered strata (age band) additionally received a Kruskal–Wallis test (Kruskal &amp; Wallis, 1952) with epsilon-squared.</p>
+<p><strong>Demographic redundancy.</strong> Pairwise bias-corrected Cramér’s <em>V</em> was computed among the five demographic features to identify overlapping information.</p>
+<p><strong>HbA1c confounder mapping.</strong> On the patient-grain cohort, testing rates were stratified by primary diagnosis and by length-of-stay quantile; a lightweight logistic regression of the testing indicator on a focused pre-treatment covariate set was fitted with <code>statsmodels</code>, reporting McFadden’s pseudo-<em>R</em>² (McFadden, 1974). Deterministic proxies of the test result (the elevated-HbA1c indicator) were excluded from the covariate set as post-treatment. The naive tested-versus-untested readmission contrast was computed with a two-proportion <em>z</em> test, then re-computed within primary-diagnosis and within length-of-stay strata.</p>
+<p><strong>Multicollinearity.</strong> Variance inflation factors were computed over the continuous feature set; the prior-utilisation aggregates and their components form exact arithmetic identities and return infinite VIF by construction, so a reduced set is reported.</p>
+<p><strong>Leakage audit.</strong> Five-fold cross-validated ROC-AUC was computed twice — once with a row-level <code>KFold</code> and once with a patient-disjoint <code>GroupKFold</code> on the patient identifier — holding the model, features, and seed fixed, under (a) a logistic regression on 16 numeric features and (b) a LightGBM on the numeric features plus target-encoded categoricals, with the encoder fitted once on the full cohort to hold encoder leakage constant. The AUC difference is the empirical patient-leakage penalty.</p>
+</section>
+<section id="software" class="level3">
+<h3 class="anchored" data-anchor-id="software">Software</h3>
+<p>Python 3.10 with <code>pandas</code> 2.2, <code>scipy</code> 1.x, <code>statsmodels</code>, <code>scikit-learn</code> 1.2, <code>category_encoders</code>, and <code>lightgbm</code>. Figures were regenerated at 200 dpi from the persisted Gold tables.</p>
+</section>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<section id="the-cohort" class="level3">
+<h3 class="anchored" data-anchor-id="the-cohort">The cohort</h3>
+<p>The cohort is geriatric. The [70–80) age band is the mode at 25.5% of admissions; the three senior bands ([60–70), [70–80), [80–90)) together hold 64.2%, and everyone aged 60 and over accounts for 66.9%. Gender is 53.8% female. Race is concentrated: Caucasian (74.7%) and African American (18.9%) cover 93.6% of admissions, which gives tight rate intervals for those two groups and wide ones for the rest. Two categorical fields are dominated by an intentional “not recorded” level — payer code (39.7% missing) and admitting specialty (48.9% missing) — both preserved as first-class categories rather than imputed. <strong>Table 1</strong> gives the profile.</p>
+<p><strong>Table 1</strong></p>
+<p><em>Demographic Profile of the Modelling Cohort (n = 99,340 admissions)</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>Largest levels (share)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Age band</td>
+<td>[70–80) 25.5%, [60–70) 22.2%, [50–60) 17.2%, [80–90) 16.5%</td>
+</tr>
+<tr class="even">
+<td>Gender</td>
+<td>Female 53.8%, Male 46.2%</td>
+</tr>
+<tr class="odd">
+<td>Race</td>
+<td>Caucasian 74.7%, African American 18.9%, Missing 2.2%, Hispanic 2.0%</td>
+</tr>
+<tr class="even">
+<td>Payer code</td>
+<td>Missing 39.7%, Medicare 31.5%, private/HMO 6.2%, self-pay 5.0%</td>
+</tr>
+<tr class="odd">
+<td>Admitting specialty</td>
+<td>Missing 48.9%, Internal Medicine 14.3%, Emergency/Trauma 7.5%, Family/General Practice 7.3%</td>
+</tr>
+<tr class="even">
+<td>Primary diagnosis group</td>
+<td>Circulatory 29.9%, Other 17.9%, Respiratory 14.0%, Digestive 9.4%, Diabetes 8.7%</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> The demographic features carry little overlapping information: the strongest pairwise bias-corrected Cramér’s <em>V</em> is age × admitting specialty at 0.25 (moderate — older patients are routed to different services), followed by age × payer code at 0.15 (Medicare eligibility at 65); every other pair is below 0.12.</p>
+<p>Age illustrates the effect-size discipline immediately (Figure 1). A Kruskal–Wallis test across the ten bands is decisive (<em>H</em> = 133.6, <em>p</em> &lt; .001) but the epsilon-squared is 0.001 — negligible. The rate does climb across the senior bands, from 11.3% at [60–70) to a peak of 12.6% at [80–90), and the paediatric bands sit far below (1.9% and 5.8%, on 160 and 690 admissions). The one departure from a smooth gradient is the <strong>[20–30) band at 14.3%</strong> (95% CI [12.7, 16.1]) — the highest rate of any band, and its interval does not overlap the working-age bands below it. This is a recognised pattern: young adults with diabetes are more often Type 1 patients with unstable glycaemic control and adherence-driven repeat admissions, a different mechanism from the older Type 2 majority.</p>
+<p>![The cohort’s mass sits in the senior age bands (left), but the sharpest readmission spike is the small <a href="assets/fig1_age_mass_and_rate.png">20–30) band at 14.3% (right, 95% Wilson intervals; cohort rate dashed). Every other band sits within roughly one point of the cohort rate.</a></p>
+</section>
+<section id="where-the-signal-is-and-how-weak-it-is" class="level3">
+<h3 class="anchored" data-anchor-id="where-the-signal-is-and-how-weak-it-is">Where the signal is, and how weak it is</h3>
+<p><strong>The strongest single signal in the cohort is discharge disposition</strong> (Figure 2; chi-square <em>p</em> &lt; .001, bias-corrected Cramér’s <em>V</em> = 0.11 — the only feature anywhere in the analysis to reach Cohen’s small band). Discharge to home, the dominant disposition at 60,232 admissions, readmits at 9.3% — well below the cohort rate. Discharge with home-health support runs at 12.7%, to a skilled-nursing facility at 14.7%, and to a rehabilitation facility at 27.7%. The reading is that the disposition is a marker of instability at the point of release: a patient not stable enough for independent living is both sent to post-acute care and more likely to return. <strong>Table 2</strong> lists the sizeable dispositions.</p>
+<p><strong>Table 2</strong></p>
+<p><em>30-Day Readmission Rate by Discharge Disposition (dispositions with n ≥ 500)</em></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Disposition</th>
+<th>n</th>
+<th>Readmission rate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Discharged to home</td>
+<td>60,232</td>
+<td>9.3%</td>
+</tr>
+<tr class="even">
+<td>Discharged to home with home-health service</td>
+<td>12,902</td>
+<td>12.7%</td>
+</tr>
+<tr class="odd">
+<td>Skilled nursing facility</td>
+<td>13,954</td>
+<td>14.7%</td>
+</tr>
+<tr class="even">
+<td>Another short-term hospital</td>
+<td>2,128</td>
+<td>16.1%</td>
+</tr>
+<tr class="odd">
+<td>Another inpatient-care institution</td>
+<td>1,184</td>
+<td>20.9%</td>
+</tr>
+<tr class="even">
+<td>Rehabilitation facility</td>
+<td>1,992</td>
+<td>27.7%</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Cohort rate 11.4%. Smaller dispositions reach higher rates still — a psychiatric-hospital transfer (n = 139) readmits at 36.7% — but are too sparse for a standalone claim.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig2_discharge_disposition.png" class="img-fluid figure-img"></p>
+<figcaption>30-day readmission rate by discharge disposition (dispositions with n ≥ 500; cohort rate dashed). A discharge to home reads 9.3%; a rehabilitation-facility transfer reads 27.7%. This is the only feature in the analysis to reach Cohen’s small effect band.</figcaption>
+</figure>
+</div>
+<p>Primary diagnosis group separates the nine clinical groups over a 3.6-point range (Figure 3), from musculoskeletal admissions at 9.5% to <strong>diabetes-as-primary at 13.1%</strong> — the highest, and clinically intuitive: a patient admitted specifically for a diabetic crisis is sicker on the disease axis than one admitted for a cardiovascular event with diabetes in the background. Circulatory admissions, the largest group at 29,680, sit almost exactly on the cohort mean; they dominate the population signal by weight of numbers, not by individual risk.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig3_primary_diagnosis_rate.png" class="img-fluid figure-img"></p>
+<figcaption>Readmission rate by primary diagnosis group with 95% Wilson intervals. The spread is 3.6 points — real but modest — with diabetes-as-primary highest and musculoskeletal lowest.</figcaption>
+</figure>
+</div>
+<p>Among the continuous features, <strong>prior utilisation dominates and nothing else comes close</strong> (Figure 4, Table 3). Prior inpatient visits carry a rank-biserial <em>r</em> of 0.22 and prior total visits 0.21 — the only two features across the whole cohort to cross from negligible into Cohen’s small band. Length of stay, distinct-diagnosis count, and medication count follow at <em>r</em> ≈ 0.09, and everything else is below that. Three engineered features — the in-hospital procedure count, the comorbidity-flag count, and the prescribed-medication count — return non-significant Mann–Whitney tests, the only continuous features that fail to reject independence. The conditional-rate curves (Figure 6) show the shape behind the ranking: prior inpatient visits take the readmission rate from 9.6% in the bottom bin to 26.4% in the top — a 2.7× gradient, the steepest in the cohort, with the largest jump between zero and one prior admission — while the comorbidity-flag count is essentially flat across its range (11.1% to 11.1%), so the multi-system-morbidity hypothesis it encodes does not hold on a univariate basis.</p>
+<p><strong>Table 3</strong></p>
+<p><em>Continuous Features Ranked by Effect Size Against 30-Day Readmission (n = 99,340)</em></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>Rank-biserial <em>r</em></th>
+<th>Point-biserial <em>r</em></th>
+<th>Band</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Prior inpatient visits</td>
+<td>.215</td>
+<td>.168</td>
+<td>small</td>
+</tr>
+<tr class="even">
+<td>Prior total visits</td>
+<td>.208</td>
+<td>.128</td>
+<td>small</td>
+</tr>
+<tr class="odd">
+<td>Length of stay</td>
+<td>.095</td>
+<td>.047</td>
+<td>negligible</td>
+</tr>
+<tr class="even">
+<td>Distinct-diagnosis count</td>
+<td>.088</td>
+<td>.054</td>
+<td>negligible</td>
+</tr>
+<tr class="odd">
+<td>Medication count</td>
+<td>.087</td>
+<td>.041</td>
+<td>negligible</td>
+</tr>
+<tr class="even">
+<td>Prior emergency visits</td>
+<td>.064</td>
+<td>.061</td>
+<td>negligible</td>
+</tr>
+<tr class="odd">
+<td>Medication-change ratio</td>
+<td>.059</td>
+<td>.044</td>
+<td>negligible</td>
+</tr>
+<tr class="even">
+<td>Medications changed</td>
+<td>.053</td>
+<td>.036</td>
+<td>negligible</td>
+</tr>
+<tr class="odd">
+<td>Lab-procedure count</td>
+<td>.044</td>
+<td>.024</td>
+<td>negligible</td>
+</tr>
+<tr class="even">
+<td>Age (band midpoint)</td>
+<td>.043</td>
+<td>.022</td>
+<td>negligible</td>
+</tr>
+<tr class="odd">
+<td>Prior outpatient visits</td>
+<td>.041</td>
+<td>.019</td>
+<td>negligible</td>
+</tr>
+<tr class="even">
+<td>In-hospital procedure count</td>
+<td>.008</td>
+<td>−.011</td>
+<td>negligible (<em>ns</em>)</td>
+</tr>
+<tr class="odd">
+<td>Comorbidity-flag count</td>
+<td>.007</td>
+<td>.004</td>
+<td>negligible (<em>ns</em>)</td>
+</tr>
+<tr class="even">
+<td>Prescribed-medication count</td>
+<td>.007</td>
+<td>.001</td>
+<td>negligible (<em>ns</em>)</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Rank-biserial <em>r</em> signs are shown as magnitudes; readmitted admissions have higher values on every feature except the in-hospital procedure count. <em>ns</em> = Mann–Whitney <em>p</em> &gt; .05. Bands follow Cohen (1988).</p>
+<p>The categorical league table (Figure 5) tells the same story on the other side. <strong>No categorical feature reaches Cohen’s small band</strong> in the batch: admitting specialty leads at <em>V</em> = 0.06 (a proxy for clinical complexity), then the insulin regimen at 0.04 and age band at 0.04, with the diagnosis-group features, payer code, and the medication fields trailing below. Discharge disposition, analysed separately, is the sole exception at 0.11. The engineered features track their raw counterparts exactly — the diabetes-medication flag ties the string field, the change flag ties the string field, and the grouped diagnosis fields outrank the raw ICD-9 codes — which confirms the feature engineering preserved the signal without inflating it.</p>
+<p>A variance-inflation scan over the continuous set confirms the redundancy is entirely by design: the age and age-squared terms (VIF ≈ 34) and the arithmetic identities among the prior-utilisation aggregates and the medication counts. Once those engineered redundancies are set aside, every remaining continuous feature has VIF below 2.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig4_mannwhitney_ranking.png" class="img-fluid figure-img"></p>
+<figcaption>Continuous features ranked by absolute rank-biserial correlation with 30-day readmission. Only prior inpatient visits and prior total visits reach Cohen’s small band (0.10, dashed); grey bars are non-significant Mann–Whitney tests.</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig5_categorical_league.png" class="img-fluid figure-img"></p>
+<figcaption>Categorical univariate signal league (bias-corrected Cramér’s V). No feature in the batch clears Cohen’s small band (0.10, dashed); discharge disposition, analysed separately, is the lone exception (diamond).</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig6_rate_by_quantile.png" class="img-fluid figure-img"></p>
+<figcaption>Conditional readmission rate by feature quantile for six continuous features (cohort rate dashed). The prior-utilisation features rise steeply; length of stay rises gently and then dips at the top; the comorbidity-flag count is flat.</figcaption>
+</figure>
+</div>
+</section>
+<section id="the-hba1c-testing-question-is-confounded-not-answerable-marginally" class="level3">
+<h3 class="anchored" data-anchor-id="the-hba1c-testing-question-is-confounded-not-answerable-marginally">The HbA1c testing question is confounded, not answerable marginally</h3>
+<p>On the patient-grain cohort, an HbA1c result was recorded for <strong>18.4% of patients</strong> (12,843 of 69,979). Testing is far from random (Figure 7). It runs at <strong>35.9%</strong> for patients admitted with diabetes as the primary diagnosis — nearly double the cohort rate — and below 13% for musculoskeletal, neoplasm, injury, and digestive admissions. It also climbs monotonically with length of stay, from 15.0% in the shortest-stay quantile to 22.7% in the longest, simply because a longer admission offers more opportunity for the order. A lightweight propensity model on pre-treatment covariates reaches a McFadden pseudo-<em>R</em>² of about 0.13; the strongest predictors of being tested are all clinical (being on a diabetes medication, a diabetes primary diagnosis, more medications changed), and the demographic covariates are weak — the observed variables explain a substantial share of the testing decision.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig7_hba1c_testing_landscape.png" class="img-fluid figure-img"></p>
+<figcaption>HbA1c testing is far from random. Left: patients with a diabetes primary diagnosis are tested at 35.9%, nearly double the 18.4% cohort rate (dashed). Right: testing rate rises monotonically with length of stay.</figcaption>
+</figure>
+</div>
+<p>The consequence for the naive comparison is decisive. Unadjusted, the tested arm readmits at 8.4% and the untested arm at 9.1% — a <strong>−0.72-percentage-point</strong> difference (<em>z</em> = −2.6, <em>p</em> = .01), in the direction clinical theory predicts. But stratifying that contrast by primary diagnosis (Figure 8) shows it is a weighted average of effects that <strong>point in opposite directions</strong>. In five strata the tested arm readmits less — most strongly Injury (−4.0 points), Diabetes (−2.9), and Respiratory (−2.2) — and in four the tested arm readmits <em>more</em> — Genitourinary (+1.3), Neoplasms (+1.2), Musculoskeletal (+0.9), Circulatory (+0.7). The most plausible reading of the positive-direction strata is selection: in those groups an HbA1c is ordered specifically when the patient looks unstable on the diabetic axis, so the tested subset is sicker to begin with. Stratifying by length of stay instead gives a consistent negative gap in all four quartiles (−0.5 to −1.3 points), which suggests that confounder acts through a level shift rather than an interaction. <strong>Table 4</strong> summarises. The marginal number is uninformative on its own; a downstream study estimates the effect with a doubly-robust design over the joint covariate space.</p>
+<p><strong>Table 4</strong></p>
+<p><em>Naive and Diagnosis-Stratified HbA1c Testing Effect on 30-Day Readmission (patient grain, n = 69,979)</em></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Contrast</th>
+<th>Tested</th>
+<th>Untested</th>
+<th>Difference</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Marginal (all patients)</td>
+<td>8.4%</td>
+<td>9.1%</td>
+<td>−0.72 pp</td>
+</tr>
+<tr class="even">
+<td>Injury stratum</td>
+<td>7.3%</td>
+<td>11.3%</td>
+<td>−4.02 pp</td>
+</tr>
+<tr class="odd">
+<td>Diabetes stratum</td>
+<td>7.2%</td>
+<td>10.2%</td>
+<td>−2.94 pp</td>
+</tr>
+<tr class="even">
+<td>Respiratory stratum</td>
+<td>5.6%</td>
+<td>7.7%</td>
+<td>−2.15 pp</td>
+</tr>
+<tr class="odd">
+<td>Circulatory stratum</td>
+<td>10.2%</td>
+<td>9.6%</td>
+<td>+0.65 pp</td>
+</tr>
+<tr class="even">
+<td>Musculoskeletal stratum</td>
+<td>9.2%</td>
+<td>8.3%</td>
+<td>+0.90 pp</td>
+</tr>
+<tr class="odd">
+<td>Neoplasms stratum</td>
+<td>10.1%</td>
+<td>9.0%</td>
+<td>+1.17 pp</td>
+</tr>
+<tr class="even">
+<td>Genitourinary stratum</td>
+<td>10.1%</td>
+<td>8.8%</td>
+<td>+1.30 pp</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> pp = percentage points. Five strata (not all shown) favour testing; four reverse. The largest cohort strata by count — Circulatory (21,391) and Other (12,124) — sit near zero, which is why the marginal estimate is small.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig8_hba1c_stratified.png" class="img-fluid figure-img"></p>
+<figcaption>The marginal HbA1c effect (−0.72 pp, dashed) is a weighted average of diagnosis-stratum effects that reverse sign — from −4.0 points in the Injury stratum to +1.3 points in the Genitourinary stratum.</figcaption>
+</figure>
+</div>
+</section>
+<section id="the-leakage-controlled-fold-split-carries-no-measurable-penalty" class="level3">
+<h3 class="anchored" data-anchor-id="the-leakage-controlled-fold-split-carries-no-measurable-penalty">The leakage-controlled fold split carries no measurable penalty</h3>
+<p>Because 29.5% of admissions come from patients with more than one admission, a row-level cross-validation split would place the same patient in both training and test folds. The data-engineering stage pre-computed five folds with <code>GroupKFold</code> on the patient identifier to prevent this. The folds are equal in size (19,868 admissions), their readmission rates span only 11.19%–11.52%, and no patient appears in more than one fold (Figure 9, left).</p>
+<p>The empirical question is how much a row-level split would actually inflate cross-validated AUC on this cohort. Holding model, features, and seed fixed, a logistic regression on 16 numeric features scores 0.636 under both row-level and patient-disjoint five-fold splits; a LightGBM on the numeric features plus target-encoded categoricals scores 0.673 under both. Both gaps are under 0.2 percentage points and within Monte-Carlo noise (Figure 9, right). The most likely reason is that the feature set is admission-grain — length of stay, medication counts, and the utilisation aggregates all vary between a patient’s admissions — so memorising patient identity does not buy a model a stable per-patient outcome. The patient-disjoint split is kept regardless: it removes a structural risk that a different model family or feature set could expose, at no measured cost.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/fig9_cv_fold_leakage.png" class="img-fluid figure-img"></p>
+<figcaption>Left: the five pre-computed folds are balanced in size and readmission rate, with no patient split across folds. Right: cross-validated AUC is unchanged between a row-level and a patient-disjoint split under both a linear and a gradient-boosted probe.</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<p><strong>Principal findings.</strong> The readmission signal in this cohort is genuinely diffuse. Only two features — prior inpatient visits and total prior visits — reach even Cohen’s small effect band, and only one categorical feature, discharge disposition, does the same. Every other association is negligible by conventional standards, and three engineered features fail to reach significance at all. This is consistent with the published AUC ceiling of 0.65–0.70: a useful model will have to aggregate many weak predictors rather than lean on a strong one, and its calibration and operating threshold will matter more than its rank ordering.</p>
+<p><strong>The mechanism worth naming</strong> is that most of the visible signal is a marker of clinical instability rather than a cause of readmission. Prior inpatient visits, a skilled-nursing or rehabilitation discharge, a long stay, and a mid-admission regimen change all point at the same underlying thing — a patient who was not stable at discharge — and they correlate with each other for that reason. A model built on them predicts instability; it does not identify a lever.</p>
+<p><strong>The HbA1c result</strong> is a methodological one. The naive tested-versus-untested contrast is small, significant, and in the “right” direction, and it would be easy to report as a finding. Stratifying by a single confounder shows it is a weighted average of effects that reverse sign across diagnosis groups. Any causal claim about HbA1c testing needs a design that handles the joint confounding structure, which is why the downstream analysis uses inverse-probability weighting and a doubly-robust estimator rather than a covariate-adjusted regression.</p>
+<p><strong>Limitations.</strong> This is a descriptive analysis of a single historical extract (1999–2008); no association here supports a causal claim. The two fields with the highest missingness — payer code and admitting specialty — are analysed with “not recorded” as a category, which is defensible for modelling but means their apparent associations partly reflect <em>which</em> sites and admission types leave the field blank. The paediatric age bands and several discharge dispositions have too few admissions for stable rate estimates and are flagged as such. The empirical leakage audit is specific to the feature families examined; a feature set richer in patient-grain signal could produce a measurable gap.</p>
+<p><strong>Conclusion.</strong> The cohort supports a modest, well-calibrated readmission model built from many weak predictors, with discharge disposition and prior utilisation as its backbone. The HbA1c-testing question is real and policy-relevant but cannot be answered by a marginal comparison. The pre-computed patient-disjoint folds are safe to use and cost nothing in measured performance.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Bergsma, W. (2013). A bias-correction for Cramér’s V and Tschuprow’s T. <em>Journal of the Korean Statistical Society, 42</em>(3), 323–328. https://doi.org/10.1016/j.jkss.2012.10.002</p>
+<p>Clore, J., Cios, K., DeShazo, J., &amp; Strack, B. (2014). <em>Diabetes 130-US Hospitals for Years 1999–2008</em> [Data set]. UCI Machine Learning Repository. https://doi.org/10.24432/C5230J</p>
+<p>Cohen, J. (1988). <em>Statistical power analysis for the behavioral sciences</em> (2nd ed.). Lawrence Erlbaum Associates.</p>
+<p>Kerby, D. S. (2014). The simple difference formula: An approach to teaching nonparametric correlation. <em>Comprehensive Psychology, 3</em>, 11.IT.3.1. https://doi.org/10.2466/11.IT.3.1</p>
+<p>Kruskal, W. H., &amp; Wallis, W. A. (1952). Use of ranks in one-criterion variance analysis. <em>Journal of the American Statistical Association, 47</em>(260), 583–621. https://doi.org/10.1080/01621459.1952.10483441</p>
+<p>Mann, H. B., &amp; Whitney, D. R. (1947). On a test of whether one of two random variables is stochastically larger than the other. <em>The Annals of Mathematical Statistics, 18</em>(1), 50–60. https://doi.org/10.1214/aoms/1177730491</p>
+<p>McFadden, D. (1974). Conditional logit analysis of qualitative choice behavior. In P. Zarembka (Ed.), <em>Frontiers in econometrics</em> (pp.&nbsp;105–142). Academic Press.</p>
+<p>Strack, B., DeShazo, J. P., Gennings, C., Olmo, J. L., Ventura, S., Cios, K. J., &amp; Clore, J. N. (2014). Impact of HbA1c measurement on hospital readmission rates: Analysis of 70,000 clinical database patient records. <em>BioMed Research International, 2014</em>, 781670. https://doi.org/10.1155/2014/781670</p>
+<p>Wilson, E. B. (1927). Probable inference, the law of succession, and statistical inference. <em>Journal of the American Statistical Association, 22</em>(158), 209–212. https://doi.org/10.1080/01621459.1927.10502953</p>
+<hr>
+<p><em>This is a descriptive exploratory study of a single historical hospital extract. No association reported here supports a causal claim; the HbA1c-testing contrast in particular is shown to be confounded and is resolved only by the companion causal analysis.</em></p>
+
+
+<div id="contact" class="connect-section" style="text-align: center; padding: 50px 20px; background: #f9f9f9; border-radius: 15px; border: 1px solid #eaeaea; margin-top: 40px;">
+<h3 style="color: #2c3e50; font-weight: 700; margin-bottom: 15px; border: none;" class="anchored">Let's Collaborate</h3>
+<p style="color: #666; max-width: 650px; margin: 0 auto 30px auto; font-size: 1.05rem; line-height: 1.6;">Available for high-impact <strong>Business Intelligence, Power BI Engineering, and Advanced Data Analytics</strong> projects. Connect with me or hire me directly through the platforms below.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
+<a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-linkedin"></i> LinkedIn</a>
+<a href="https://github.com/mkhanmuneer" class="btn btn-dark" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-github"></i> GitHub</a>
+<a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" target="_blank" rel="noopener" style="color: white; padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-graph-up"></i> Kaggle</a>
+<a href="https://www.upwork.com/freelancers/~018de8553286a1d00c" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-briefcase"></i> Upwork</a>
+<a href="https://www.fiverr.com/neuronvision" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-lightning-charge"></i> Fiverr</a>
+</div>
+</div>
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/mkhanmuneer\.github\.io\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 Muhammad Khan Muneer</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.upwork.com/freelancers/~018de8553286a1d00c">
+<p>Hire on Upwork</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.fiverr.com/neuronvision">
+<p>Hire on Fiverr</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

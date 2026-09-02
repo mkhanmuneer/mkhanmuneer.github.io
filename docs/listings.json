@@ -1,0 +1,38 @@
+[
+  {
+    "listing": "/index.html",
+    "items": [
+      "/projects/unsupervised-patient-phenotyping-two-stream-clustering-cross-algorithm-validation/index.html",
+      "/projects/clinical-ml-equity-audit-age-band-disparities-risk-factor-detection-asymmetry-fairness-metrics/index.html",
+      "/projects/clinical-stroke-screening-model-benchmarking-champion-selection-threshold-profiling-calibration/index.html",
+      "/projects/automated-real-estate-intelligence-high-performance-market-valuation-engine/index.html",
+      "/projects/clinical-risk-factor-analysis-crude-adjusted-odds-ratios-confounding-population-attributable-fraction/index.html",
+      "/projects/clinical-feature-profiling-age-led-stroke-rate-gradients-confounder-identification-signal-quantification/index.html",
+      "/projects/sequential-random-forest-imputation-medallion-pipeline-mixed-type-clinical-data/index.html",
+      "/projects/starbucks-cate-uplift-modelling-negative-result-under-propensity-overlap-limits/index.html",
+      "/projects/starbucks-quasi-experimental-causal-inference-itt-iv-late-evalue-sensitivity/index.html",
+      "/projects/starbucks-simulated-ab-test-design-feasibility-monte-carlo-validation/index.html",
+      "/projects/starbucks-offer-response-behavioural-eda-rfm-segmentation-spend-concentration/index.html",
+      "/projects/starbucks-offer-events-medallion-pipeline-sentinel-resolution-dict-harmonisation/index.html",
+      "/projects/admission-time-length-of-stay-forecasting-when-mae-selects-the-wrong-model-poisson-deviance-champion-selection/index.html",
+      "/projects/citywide-crime-intelligence-analytics-dashboard/index.html",
+      "/projects/three-stream-patient-phenotyping-feature-space-structure-not-algorithm-choice-drives-cluster-quality/index.html",
+      "/projects/calibrated-readmission-scorer-to-a-governed-targeting-decision-cheers-psa-scenario-grid-and-stepped-wedge-trial/index.html",
+      "/projects/causal-analysis-of-hba1c-testing-on-30-day-readmission-a-disciplined-null-with-a-trauma-subgroup-signal/index.html",
+      "/projects/readmission-risk-model-at-a-signal-ceiling-cross-family-convergence-isotonic-calibration-and-fairness-audit/index.html",
+      "/projects/diabetic-inpatient-30-day-readmission-eda-effect-size-first-signal-scan-and-cross-validation-leakage-audit/index.html",
+      "/projects/health-analytics-biostatistics-diabetes-readmission-eda/index.html",
+      "/projects/diabetic-inpatient-readmission-medallion-etl-icd9-diagnosis-grouping-and-patient-disjoint-cross-validation-folds/index.html",
+      "/projects/operational-risk-scoring-dual-engine-delay-prediction-and-capacity-sized-triage/index.html",
+      "/projects/catalogue-segmentation-flagship-concentration-and-a-thin-evidence-loss-segment/index.html",
+      "/projects/customer-loyalty-tier-refinement-six-cluster-multi-algorithm-segmentation/index.html",
+      "/projects/clickstream-conversion-engagement-diagnostic-bimodal-audience/index.html",
+      "/projects/catalogue-anchor-concentration-economy-over-luxury-paradox/index.html",
+      "/projects/bifurcated-customer-base-revenue-concentration-diagnostic/index.html",
+      "/projects/global-supply-chain-otif-diagnostic-where-orders-lose-time/index.html",
+      "/projects/dataco-medallion-pipeline-adaptive-anomaly-reconciliation/index.html",
+      "/projects/part-1-crime-incident-eda-four-lens-concentration-severity-spatial-inequality/index.html",
+      "/projects/operator-truth-preserving-medallion-etl-pipeline-urban-crime-incident-star-schema/index.html"
+    ]
+  }
+]

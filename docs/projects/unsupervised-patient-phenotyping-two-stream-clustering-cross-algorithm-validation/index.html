@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Muhammad Khan Muneer">
+<meta name="keywords" content="unsupervised learning, patient phenotyping, K-means clustering, agglomerative clustering, Gaussian mixture model, HDBSCAN, UMAP, adjusted Rand index, cross-algorithm validation, Cramér’s V, feature scaling, stroke cohort, Python, scikit-learn">
+<meta name="description" content="Label-free segmentation of a 5,110-patient stroke cohort along two feature streams. Physiological stream: eight phenotypes with stroke rates from 0.3% to 24.1% — an ~83× spread the supervised models never surfaced. Cross-algorithm validation: K-Means and Ward agree at ARI 0.9988 on the physiological stream, only 0.62–0.65 on the demographic one. Cross-stream link: the two partitions share Cramér’s V = 0.26, driven almost entirely by age. The stroke label entered no distance calculation.">
+
+<title>Unsupervised Patient Phenotyping: Two-Stream Clustering of a Stroke Cohort With Cross-Algorithm Validation – Muhammad Khan Muneer</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-ca0cfe78a00f84493d894d8af57a3a20.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": true,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="../../styles/custom.css">
+<meta property="og:title" content="Muhammad Khan Muneer — Data Science &amp; BI Portfolio">
+<meta property="og:description" content="Engineering ML-driven analytics and automated decision systems.">
+<meta property="og:image" content="https://mkhanmuneer.github.io/projects/unsupervised-patient-phenotyping-two-stream-clustering-cross-algorithm-validation/assets/fig3_phenotype_heatmap.png">
+<meta property="og:site_name" content="M. Khan Muneer Portfolio">
+<meta property="og:image:height" content="1091">
+<meta property="og:image:width" content="2172">
+<meta name="twitter:title" content="Unsupervised Patient Phenotyping: Two-Stream Clustering of a Stroke Cohort With Cross-Algorithm Validation – Muhammad Khan Muneer">
+<meta name="twitter:description" content="Label-free segmentation of a 5,110-patient stroke cohort along two feature streams. Physiological stream: eight phenotypes with stroke rates from 0.3% to 24.1% — an ~83× spread the supervised models never surfaced. Cross-algorithm validation: K-Means and Ward agree at ARI 0.9988 on the physiological stream, only 0.62–0.65 on the demographic one. Cross-stream link: the two partitions share Cramér’s V = 0.26, driven almost entirely by age. The stroke label entered no distance calculation.">
+<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/unsupervised-patient-phenotyping-two-stream-clustering-cross-algorithm-validation/assets/fig3_phenotype_heatmap.png">
+<meta name="twitter:creator" content="@iMKhanMuneer">
+<meta name="twitter:site" content="@iMKhanMuneer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image-height" content="1091">
+<meta name="twitter:image-width" content="2172">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#featured-projects"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/iMKhanMuneer"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.kaggle.com/muhammadkhanmuneer"> <i class="bi bi-graph-up" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#contact"> 
+<span class="menu-text">Contact</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#method" id="toc-method" class="nav-link" data-scroll-target="#method">Method</a>
+  <ul class="collapse">
+  <li><a href="#data-source" id="toc-data-source" class="nav-link" data-scroll-target="#data-source">Data source</a></li>
+  <li><a href="#two-stream-feature-design" id="toc-two-stream-feature-design" class="nav-link" data-scroll-target="#two-stream-feature-design">Two-stream feature design</a></li>
+  <li><a href="#why-standardisation-is-not-optional" id="toc-why-standardisation-is-not-optional" class="nav-link" data-scroll-target="#why-standardisation-is-not-optional">Why standardisation is not optional</a></li>
+  <li><a href="#clustering-algorithms-and-model-selection" id="toc-clustering-algorithms-and-model-selection" class="nav-link" data-scroll-target="#clustering-algorithms-and-model-selection">Clustering algorithms and model selection</a></li>
+  <li><a href="#validation" id="toc-validation" class="nav-link" data-scroll-target="#validation">Validation</a></li>
+  <li><a href="#software-and-reproducibility" id="toc-software-and-reproducibility" class="nav-link" data-scroll-target="#software-and-reproducibility">Software and reproducibility</a></li>
+  </ul></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
+  <ul class="collapse">
+  <li><a href="#standardisation-changes-the-partition" id="toc-standardisation-changes-the-partition" class="nav-link" data-scroll-target="#standardisation-changes-the-partition">Standardisation changes the partition</a></li>
+  <li><a href="#stream-b-the-metrics-converge-on-eight-phenotypes" id="toc-stream-b-the-metrics-converge-on-eight-phenotypes" class="nav-link" data-scroll-target="#stream-b-the-metrics-converge-on-eight-phenotypes">Stream B: the metrics converge on eight phenotypes</a></li>
+  <li><a href="#stream-b-eight-physiological-phenotypes" id="toc-stream-b-eight-physiological-phenotypes" class="nav-link" data-scroll-target="#stream-b-eight-physiological-phenotypes">Stream B: eight physiological phenotypes</a></li>
+  <li><a href="#stream-b-three-algorithms-recover-the-same-partition" id="toc-stream-b-three-algorithms-recover-the-same-partition" class="nav-link" data-scroll-target="#stream-b-three-algorithms-recover-the-same-partition">Stream B: three algorithms recover the same partition</a></li>
+  <li><a href="#stream-a-the-metrics-refuse-to-converge" id="toc-stream-a-the-metrics-refuse-to-converge" class="nav-link" data-scroll-target="#stream-a-the-metrics-refuse-to-converge">Stream A: the metrics refuse to converge</a></li>
+  <li><a href="#stream-a-seven-demographic-profiles" id="toc-stream-a-seven-demographic-profiles" class="nav-link" data-scroll-target="#stream-a-seven-demographic-profiles">Stream A: seven demographic profiles</a></li>
+  <li><a href="#stream-a-agreement-is-real-but-fragile" id="toc-stream-a-agreement-is-real-but-fragile" class="nav-link" data-scroll-target="#stream-a-agreement-is-real-but-fragile">Stream A: agreement is real but fragile</a></li>
+  <li><a href="#visual-confirmation" id="toc-visual-confirmation" class="nav-link" data-scroll-target="#visual-confirmation">Visual confirmation</a></li>
+  <li><a href="#the-two-streams-are-linked-and-the-link-is-age" id="toc-the-two-streams-are-linked-and-the-link-is-age" class="nav-link" data-scroll-target="#the-two-streams-are-linked-and-the-link-is-age">The two streams are linked, and the link is age</a></li>
+  <li><a href="#stroke-incidence-by-phenotype-the-central-finding" id="toc-stroke-incidence-by-phenotype-the-central-finding" class="nav-link" data-scroll-target="#stroke-incidence-by-phenotype-the-central-finding">Stroke incidence by phenotype — the central finding</a></li>
+  <li><a href="#age-and-gender-structure-within-phenotypes" id="toc-age-and-gender-structure-within-phenotypes" class="nav-link" data-scroll-target="#age-and-gender-structure-within-phenotypes">Age and gender structure within phenotypes</a></li>
+  </ul></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a>
+  <ul class="collapse">
+  <li><a href="#unsupervised-phenotypes-recover-the-risk-hierarchy" id="toc-unsupervised-phenotypes-recover-the-risk-hierarchy" class="nav-link" data-scroll-target="#unsupervised-phenotypes-recover-the-risk-hierarchy">Unsupervised phenotypes recover the risk hierarchy</a></li>
+  <li><a href="#the-two-stream-design-earns-its-keep" id="toc-the-two-stream-design-earns-its-keep" class="nav-link" data-scroll-target="#the-two-stream-design-earns-its-keep">The two-stream design earns its keep</a></li>
+  <li><a href="#report-agreement-not-a-winner" id="toc-report-agreement-not-a-winner" class="nav-link" data-scroll-target="#report-agreement-not-a-winner">Report agreement, not a winner</a></li>
+  <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations">Limitations</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Unsupervised Patient Phenotyping: Two-Stream Clustering of a Stroke Cohort With Cross-Algorithm Validation</h1>
+<p class="subtitle lead">Segmenting 5,110 patients along a physiological and a demographic feature stream — four algorithms, agreement rather than a single winner, and a post-hoc read against the stroke outcome the clustering never saw.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Machine Learning</div>
+    <div class="quarto-category">Unsupervised Learning</div>
+    <div class="quarto-category">Clustering</div>
+    <div class="quarto-category">Dimensionality Reduction</div>
+    <div class="quarto-category">Model Evaluation</div>
+    <div class="quarto-category">Patient Phenotyping</div>
+    <div class="quarto-category">Clinical Research</div>
+    <div class="quarto-category">Healthcare Analytics</div>
+    <div class="quarto-category">Python</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>Label-free segmentation of a 5,110-patient stroke cohort along two feature streams. <strong>Physiological stream:</strong> eight phenotypes with stroke rates from 0.3% to 24.1% — an ~83× spread the supervised models never surfaced. <strong>Cross-algorithm validation:</strong> K-Means and Ward agree at ARI 0.9988 on the physiological stream, only 0.62–0.65 on the demographic one. <strong>Cross-stream link:</strong> the two partitions share Cramér’s V = 0.26, driven almost entirely by age. The stroke label entered no distance calculation.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Muhammad Khan Muneer </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">April 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+<div>
+  <div class="keywords">
+    <div class="block-title">Keywords</div>
+    <p>unsupervised learning, patient phenotyping, K-means clustering, agglomerative clustering, Gaussian mixture model, HDBSCAN, UMAP, adjusted Rand index, cross-algorithm validation, Cramér’s V, feature scaling, stroke cohort, Python, scikit-learn</p>
+  </div>
+</div>
+
+</header>
+
+
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+<p>This study segments a 5,110-patient stroke cohort with unsupervised clustering, deliberately withholding the stroke label from every distance and density calculation, then reads the resulting phenotypes against that label post hoc. The feature space is split into two streams — a six-feature demographic/behavioural stream (age, smoking, marital status, occupation, gender, residence) and an eight-feature clinical/physiological stream (hypertension, heart disease, glucose, BMI, and derived flags) — clustered independently and reconciled afterward. Four algorithms are applied (K-means, Ward agglomerative, Gaussian mixture, HDBSCAN) and their agreement is reported rather than a single method chosen. The physiological stream resolves cleanly into eight phenotypes: silhouette and Davies–Bouldin both turn over at <em>k</em> = 8, and K-means and Ward agglomerative recover the same partition at an adjusted Rand index (ARI) of 0.9988. Those eight phenotypes carry stroke rates from 0.29% (an underweight, child-dominated cluster) to 24.11% (a 112-patient cluster with co-occurring heart disease and hyperglycaemia) — an ~83-fold spread around the 4.87% cohort rate. The demographic stream is weaker: its metrics never converge, <em>k</em> = 7 is a documented judgement call, and cross-algorithm ARI is only 0.62–0.65; its seven profiles span a narrower 0.40%–7.72% stroke range. The two partitions share a moderate association (Cramér’s <em>V</em> = 0.26, χ²(42) = 2,059), driven almost entirely by age. Unsupervised phenotypes recover, from features alone, the clinical-risk hierarchy the supervised models were trained to predict.</p>
+<p><em>Keywords:</em> unsupervised learning, patient phenotyping, K-means, HDBSCAN, adjusted Rand index, cross-algorithm validation</p>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Supervised models for stroke answer “who is at risk?” against a fixed label. This study asks a different question: <em>what patient phenotypes exist in the feature space independent of that label, and do any of them carry disproportionate stroke incidence?</em> If clustering that never sees the outcome recovers the same risk structure a classifier was trained to find, that is evidence the structure is real in the data rather than an artefact of the labelling process.</p>
+<p>Two design choices shape the analysis. First, the feature space is <strong>split into two streams</strong> rather than clustered jointly: a demographic/behavioural stream (6 features) and a clinical/physiological stream (8 features). Distance-based clustering degrades in higher-dimensional mixed-type spaces, and the split allows a question a single joint clustering cannot answer — do the two axes describe the same patients the same way, or capture genuinely different variation? Second, <strong>four clustering algorithms are run and their agreement measured</strong>, rather than one method chosen and reported in isolation. Agreement across methods with different assumptions is the calibration: where they converge, the structure is trustworthy; where they diverge, that is itself the finding.</p>
+<p>The stroke label is excluded from every feature matrix and every distance, density, or similarity computation. Its only appearance is a post-hoc cross-tabulation against final cluster membership.</p>
+</section>
+<section id="method" class="level2">
+<h2 class="anchored" data-anchor-id="method">Method</h2>
+<section id="data-source" class="level3">
+<h3 class="anchored" data-anchor-id="data-source">Data source</h3>
+<p>The cohort is the open <em>Stroke Prediction Dataset</em> (fedesoriano, 2021): 5,110 patients, 4.87% stroke prevalence, processed through a medallion-style extract–transform–load pipeline. This analysis uses the full cohort — no train/test split, no sampling — because clustering describes the population as a whole. After dropping a pre-imputation audit column, the working frame holds 5,110 rows and 23 columns (an identifier, the outcome, and 21 model features).</p>
+</section>
+<section id="two-stream-feature-design" class="level3">
+<h3 class="anchored" data-anchor-id="two-stream-feature-design">Two-stream feature design</h3>
+<p>The two feature matrices (Table 1) were built from disjoint feature sets. <strong>Stream A</strong> (demographic/behavioural) uses age, smoking status, marital status, gender, work type, and residence type. <strong>Stream B</strong> (clinical/physiological) uses hypertension, heart disease, average glucose, BMI, log-glucose, and the obesity, underweight, and elevated-glucose flags. Four exclusions were applied to both streams:</p>
+<ul>
+<li><strong>The stroke outcome</strong> — never an input; post-hoc cross-tabulation only.</li>
+<li><strong>The four interaction terms</strong> (age × glucose, age × BMI, hypertension × glucose, smoker × obese) — each is highly collinear with its parent features, so including it alongside them double-weights the parents’ variance in a distance metric without adding information.</li>
+<li><strong>The current-or-former-smoker flag</strong> from Stream A — a deterministic function of smoking status; the three-level variable is retained because it carries the former-versus-current distinction the flag discards.</li>
+<li><strong>The four-band age variable</strong> from Stream A — a deterministic binning of continuous age; retaining both would double-weight age.</li>
+</ul>
+<p>Smoking status was encoded with an explicit clinical ordering (never = 0, formerly = 1, currently = 2) rather than an alphabetical sort that would place “currently” and “formerly” adjacent by spelling alone. Both matrices were standardised (zero mean, unit variance) with independent scalers before any distance was computed.</p>
+<p><strong>Table 1</strong></p>
+<p><em>Composition of the Two Feature Streams</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: left;">Stream A — demographic / behavioural</th>
+<th style="text-align: left;">Stream B — clinical / physiological</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Features</td>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">8</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Numeric</td>
+<td style="text-align: left;">age</td>
+<td style="text-align: left;">average glucose, BMI, log-glucose</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ordinal (explicit)</td>
+<td style="text-align: left;">smoking status (never/former/current)</td>
+<td style="text-align: left;">—</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">ever married</td>
+<td style="text-align: left;">hypertension, heart disease, obese, underweight, elevated glucose</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Nominal → ordinal codes</td>
+<td style="text-align: left;">gender, work type, residence type</td>
+<td style="text-align: left;">—</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Excluded (shared)</td>
+<td style="text-align: left;">stroke outcome; 4 interaction terms; current-or-former-smoker flag; four-band age variable</td>
+<td style="text-align: left;">stroke outcome; 4 interaction terms</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Scaling</td>
+<td style="text-align: left;">independent <code>StandardScaler</code></td>
+<td style="text-align: left;">independent <code>StandardScaler</code></td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Exclusions are collinearity- or leakage-driven (see text). Nominal categoricals were ordinal-encoded for a Euclidean metric, with cardinalities kept low (2–5 levels).</p>
+</section>
+<section id="why-standardisation-is-not-optional" class="level3">
+<h3 class="anchored" data-anchor-id="why-standardisation-is-not-optional">Why standardisation is not optional</h3>
+<p>Distance-based algorithms treat every feature axis equally in absolute units. Average glucose spans ~217 units; a binary flag spans exactly 1. Unstandardised, a one-unit glucose difference — clinically trivial — contributes as much to Euclidean distance as flipping hypertension status. A demonstration on the glucose-and-hypertension pair quantifies the effect (Figure 1, Results).</p>
+</section>
+<section id="clustering-algorithms-and-model-selection" class="level3">
+<h3 class="anchored" data-anchor-id="clustering-algorithms-and-model-selection">Clustering algorithms and model selection</h3>
+<p>Four algorithms were applied. <strong>K-means</strong> (Lloyd, 1982) partitions to <em>k</em> centroids under a spherical, equal-size assumption; fast and interpretable, it is the baseline. <strong>Agglomerative clustering</strong> with <strong>Ward linkage</strong> (Ward, 1963) builds a bottom-up merge hierarchy under the same variance-minimising objective but no sphericity assumption. <strong>Gaussian mixture models</strong> (GMM; Reynolds, 2009) replace centroids with multivariate Gaussians and give each patient a membership probability. <strong>HDBSCAN</strong> (Campello et al., 2013) is density-based, requires no <em>k</em>, and labels points in no dense region as noise — applied only to Stream B, on the rationale that a patient whose physiology fits no dense cluster is a plausible atypical case.</p>
+<p>For the partition methods, <em>k</em> was chosen by sweeping <em>k</em> = 2–14 across four metrics — the silhouette coefficient (Rousseeuw, 1987; higher is better), the Davies–Bouldin index (Davies &amp; Bouldin, 1979; lower is better), the Calinski–Harabasz index (Caliński &amp; Harabasz, 1974; higher is better), and inertia — and reading for convergence or documented tension between them.</p>
+</section>
+<section id="validation" class="level3">
+<h3 class="anchored" data-anchor-id="validation">Validation</h3>
+<p><strong>Cross-algorithm agreement</strong> was measured with the adjusted Rand index (ARI; Hubert &amp; Arabie, 1985), where 1.0 is an identical partition and 0.0 is chance. <strong>Cross-stream association</strong> between the two partitions was quantified with Cramér’s <em>V</em> on their contingency table. <strong>Visual confirmation</strong> used PCA (Hotelling, 1933) as a conservative linear baseline and UMAP (McInnes et al., 2018) as a non-linear, neighbourhood-preserving projection, read together to guard against 2-D projection artefacts.</p>
+</section>
+<section id="software-and-reproducibility" class="level3">
+<h3 class="anchored" data-anchor-id="software-and-reproducibility">Software and reproducibility</h3>
+<p>Analyses used <code>scikit-learn</code> (Pedregosa et al., 2011), <code>umap-learn</code> (McInnes et al., 2018), <code>hdbscan</code> (McInnes et al., 2017), <code>SciPy</code> (Virtanen et al., 2020), <code>NumPy</code> (Harris et al., 2020), and <code>pandas</code> (The pandas development team, 2020), with a fixed random seed (412). All partition results, ARIs, centroids, and cross-tabulations reproduced exactly on re-execution; one density-based figure differed slightly by library version and is flagged where it appears.</p>
+</section>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<section id="standardisation-changes-the-partition" class="level3">
+<h3 class="anchored" data-anchor-id="standardisation-changes-the-partition">Standardisation changes the partition</h3>
+<p>Clustering the glucose-and-hypertension pair at <em>k</em> = 3 gives an ARI of only <strong>0.31</strong> between the unstandardised and standardised partitions — closer to chance than to agreement (Figure 1). Unstandardised, K-means splits the 5,110 patients 2,908 / 1,543 / 659 — functionally a one-dimensional split on glucose, with hypertension (1/217 of the weight) invisible. Standardised, the split becomes 4,005 / 607 / <strong>498</strong> — and 498 is exactly the hypertensive population. Once both features carry equal weight, K-means recovers hypertension status as a near-pure splitting axis. Unstandardised features do not merely shift boundaries; they can erase a binary clinical flag from the clustering.</p>
+<p><strong>Figure 1</strong></p>
+<p><em>Standardisation Changes the K-Means Partition of the Same 5,110 Patients</em></p>
+<p><img src="assets/fig1_scaling_demo.png" class="img-fluid" alt="Grouped bars comparing cluster sizes from K-means on unstandardised versus standardised glucose-and-hypertension features. Unstandardised: 2,908 / 1,543 / 659. Standardised: 4,005 / 607 / 498, where 498 equals the hypertensive population."></p>
+<p><em>Note.</em> Bars are cluster sizes sorted largest to smallest. The unstandardised and standardised partitions agree at ARI = 0.31. The smallest standardised cluster (<em>n</em> = 498) matches the hypertensive population exactly.</p>
+</section>
+<section id="stream-b-the-metrics-converge-on-eight-phenotypes" class="level3">
+<h3 class="anchored" data-anchor-id="stream-b-the-metrics-converge-on-eight-phenotypes">Stream B: the metrics converge on eight phenotypes</h3>
+<p>For the clinical/physiological stream, the silhouette coefficient peaks at <em>k</em> = 8 (0.575, the global maximum over <em>k</em> = 2–14) and Davies–Bouldin bottoms out at the same <em>k</em> (0.739, the global minimum) — two metrics with different foundations turning over at exactly the same point (Figure 2, Table 2). Calinski–Harabasz reaches a shallow plateau around <em>k</em> = 10–11 but does not contradict the convergence. This is what genuine multi-metric agreement looks like: a sharp, unambiguous inflection.</p>
+<p><strong>Table 2</strong></p>
+<p><em>K-Means Selection Metrics at the Chosen k, by Stream</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 18%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Stream</th>
+<th style="text-align: center;">Chosen <em>k</em></th>
+<th style="text-align: left;">Basis</th>
+<th style="text-align: right;">Silhouette</th>
+<th style="text-align: right;">Davies–Bouldin</th>
+<th style="text-align: right;">Calinski–Harabasz</th>
+<th style="text-align: right;">Inertia</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">B — clinical / physiological</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: left;">silhouette max <strong>and</strong> Davies–Bouldin min</td>
+<td style="text-align: right;">0.575</td>
+<td style="text-align: right;">0.739</td>
+<td style="text-align: right;">3,432</td>
+<td style="text-align: right;">7,161</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">A — demographic / behavioural</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: left;">judgement call — no metric convergence</td>
+<td style="text-align: right;">0.316</td>
+<td style="text-align: right;">1.231</td>
+<td style="text-align: right;">1,477</td>
+<td style="text-align: right;">11,202</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Sweep range <em>k</em> = 2–14. For Stream B, <em>k</em> = 8 is the global optimum on two independent metrics. For Stream A (see below), <em>k</em> = 7 is the one point where silhouette and Davies–Bouldin both step out of the <em>k</em> = 3–6 trough before resuming a smooth drift.</p>
+<p><strong>Figure 2</strong></p>
+<p><em>Four-Metric k-Selection Sweeps for Both Streams (k = 2–14)</em></p>
+<p><img src="assets/fig2_kselection.png" class="img-fluid" alt="Eight small line charts. Top row (Stream B): silhouette peaks and Davies-Bouldin troughs sharply at k=8, both marked. Bottom row (Stream A): silhouette and Davies-Bouldin drift monotonically with no plateau; Calinski-Harabasz falls throughout."></p>
+<p><em>Note.</em> Dashed line marks the selected <em>k</em>. Stream B shows a clean joint turning point at <em>k</em> = 8; Stream A’s metrics never converge.</p>
+</section>
+<section id="stream-b-eight-physiological-phenotypes" class="level3">
+<h3 class="anchored" data-anchor-id="stream-b-eight-physiological-phenotypes">Stream B: eight physiological phenotypes</h3>
+<p>The inverse-scaled K-means centroids give each cluster a clinical identity (Figure 3, Table 3). Four clusters split on a single axis; the remaining four form a 2 × 2 grid crossing cardiac status against glycaemic status:</p>
+<ul>
+<li><strong>Cluster 0 — Physiologically unremarkable (2,210 patients, 43.2%).</strong> Every comorbidity flag near zero; glucose and BMI near or below the cohort mean. The baseline against which excess risk is read.</li>
+<li><strong>Cluster 1 — Isolated obesity (1,307, 25.6%).</strong> Every patient obese (mean BMI 36.0); hypertension, heart disease, and glucose all near zero.</li>
+<li><strong>Cluster 2 — Hyperglycaemia without cardiac disease (543, 10.6%).</strong> Elevated-glucose flag at 1.0, mean glucose 195 mg/dL; roughly half obese; no cardiac comorbidity.</li>
+<li><strong>Cluster 3 — Underweight (341, 6.7%).</strong> Underweight flag at 1.0, mean BMI 16.7; every other flag near zero.</li>
+<li><strong>Clusters 4–7 — the comorbidity grid (112–288 patients each).</strong> Cluster 4 = heart disease + hyperglycaemia (mean glucose 208, the highest of any cluster); Cluster 5 = hypertension + hyperglycaemia; Cluster 6 = heart disease, normal glucose; Cluster 7 = hypertension, normal glucose. Cardiac disease and hyperglycaemia combine <em>independently</em> here rather than as a single “sick” cluster.</li>
+</ul>
+<p><strong>Table 3</strong></p>
+<p><em>The Eight Stream B Phenotypes: Centroid Summary, Size, and Post-Hoc Stroke Rate</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Cluster</th>
+<th style="text-align: left;">Label</th>
+<th style="text-align: right;"><em>n</em></th>
+<th style="text-align: right;">%</th>
+<th style="text-align: right;">Mean glucose</th>
+<th style="text-align: right;">Mean BMI</th>
+<th style="text-align: left;">Defining flags</th>
+<th style="text-align: right;">Stroke rate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Physiologically unremarkable</td>
+<td style="text-align: right;">2,210</td>
+<td style="text-align: right;">43.2</td>
+<td style="text-align: right;">89</td>
+<td style="text-align: right;">24.8</td>
+<td style="text-align: left;">none</td>
+<td style="text-align: right;">3.21%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Isolated obesity</td>
+<td style="text-align: right;">1,307</td>
+<td style="text-align: right;">25.6</td>
+<td style="text-align: right;">89</td>
+<td style="text-align: right;">36.0</td>
+<td style="text-align: left;">obese</td>
+<td style="text-align: right;">2.52%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Hyperglycaemia, no cardiac disease</td>
+<td style="text-align: right;">543</td>
+<td style="text-align: right;">10.6</td>
+<td style="text-align: right;">195</td>
+<td style="text-align: right;">32.5</td>
+<td style="text-align: left;">high glucose</td>
+<td style="text-align: right;">8.10%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">Underweight</td>
+<td style="text-align: right;">341</td>
+<td style="text-align: right;">6.7</td>
+<td style="text-align: right;">93</td>
+<td style="text-align: right;">16.7</td>
+<td style="text-align: left;">underweight</td>
+<td style="text-align: right;">0.29%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">Heart disease + hyperglycaemia</td>
+<td style="text-align: right;">112</td>
+<td style="text-align: right;">2.2</td>
+<td style="text-align: right;">208</td>
+<td style="text-align: right;">31.3</td>
+<td style="text-align: left;">heart disease, high glucose</td>
+<td style="text-align: right;">24.11%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">Hypertension + hyperglycaemia</td>
+<td style="text-align: right;">145</td>
+<td style="text-align: right;">2.8</td>
+<td style="text-align: right;">204</td>
+<td style="text-align: right;">34.0</td>
+<td style="text-align: left;">hypertension, high glucose</td>
+<td style="text-align: right;">15.17%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">Heart disease, normal glucose</td>
+<td style="text-align: right;">164</td>
+<td style="text-align: right;">3.2</td>
+<td style="text-align: right;">88</td>
+<td style="text-align: right;">29.7</td>
+<td style="text-align: left;">heart disease</td>
+<td style="text-align: right;">12.20%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">Hypertension, normal glucose</td>
+<td style="text-align: right;">288</td>
+<td style="text-align: right;">5.6</td>
+<td style="text-align: right;">89</td>
+<td style="text-align: right;">32.9</td>
+<td style="text-align: left;">hypertension</td>
+<td style="text-align: right;">10.76%</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Stroke rate is post-hoc; the outcome was not a clustering input. Cohort rate = 4.87%.</p>
+<p><strong>Figure 3</strong></p>
+<p><em>Stream B Phenotype Profiles: Inverse-Scaled Centroids, Ordered by Stroke Rate</em></p>
+<p><img src="assets/fig3_phenotype_heatmap.png" class="img-fluid" alt="An 8-row heatmap of the eight Stream B cluster centroids across eight physiological features, rows ordered from lowest to highest stroke rate. The four comorbidity-grid clusters at the bottom light up on hypertension, heart disease, and high-glucose columns; the underweight and unremarkable clusters at the top are pale."></p>
+<p><em>Note.</em> Cells are min–max scaled per feature across the eight centroids for a comparable colour scale; printed values are in original units. Row labels carry cluster size and post-hoc stroke rate.</p>
+</section>
+<section id="stream-b-three-algorithms-recover-the-same-partition" class="level3">
+<h3 class="anchored" data-anchor-id="stream-b-three-algorithms-recover-the-same-partition">Stream B: three algorithms recover the same partition</h3>
+<p>K-means and Ward agglomerative — top-down centroids versus bottom-up hierarchical merges — produce an ARI of <strong>0.9988</strong> at <em>k</em> = 8 (Figure 4, Table 5): effectively the same partition recovered twice by unrelated methods, cluster sizes matching almost to the patient. GMM agrees less exactly (ARI 0.71 against each) — its non-spherical model splits K-means’ largest “no comorbidity” cluster (2,210) into two sub-populations of 1,057 and 1,153 that sum to exactly 2,210, a genuine secondary structure rather than disagreement. GMM’s soft assignment is barely exercised: 95.4% of patients receive a maximum cluster probability above 0.99.</p>
+<p>HDBSCAN, run without being told how many clusters to find, independently recovers the two dominant clusters (2,210 and 1,307) at matching sizes across every <code>min_cluster_size</code> from 25 to 250. At the finest setting it flags <strong>15 patients (0.29%)</strong> as noise — a negligible fraction. Ten of the fifteen carry extreme BMI (54.7 to 97.6, the dataset maximum), far beyond any cluster centroid; the rest sit at classification boundaries. Physiological feature space at this scale is dense: there is no meaningful outlier population for a density method to surface, and the density-based view corroborates the partition structure rather than revising it. <em>(The original notebook run flagged 5 noise patients at this setting; the difference is a density-library version effect and does not change the conclusion.)</em></p>
+</section>
+<section id="stream-a-the-metrics-refuse-to-converge" class="level3">
+<h3 class="anchored" data-anchor-id="stream-a-the-metrics-refuse-to-converge">Stream A: the metrics refuse to converge</h3>
+<p>The demographic/behavioural stream tells the opposite story (Figure 2, lower row). Calinski–Harabasz favours <em>k</em> = 2 throughout — a known bias toward fewer clusters. Silhouette and Davies–Bouldin keep improving all the way to <em>k</em> = 14 with no plateau, a pattern more consistent with the mechanical tightening of ever-smaller clusters in a space dominated by one continuous feature (age) than with new structure emerging at each step. <strong>k = 7 is a documented judgement call</strong>, chosen as the single point where silhouette and Davies–Bouldin both step out of the <em>k</em> = 3–6 trough before resuming a smooth drift.</p>
+</section>
+<section id="stream-a-seven-demographic-profiles" class="level3">
+<h3 class="anchored" data-anchor-id="stream-a-seven-demographic-profiles">Stream A: seven demographic profiles</h3>
+<p>The K-means centroids (Table 4) resolve into a life-stage trio and a four-way grid. Cluster 3 (“Children”, mean age 8.5) and Cluster 5 (“Young unmarried adults”, mean age 26.3) are the youngest and most distinct. Cluster 0 (“Current smokers”) is pulled out by smoking status alone regardless of age. Clusters 1, 2, 4, and 6 share a near-identical profile — older (mean age 55–57), married (96–98%), private-sector — and differ <em>only</em> on gender and residence, each resolving cleanly to 0 or 1. These four account for 2,910 patients (56.9%): the majority of the cohort is one life-stage crossed by gender and residence.</p>
+<p><strong>Table 4</strong></p>
+<p><em>The Seven Stream A Demographic/Behavioural Profiles</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Cluster</th>
+<th style="text-align: left;">Label</th>
+<th style="text-align: right;"><em>n</em></th>
+<th style="text-align: right;">%</th>
+<th style="text-align: right;">Mean age</th>
+<th style="text-align: left;">Distinguishing features</th>
+<th style="text-align: right;">Stroke rate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">Children</td>
+<td style="text-align: right;">745</td>
+<td style="text-align: right;">14.6</td>
+<td style="text-align: right;">8.5</td>
+<td style="text-align: left;">child-care occupation, unmarried</td>
+<td style="text-align: right;">0.40%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">Young unmarried adults</td>
+<td style="text-align: right;">719</td>
+<td style="text-align: right;">14.1</td>
+<td style="text-align: right;">26.3</td>
+<td style="text-align: left;">unmarried, mixed occupation</td>
+<td style="text-align: right;">0.42%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Current smokers</td>
+<td style="text-align: right;">736</td>
+<td style="text-align: right;">14.4</td>
+<td style="text-align: right;">46.2</td>
+<td style="text-align: left;">smoking status = currently</td>
+<td style="text-align: right;">5.30%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Older married workers — female, rural</td>
+<td style="text-align: right;">828</td>
+<td style="text-align: right;">16.2</td>
+<td style="text-align: right;">54.7</td>
+<td style="text-align: left;">married, private-sector</td>
+<td style="text-align: right;">6.40%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Older married workers — male, urban</td>
+<td style="text-align: right;">531</td>
+<td style="text-align: right;">10.4</td>
+<td style="text-align: right;">57.1</td>
+<td style="text-align: left;">married, private-sector</td>
+<td style="text-align: right;">7.72%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">Older married workers — male, rural</td>
+<td style="text-align: right;">689</td>
+<td style="text-align: right;">13.5</td>
+<td style="text-align: right;">55.6</td>
+<td style="text-align: left;">married, private-sector</td>
+<td style="text-align: right;">6.97%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">Older married workers — female, urban</td>
+<td style="text-align: right;">862</td>
+<td style="text-align: right;">16.9</td>
+<td style="text-align: right;">55.5</td>
+<td style="text-align: left;">married, private-sector</td>
+<td style="text-align: right;">7.19%</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Stroke rate is post-hoc. Clusters 1, 2, 4, 6 differ only on gender and residence.</p>
+</section>
+<section id="stream-a-agreement-is-real-but-fragile" class="level3">
+<h3 class="anchored" data-anchor-id="stream-a-agreement-is-real-but-fragile">Stream A: agreement is real but fragile</h3>
+<p>Stream A’s three algorithms agree only moderately: K-means vs.&nbsp;GMM <strong>0.636</strong>, K-means vs.&nbsp;Ward <strong>0.615</strong>, GMM vs.&nbsp;Ward <strong>0.655</strong> (Figure 4, Table 5) — well above chance, so the structure is real, but nothing like Stream B’s near-identical recovery. GMM’s internal certainty is if anything higher (99.4% of patients above 0.99 max probability): it is confidently finding a <em>different</em> partition, not hedging. The seven-cluster partition is a real but algorithm-sensitive signal.</p>
+<p><strong>Table 5</strong></p>
+<p><em>Cross-Algorithm Agreement (Adjusted Rand Index), by Stream</em></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Algorithm pair</th>
+<th style="text-align: right;">Stream B</th>
+<th style="text-align: right;">Stream A</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">K-means vs.&nbsp;Ward agglomerative</td>
+<td style="text-align: right;"><strong>0.9988</strong></td>
+<td style="text-align: right;">0.6152</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">K-means vs.&nbsp;GMM</td>
+<td style="text-align: right;">0.7069</td>
+<td style="text-align: right;">0.6358</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">GMM vs.&nbsp;Ward agglomerative</td>
+<td style="text-align: right;">0.7059</td>
+<td style="text-align: right;">0.6547</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> ARI 1.0 = identical partition; 0.0 = chance. Stream B’s physiological structure is algorithm-independent; Stream A’s is not.</p>
+<p><strong>Figure 4</strong></p>
+<p><em>Cross-Algorithm Agreement (ARI) for Both Streams</em></p>
+<p><img src="assets/fig4_cross_algorithm_ari.png" class="img-fluid" alt="Grouped horizontal bars of adjusted Rand index for three algorithm pairs. Stream B's K-means vs Ward bar reaches 0.9988, past the 0.90 near-identical line; all Stream A bars sit near 0.62 to 0.65."></p>
+<p><em>Note.</em> Dashed line at ARI = 0.90 marks near-identical agreement. Only Stream B’s K-means/Ward pair clears it.</p>
+</section>
+<section id="visual-confirmation" class="level3">
+<h3 class="anchored" data-anchor-id="visual-confirmation">Visual confirmation</h3>
+<p>PCA retains 61.2% of Stream B’s variance in two dimensions and 53.8% of Stream A’s. The UMAP projections (Figures 5 and 6) confirm the numeric picture directly. Stream B shows a clearly dominant cluster, a second large cluster set apart, and several small, cleanly separated groups — the structure that survived cross-algorithm validation. Stream A fragments into dozens of small scattered segments with no colour occupying one coherent region — the visual signature of a weak, interleaved partition built from a handful of low-cardinality categoricals plus one continuous axis.</p>
+<p><strong>Figure 5</strong></p>
+<p><em>Stream B UMAP Projection, Coloured by Phenotype and Annotated With Stroke Rate</em></p>
+<p><img src="assets/fig5_streamB_umap.png" class="img-fluid" alt="A UMAP scatter of 5,110 patients coloured by the eight physiological phenotypes. A large central cluster is labelled 3.2 percent; separated smaller clusters carry labels from 2.5 percent up to 24.1 percent, with the highest-rate clusters coloured dark red."></p>
+<p><em>Note.</em> Each cluster is labelled with its post-hoc stroke rate; label fill encodes that rate. The eight groups the algorithms agreed on appear as visually distinct regions.</p>
+<p><strong>Figure 6</strong></p>
+<p><em>Stream A UMAP Projection, Coloured by Cluster</em></p>
+<p><img src="assets/fig6_streamA_umap.png" class="img-fluid" alt="A UMAP scatter for the demographic stream. Rather than distinct blobs, it fragments into many small arcs and segments; each cluster colour recurs across disconnected pieces."></p>
+<p><em>Note.</em> The fragmentation is consistent with Stream A’s low cross-algorithm ARI: the seven-cluster partition is real but not geometrically crisp.</p>
+</section>
+<section id="the-two-streams-are-linked-and-the-link-is-age" class="level3">
+<h3 class="anchored" data-anchor-id="the-two-streams-are-linked-and-the-link-is-age">The two streams are linked, and the link is age</h3>
+<p>Cramér’s <em>V</em> between the two partitions is <strong>0.259</strong> (χ²(42) = 2,059, <em>p</em> &lt; .001) — a moderate association (Figure 7). Knowing a patient’s demographic phenotype says something real about their physiological phenotype, even though age never entered Stream B. The strongest thread is life-stage: Stream A’s “Children” cluster maps almost entirely onto two Stream B clusters — 378 into “physiologically unremarkable” and 296 into “underweight” — and 296 of Stream B’s 341 “underweight” patients (86.8%) are Stream A’s Children. The two streams describe the same paediatric sub-population from different angles.</p>
+<p><strong>Figure 7</strong></p>
+<p><em>Cross-Stream Contingency: Stream A (Demographic) Clusters × Stream B (Physiological) Clusters</em></p>
+<p><img src="assets/fig7_cross_stream_contingency.png" class="img-fluid" alt="A 7-by-8 heatmap of patient counts. Stream A cluster 3 (Children) has 378 in Stream B cluster 0 and 296 in Stream B cluster 3, near-zero in the comorbidity clusters. Other rows spread across Stream B clusters 0-2."></p>
+<p><em>Note.</em> Cramér’s <em>V</em> = 0.259. The bright cell at row A3 / column B3 (296 patients) is the Children ↔︎ Underweight overlap.</p>
+</section>
+<section id="stroke-incidence-by-phenotype-the-central-finding" class="level3">
+<h3 class="anchored" data-anchor-id="stroke-incidence-by-phenotype-the-central-finding">Stroke incidence by phenotype — the central finding</h3>
+<p>The two streams give sharply different answers to the question the study was built for (Figure 8, Table 6). Stream B’s physiological phenotypes span stroke rates from <strong>0.29% to 24.11%</strong> — an ~83-fold spread. Cluster 4 (heart disease + hyperglycaemia, <em>n</em> = 112) carries a <strong>24.11%</strong> rate, roughly five times the cohort average, and was found without the stroke label entering any computation. The other three comorbidity-grid clusters follow: 15.17%, 12.20%, 10.76% — all 2.2× to 5× the cohort rate. At the other extreme, the underweight cluster’s 0.29% is best explained by age (it is 92% young patients, and the dataset records essentially no paediatric strokes) rather than by underweight being protective. Stream A’s demographic phenotypes span a much narrower <strong>0.40% to 7.72%</strong> — the same age-linked gradient at lower resolution, with no cluster exceeding 7.72%.</p>
+<p><strong>Table 6</strong></p>
+<p><em>Post-Hoc Stroke Rate by Cluster, Both Streams (Cohort Rate 4.87%)</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Rank</th>
+<th style="text-align: left;">Stream B cluster</th>
+<th style="text-align: right;">Stroke rate</th>
+<th></th>
+<th style="text-align: left;">Stream A cluster</th>
+<th style="text-align: right;">Stroke rate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Highest</td>
+<td style="text-align: left;">4 · Heart disease + hyperglycaemia</td>
+<td style="text-align: right;">24.11%</td>
+<td></td>
+<td style="text-align: left;">2 · Older married — male, urban</td>
+<td style="text-align: right;">7.72%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">5 · Hypertension + hyperglycaemia</td>
+<td style="text-align: right;">15.17%</td>
+<td></td>
+<td style="text-align: left;">6 · Older married — female, urban</td>
+<td style="text-align: right;">7.19%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">6 · Heart disease, normal glucose</td>
+<td style="text-align: right;">12.20%</td>
+<td></td>
+<td style="text-align: left;">4 · Older married — male, rural</td>
+<td style="text-align: right;">6.97%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">7 · Hypertension, normal glucose</td>
+<td style="text-align: right;">10.76%</td>
+<td></td>
+<td style="text-align: left;">1 · Older married — female, rural</td>
+<td style="text-align: right;">6.40%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">2 · Hyperglycaemia, no cardiac disease</td>
+<td style="text-align: right;">8.10%</td>
+<td></td>
+<td style="text-align: left;">0 · Current smokers</td>
+<td style="text-align: right;">5.30%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">0 · Physiologically unremarkable</td>
+<td style="text-align: right;">3.21%</td>
+<td></td>
+<td style="text-align: left;">5 · Young unmarried adults</td>
+<td style="text-align: right;">0.42%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Lowest</td>
+<td style="text-align: left;">1 · Isolated obesity</td>
+<td style="text-align: right;">2.52%</td>
+<td></td>
+<td style="text-align: left;">3 · Children</td>
+<td style="text-align: right;">0.40%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">3 · Underweight</td>
+<td style="text-align: right;">0.29%</td>
+<td></td>
+<td style="text-align: left;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Spread</strong></td>
+<td style="text-align: left;"></td>
+<td style="text-align: right;"><strong>~83×</strong></td>
+<td></td>
+<td style="text-align: left;"></td>
+<td style="text-align: right;"><strong>~19×</strong></td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> The physiological stream separates the highest- and lowest-risk groups roughly four times more sharply than the demographic stream.</p>
+<p><strong>Figure 8</strong></p>
+<p><em>Post-Hoc Stroke Rate by Cluster, Sorted, for Both Streams</em></p>
+<p><img src="assets/fig8_stroke_rate_by_phenotype.png" class="img-fluid" alt="Two sorted horizontal bar panels. Stream B ranges from 0.29 percent to 24.11 percent, an 83-fold spread. Stream A ranges from 0.40 percent to 7.72 percent, a 19-fold spread. A dashed line marks the 4.87 percent cohort rate."></p>
+<p><em>Note.</em> Dashed line = cohort rate (4.87%). Bar colour encodes rate. The physiological spread dwarfs the demographic one.</p>
+</section>
+<section id="age-and-gender-structure-within-phenotypes" class="level3">
+<h3 class="anchored" data-anchor-id="age-and-gender-structure-within-phenotypes">Age and gender structure within phenotypes</h3>
+<p>The comorbidity clusters are overwhelmingly older (Figure 9): Cluster 4 is 81% senior with zero young patients, Cluster 6 is 75% senior, Cluster 5 is 63% senior. Comorbidity accumulating with age is a well-established pattern, and it emerged here from features that never included age. A gender skew runs alongside it: six of Stream B’s eight clusters over-represent men relative to the 41.4% cohort share, and only the two comorbidity-free clusters sit below it. The heart-disease clusters skew most (Cluster 6 is 62% male), but the pattern is broader than heart disease — consistent with cardiovascular and metabolic disease presenting more, and earlier, in men. The same male skew appears independently in the cross-stream contingency and in post-hoc interaction-term profiling.</p>
+<p><strong>Table 7</strong></p>
+<p><em>Age-Band and Gender Composition of the Stream B Phenotypes (Row %)</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Cluster</th>
+<th style="text-align: right;">Young</th>
+<th style="text-align: right;">Mid</th>
+<th style="text-align: right;">Mature</th>
+<th style="text-align: right;">Senior</th>
+<th style="text-align: right;">% Male</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">0 · Physiologically unremarkable</td>
+<td style="text-align: right;">39.8</td>
+<td style="text-align: right;">20.9</td>
+<td style="text-align: right;">20.2</td>
+<td style="text-align: right;">19.1</td>
+<td style="text-align: right;">37.4</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">1 · Isolated obesity</td>
+<td style="text-align: right;">17.7</td>
+<td style="text-align: right;">31.4</td>
+<td style="text-align: right;">30.5</td>
+<td style="text-align: right;">20.4</td>
+<td style="text-align: right;">39.5</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2 · Hyperglycaemia, no cardiac disease</td>
+<td style="text-align: right;">14.0</td>
+<td style="text-align: right;">16.8</td>
+<td style="text-align: right;">29.3</td>
+<td style="text-align: right;">40.0</td>
+<td style="text-align: right;">47.0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">3 · Underweight</td>
+<td style="text-align: right;">92.4</td>
+<td style="text-align: right;">1.5</td>
+<td style="text-align: right;">1.5</td>
+<td style="text-align: right;">4.7</td>
+<td style="text-align: right;">49.3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">4 · Heart disease + hyperglycaemia</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">1.8</td>
+<td style="text-align: right;">17.0</td>
+<td style="text-align: right;">81.2</td>
+<td style="text-align: right;">54.5</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">5 · Hypertension + hyperglycaemia</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">4.8</td>
+<td style="text-align: right;">31.7</td>
+<td style="text-align: right;">63.4</td>
+<td style="text-align: right;">44.1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">6 · Heart disease, normal glucose</td>
+<td style="text-align: right;">1.2</td>
+<td style="text-align: right;">1.8</td>
+<td style="text-align: right;">22.0</td>
+<td style="text-align: right;">75.0</td>
+<td style="text-align: right;">62.2</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">7 · Hypertension, normal glucose</td>
+<td style="text-align: right;">3.8</td>
+<td style="text-align: right;">12.8</td>
+<td style="text-align: right;">31.9</td>
+<td style="text-align: right;">51.4</td>
+<td style="text-align: right;">42.7</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Cohort</strong></td>
+<td style="text-align: right;">29.6</td>
+<td style="text-align: right;">19.9</td>
+<td style="text-align: right;">23.5</td>
+<td style="text-align: right;">26.9</td>
+<td style="text-align: right;">41.4</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Every comorbidity cluster over-represents the two oldest age bands; six of eight clusters over-represent men.</p>
+<p><strong>Figure 9</strong></p>
+<p><em>Age-Band Composition of the Stream B Phenotypes, Ordered by Stroke Rate</em></p>
+<p><img src="assets/fig9_ageband_by_phenotype.png" class="img-fluid" alt="Stacked horizontal bars showing the young/mid/mature/senior split of each of the eight Stream B clusters, ordered from lowest to highest stroke rate. The high-rate clusters at the bottom are almost entirely mature and senior; the low-rate underweight cluster at the top is almost entirely young."></p>
+<p><em>Note.</em> Clusters are ordered by post-hoc stroke rate (shown in each row label). Age was not a Stream B input; the senior dominance of the high-risk phenotypes emerged from the physiological features alone.</p>
+</section>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<section id="unsupervised-phenotypes-recover-the-risk-hierarchy" class="level3">
+<h3 class="anchored" data-anchor-id="unsupervised-phenotypes-recover-the-risk-hierarchy">Unsupervised phenotypes recover the risk hierarchy</h3>
+<p>The physiological stream, clustered without ever seeing the stroke label, produces eight phenotypes whose stroke rates span nearly two orders of magnitude and whose ordering is clinically coherent: comorbidity-grid clusters at the top, an unremarkable baseline in the middle, an age-explained underweight cluster at the floor. A supervised classifier trained on the label would surface the same structure; recovering it from features alone is evidence the structure is a property of the population, not of the labelling. The highest-risk phenotype — 112 patients with co-occurring heart disease and hyperglycaemia, at a 24% stroke rate — is exactly the kind of small, sharply defined subgroup an aggregate model can dilute.</p>
+</section>
+<section id="the-two-stream-design-earns-its-keep" class="level3">
+<h3 class="anchored" data-anchor-id="the-two-stream-design-earns-its-keep">The two-stream design earns its keep</h3>
+<p>Clustering the two feature sets separately, then reconciling them, answered a question a joint clustering could not: the streams share moderate information (Cramér’s <em>V</em> = 0.26) but capture genuinely different structure. Almost all the shared information is age. The physiological stream discriminates stroke risk; the demographic stream contextualises it. Had the 14 features been clustered jointly, the strong physiological signal and the weak demographic one would have been averaged into a single partition of indeterminate quality.</p>
+</section>
+<section id="report-agreement-not-a-winner" class="level3">
+<h3 class="anchored" data-anchor-id="report-agreement-not-a-winner">Report agreement, not a winner</h3>
+<p>Running four algorithms and reporting their agreement produced a calibrated confidence that picking one method would have hidden. Stream B’s structure is near-certain: three algorithms with different assumptions recovered it, one of them without being told how many clusters to find. Stream A’s is real but fragile: ARI 0.62–0.65, metrics that never converge, a <em>k</em> chosen by judgement. Both assessments are stated plainly rather than buried under a single silhouette score.</p>
+</section>
+<section id="limitations" class="level3">
+<h3 class="anchored" data-anchor-id="limitations">Limitations</h3>
+<p>The analysis is descriptive and cross-sectional; the stroke rates by phenotype are associations, not adjusted effects, and the underweight cluster’s low rate is explicitly an age artefact. Stream A’s partition is algorithm-sensitive and should be read as indicative only. Categorical features were ordinal-encoded for a Euclidean metric, which imposes a distance structure on nominally unordered categories (mitigated by keeping cardinalities low and ordering smoking status deliberately). The four comorbidity-grid clusters are small (112–288 patients), so their stroke rates carry wide sampling uncertainty. HDBSCAN’s noise count was the one quantity that did not reproduce exactly across library versions (5 vs.&nbsp;15 patients); both figures are negligible and the conclusion is unaffected. UMAP layouts are seeded but remain a projection, not a metric.</p>
+</section>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
+<p>Unsupervised clustering of this stroke cohort, with the outcome withheld from every distance calculation, recovers a clinical-risk hierarchy spanning an ~83-fold range in stroke incidence — concentrated entirely in the physiological feature stream, validated across four algorithms, and linked to the demographic stream almost entirely through age. The phenotypes are a descriptive complement to the supervised models: they show that the risk structure those models predict is legible in the features themselves.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Caliński, T., &amp; Harabasz, J. (1974). A dendrite method for cluster analysis. <em>Communications in Statistics, 3</em>(1), 1–27. https://doi.org/10.1080/03610927408827101</p>
+<p>Campello, R. J. G. B., Moulavi, D., &amp; Sander, J. (2013). Density-based clustering based on hierarchical density estimates. In J. Pei, V. S. Tseng, L. Cao, H. Motoda, &amp; G. Xu (Eds.), <em>Advances in knowledge discovery and data mining</em> (pp.&nbsp;160–172). Springer. https://doi.org/10.1007/978-3-642-37456-2_14</p>
+<p>Cramér, H. (1946). <em>Mathematical methods of statistics</em>. Princeton University Press.</p>
+<p>Davies, D. L., &amp; Bouldin, D. W. (1979). A cluster separation measure. <em>IEEE Transactions on Pattern Analysis and Machine Intelligence, PAMI-1</em>(2), 224–227. https://doi.org/10.1109/TPAMI.1979.4766909</p>
+<p>fedesoriano. (2021). <em>Stroke prediction dataset</em> [Data set]. Kaggle. https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset</p>
+<p>Harris, C. R., Millman, K. J., van der Walt, S. J., Gommers, R., Virtanen, P., Cournapeau, D., Wieser, E., Taylor, J., Berg, S., Smith, N. J., Kern, R., Picus, M., Hoyer, S., van Kerkwijk, M. H., Brett, M., Haldane, A., del Río, J. F., Wiebe, M., Peterson, P., … Oliphant, T. E. (2020). Array programming with NumPy. <em>Nature, 585</em>, 357–362. https://doi.org/10.1038/s41586-020-2649-2</p>
+<p>Hotelling, H. (1933). Analysis of a complex of statistical variables into principal components. <em>Journal of Educational Psychology, 24</em>(6), 417–441. https://doi.org/10.1037/h0071325</p>
+<p>Hubert, L., &amp; Arabie, P. (1985). Comparing partitions. <em>Journal of Classification, 2</em>(1), 193–218. https://doi.org/10.1007/BF01908075</p>
+<p>Lloyd, S. P. (1982). Least squares quantization in PCM. <em>IEEE Transactions on Information Theory, 28</em>(2), 129–137. https://doi.org/10.1109/TIT.1982.1056489</p>
+<p>McInnes, L., Healy, J., &amp; Astels, S. (2017). hdbscan: Hierarchical density based clustering. <em>Journal of Open Source Software, 2</em>(11), Article 205. https://doi.org/10.21105/joss.00205</p>
+<p>McInnes, L., Healy, J., &amp; Melville, J. (2018). <em>UMAP: Uniform manifold approximation and projection for dimension reduction</em>. arXiv. https://doi.org/10.48550/arXiv.1802.03426</p>
+<p>Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., &amp; Duchesnay, É. (2011). Scikit-learn: Machine learning in Python. <em>Journal of Machine Learning Research, 12</em>, 2825–2830.</p>
+<p>Reynolds, D. (2009). Gaussian mixture models. In S. Z. Li &amp; A. Jain (Eds.), <em>Encyclopedia of biometrics</em> (pp.&nbsp;659–663). Springer. https://doi.org/10.1007/978-0-387-73003-5_196</p>
+<p>Rousseeuw, P. J. (1987). Silhouettes: A graphical aid to the interpretation and validation of cluster analysis. <em>Journal of Computational and Applied Mathematics, 20</em>, 53–65. https://doi.org/10.1016/0377-0427(87)90125-7</p>
+<p>The pandas development team. (2020). <em>pandas-dev/pandas: Pandas</em> (Version latest) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.3509134</p>
+<p>Virtanen, P., Gommers, R., Oliphant, T. E., Haberland, M., Reddy, T., Cournapeau, D., Burovski, E., Peterson, P., Weckesser, W., Bright, J., van der Walt, S. J., Brett, M., Wilson, J., Millman, K. J., Mayorov, N., Nelson, A. R. J., Jones, E., Kern, R., Larson, E., … SciPy 1.0 Contributors. (2020). SciPy 1.0: Fundamental algorithms for scientific computing in Python. <em>Nature Methods, 17</em>, 261–272. https://doi.org/10.1038/s41592-019-0686-2</p>
+<p>Ward, J. H., Jr.&nbsp;(1963). Hierarchical grouping to optimize an objective function. <em>Journal of the American Statistical Association, 58</em>(301), 236–244. https://doi.org/10.1080/01621459.1963.10500845</p>
+<hr>
+<p><em>Analytical workflow and figures by the author. Cluster–stroke associations are descriptive; the outcome was withheld from all clustering computation and read only post hoc.</em></p>
+
+
+<div id="contact" class="connect-section" style="text-align: center; padding: 50px 20px; background: #f9f9f9; border-radius: 15px; border: 1px solid #eaeaea; margin-top: 40px;">
+<h3 style="color: #2c3e50; font-weight: 700; margin-bottom: 15px; border: none;" class="anchored">Let's Collaborate</h3>
+<p style="color: #666; max-width: 650px; margin: 0 auto 30px auto; font-size: 1.05rem; line-height: 1.6;">Available for high-impact <strong>Business Intelligence, Power BI Engineering, and Advanced Data Analytics</strong> projects. Connect with me or hire me directly through the platforms below.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
+<a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-linkedin"></i> LinkedIn</a>
+<a href="https://github.com/mkhanmuneer" class="btn btn-dark" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-github"></i> GitHub</a>
+<a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" target="_blank" rel="noopener" style="color: white; padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-graph-up"></i> Kaggle</a>
+<a href="https://www.upwork.com/freelancers/~018de8553286a1d00c" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-briefcase"></i> Upwork</a>
+<a href="https://www.fiverr.com/neuronvision" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-lightning-charge"></i> Fiverr</a>
+</div>
+</div>
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/mkhanmuneer\.github\.io\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 Muhammad Khan Muneer</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.upwork.com/freelancers/~018de8553286a1d00c">
+<p>Hire on Upwork</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.fiverr.com/neuronvision">
+<p>Hire on Fiverr</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

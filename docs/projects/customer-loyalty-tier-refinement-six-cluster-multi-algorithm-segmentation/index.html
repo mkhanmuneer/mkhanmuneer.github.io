@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Muhammad Khan Muneer">
+<meta name="keywords" content="unsupervised learning, K-means clustering, Ward agglomerative clustering, Gaussian mixture model, silhouette score, Davies-Bouldin index, adjusted Rand index, k selection, PCA, UMAP, RFM, customer segmentation, Python, scikit-learn">
+<meta name="description" content="Unsupervised K-Means clustering of 20,652 customers on 18 behavioural, monetary, temporal, and product-breadth features. k = 6, chosen where silhouette and Davies–Bouldin improve together (k = 2 wins every geometry metric but is a small-k bias artefact). Cross-validated: K-Means, Ward, and a Gaussian mixture agree at ARI 0.56–0.62 — moderate, so the partition is partly algorithm-dependent. The refinement: one cluster is 70% Loyal-tier and 26% Champion-tier customers — it holds 99% of all Champions and two-thirds of the Loyal tier, consolidating the RFM top two — while the Standard tier (63% of the base) fans out across five structurally distinct clusters, including a 573-customer negative-margin group the algorithm surfaced with no guidance toward profitability. The economics: two clusters hold 58.6% of customers and 93.1% of revenue. Silhouette 0.32 — a useful lens, not a ground truth.">
+
+<title>A Six-Cluster Refinement of the Loyalty Tier System: Multi-Metric Selection and Three-Algorithm Validation Over 20,652 Customers – Muhammad Khan Muneer</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-ca0cfe78a00f84493d894d8af57a3a20.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": true,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="../../styles/custom.css">
+<meta property="og:title" content="Muhammad Khan Muneer — Data Science &amp; BI Portfolio">
+<meta property="og:description" content="Engineering ML-driven analytics and automated decision systems.">
+<meta property="og:image" content="https://mkhanmuneer.github.io/projects/customer-loyalty-tier-refinement-six-cluster-multi-algorithm-segmentation/assets/fig1_k_selection_sweep.png">
+<meta property="og:site_name" content="M. Khan Muneer Portfolio">
+<meta property="og:image:alt" content="Four line panels of clustering metrics against k from 2 to 12. Silhouette: peaks at k=2 (0.43), drops, small local bump at k=5 to 6 (0.32). Davies-Bouldin: minimum at k=2 (0.99), rises to 1.37 at k=4, then a sharp local minimum at k=6 (1.10). Calinski-Harabasz: monotonically decreasing from k=2. Inertia: smooth decreasing curve with the elbow around k=5 to 6. A dashed red line marks k=6 in every panel.">
+<meta property="og:image:height" content="1402">
+<meta property="og:image:width" content="1895">
+<meta name="twitter:title" content="A Six-Cluster Refinement of the Loyalty Tier System: Multi-Metric Selection and Three-Algorithm Validation Over 20,652 Customers – Muhammad Khan Muneer">
+<meta name="twitter:description" content="Unsupervised K-Means clustering of 20,652 customers on 18 behavioural, monetary, temporal, and product-breadth features. k = 6, chosen where silhouette and Davies–Bouldin improve together (k = 2 wins every geometry metric but is a small-k bias artefact). Cross-validated: K-Means, Ward, and a Gaussian mixture agree at ARI 0.56–0.62 — moderate, so the partition is partly algorithm-dependent. The refinement: one cluster is 70% Loyal-tier and 26% Champion-tier customers — it holds 99% of all Champions and two-thirds of the Loyal tier, consolidating the RFM top two — while the Standard tier (63% of the base) fans out across five structurally distinct clusters, including a 573-customer negative-margin group the algorithm surfaced with no guidance toward profitability. The economics: two clusters hold 58.6% of customers and 93.1% of revenue. Silhouette 0.32 — a useful lens, not a ground truth.">
+<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/customer-loyalty-tier-refinement-six-cluster-multi-algorithm-segmentation/assets/fig1_k_selection_sweep.png">
+<meta name="twitter:creator" content="@iMKhanMuneer">
+<meta name="twitter:site" content="@iMKhanMuneer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Four line panels of clustering metrics against k from 2 to 12. Silhouette: peaks at k=2 (0.43), drops, small local bump at k=5 to 6 (0.32). Davies-Bouldin: minimum at k=2 (0.99), rises to 1.37 at k=4, then a sharp local minimum at k=6 (1.10). Calinski-Harabasz: monotonically decreasing from k=2. Inertia: smooth decreasing curve with the elbow around k=5 to 6. A dashed red line marks k=6 in every panel.">
+<meta name="twitter:image-height" content="1402">
+<meta name="twitter:image-width" content="1895">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#featured-projects"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/iMKhanMuneer"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.kaggle.com/muhammadkhanmuneer"> <i class="bi bi-graph-up" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#contact"> 
+<span class="menu-text">Contact</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#method" id="toc-method" class="nav-link" data-scroll-target="#method">Method</a>
+  <ul class="collapse">
+  <li><a href="#data-source" id="toc-data-source" class="nav-link" data-scroll-target="#data-source">Data source</a></li>
+  <li><a href="#feature-matrix" id="toc-feature-matrix" class="nav-link" data-scroll-target="#feature-matrix">Feature matrix</a></li>
+  <li><a href="#preprocessing" id="toc-preprocessing" class="nav-link" data-scroll-target="#preprocessing">Preprocessing</a></li>
+  <li><a href="#k-selection" id="toc-k-selection" class="nav-link" data-scroll-target="#k-selection">k selection</a></li>
+  <li><a href="#algorithms-and-validation" id="toc-algorithms-and-validation" class="nav-link" data-scroll-target="#algorithms-and-validation">Algorithms and validation</a></li>
+  <li><a href="#software" id="toc-software" class="nav-link" data-scroll-target="#software">Software</a></li>
+  </ul></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
+  <ul class="collapse">
+  <li><a href="#k-6-chosen-on-a-two-metric-convergence" id="toc-k-6-chosen-on-a-two-metric-convergence" class="nav-link" data-scroll-target="#k-6-chosen-on-a-two-metric-convergence">k = 6, chosen on a two-metric convergence</a></li>
+  <li><a href="#the-partition-is-moderately-robust-across-algorithms" id="toc-the-partition-is-moderately-robust-across-algorithms" class="nav-link" data-scroll-target="#the-partition-is-moderately-robust-across-algorithms">The partition is moderately robust across algorithms</a></li>
+  <li><a href="#the-feature-space-has-one-dominant-axis" id="toc-the-feature-space-has-one-dominant-axis" class="nav-link" data-scroll-target="#the-feature-space-has-one-dominant-axis">The feature space has one dominant axis</a></li>
+  <li><a href="#the-six-clusters" id="toc-the-six-clusters" class="nav-link" data-scroll-target="#the-six-clusters">The six clusters</a></li>
+  <li><a href="#the-loyalty-tier-refinement" id="toc-the-loyalty-tier-refinement" class="nav-link" data-scroll-target="#the-loyalty-tier-refinement">The loyalty-tier refinement</a></li>
+  <li><a href="#two-null-findings-confirmed" id="toc-two-null-findings-confirmed" class="nav-link" data-scroll-target="#two-null-findings-confirmed">Two null findings confirmed</a></li>
+  </ul></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a>
+  <ul class="collapse">
+  <li><a href="#principal-findings" id="toc-principal-findings" class="nav-link" data-scroll-target="#principal-findings">Principal findings</a></li>
+  <li><a href="#the-mechanism-worth-naming" id="toc-the-mechanism-worth-naming" class="nav-link" data-scroll-target="#the-mechanism-worth-naming">The mechanism worth naming</a></li>
+  <li><a href="#limitations-and-honest-assessment" id="toc-limitations-and-honest-assessment" class="nav-link" data-scroll-target="#limitations-and-honest-assessment">Limitations and honest assessment</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">A Six-Cluster Refinement of the Loyalty Tier System: Multi-Metric Selection and Three-Algorithm Validation Over 20,652 Customers</h1>
+<p class="subtitle lead">An unsupervised segmentation of an e-commerce customer base — how a data-driven partition consolidates the top two RFM tiers into one group and splits the Standard tier into five, and how far to trust it.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Machine Learning</div>
+    <div class="quarto-category">Unsupervised Learning</div>
+    <div class="quarto-category">Clustering</div>
+    <div class="quarto-category">Dimensionality Reduction</div>
+    <div class="quarto-category">Model Evaluation</div>
+    <div class="quarto-category">Customer Analytics</div>
+    <div class="quarto-category">Customer Segmentation</div>
+    <div class="quarto-category">RFM Analysis</div>
+    <div class="quarto-category">Retail Analytics</div>
+    <div class="quarto-category">Python</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>Unsupervised K-Means clustering of 20,652 customers on 18 behavioural, monetary, temporal, and product-breadth features. <strong>k = 6</strong>, chosen where silhouette and Davies–Bouldin improve together (k = 2 wins every geometry metric but is a small-k bias artefact). <strong>Cross-validated:</strong> K-Means, Ward, and a Gaussian mixture agree at ARI 0.56–0.62 — moderate, so the partition is partly algorithm-dependent. <strong>The refinement:</strong> one cluster is 70% Loyal-tier and 26% Champion-tier customers — it holds 99% of all Champions and two-thirds of the Loyal tier, consolidating the RFM top two — while the Standard tier (63% of the base) fans out across five structurally distinct clusters, including a 573-customer negative-margin group the algorithm surfaced with no guidance toward profitability. <strong>The economics:</strong> two clusters hold 58.6% of customers and 93.1% of revenue. Silhouette 0.32 — a useful lens, not a ground truth.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Muhammad Khan Muneer </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+<div>
+  <div class="keywords">
+    <div class="block-title">Keywords</div>
+    <p>unsupervised learning, K-means clustering, Ward agglomerative clustering, Gaussian mixture model, silhouette score, Davies-Bouldin index, adjusted Rand index, k selection, PCA, UMAP, RFM, customer segmentation, Python, scikit-learn</p>
+  </div>
+</div>
+
+</header>
+
+
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+<p>This study applies unsupervised clustering to a 20,652-customer e-commerce base to test whether it contains structurally distinct subpopulations that the existing four-tier RFM loyalty classification (At Risk / Standard / Loyal / Champion) does not capture. The analytical table is the validated Gold layer of a companion medallion pipeline; the clustering was fitted once and persisted, and every figure here is rebuilt from those artefacts. Eighteen behavioural, monetary, temporal, and product-breadth features were standardised and passed to K-Means. A sweep across k = 2–12 with four independent metrics identified <strong>k = 6</strong> as the smallest non-trivial partition where silhouette and the Davies–Bouldin index improve together (k = 2 wins every geometry metric by the small-<em>k</em> bias all of them share). K-Means, Ward agglomerative clustering, and a Gaussian mixture model fitted at k = 6 agree at <strong>adjusted Rand index 0.56–0.62</strong> — moderate, so the partition is partly algorithm-dependent. The six clusters <strong>refine rather than overturn</strong> the tier system: <strong>cluster 2 is 70.2% Loyal-tier and 26.4% Champion-tier customers</strong> — it captures <strong>99.4% of all Champions and 66.8% of the Loyal tier</strong> (cluster 4 holds most of the remaining Loyal) — consolidating the RFM top two into one data-driven group that holds 27.1% of customers and <strong>61.0% of revenue</strong>; the <strong>Standard tier (63% of the base) fans out across the other five clusters</strong>, which differ in ticket size, margin, and product category. Among them the algorithm surfaced a <strong>573-customer negative-margin group</strong> (mean margin ratio −1.27, mean profit −$375 per order) with no feature pointing it toward profitability. Customer segment (Consumer / Corporate / Home Office) and late-delivery rate are near-uniform across all six clusters, confirming two prior null findings in an independent frame. Silhouette is <strong>0.32</strong> — moderate; the partition is a lens, not a ground truth.</p>
+<p><em>Keywords:</em> unsupervised learning, K-means clustering, silhouette, Davies–Bouldin, adjusted Rand index, PCA, UMAP, RFM, customer segmentation</p>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>The companion customer study profiled this base at the individual level and along a four-tier RFM loyalty ladder. That ladder is useful, but it is a fixed-threshold system: it assigns roughly <strong>63% of customers to the single “Standard” band</strong>. If materially different customer types sit inside Standard — different ticket sizes, margin profiles, product preferences — a threshold system cannot surface them.</p>
+<p>This study asks whether the base contains such structure, using <strong>unsupervised clustering</strong>: no labels are supplied, and the algorithm groups customers from the geometry of an 18-dimensional feature space. The result is evaluated three ways — by internal geometry metrics, by agreement across three structurally different algorithms, and by whether the clusters separate on variables the algorithm never saw (loyalty tier, RFM score, customer segment, product category). If clusters split on inputs they were never given, the partition has found real structure rather than echoing itself.</p>
+<p>The framing is deliberately modest. Clustering does not produce a ground truth; it produces one lens. The value test is whether that lens shows something the existing tier system cannot.</p>
+</section>
+<section id="method" class="level2">
+<h2 class="anchored" data-anchor-id="method">Method</h2>
+<section id="data-source" class="level3">
+<h3 class="anchored" data-anchor-id="data-source">Data source</h3>
+<p>One analytical table, <code>customer_features_gold</code> (20,652 rows × 39 columns), one row per customer aggregated over January 2015 – January 2018. No duplicate customers, no zero-variance columns.</p>
+</section>
+<section id="feature-matrix" class="level3">
+<h3 class="anchored" data-anchor-id="feature-matrix">Feature matrix</h3>
+<p>All 39 source columns were triaged: <strong>18 enter the feature matrix, 21 are excluded with a stated reason</strong> (Table 1). Included features span four dimensions — <strong>behavioural</strong> (<code>orders</code>, <code>total_items</code>, <code>avg_items_per_order</code>), <strong>monetary</strong> (<code>total_revenue</code>, <code>avg_order_value</code>, <code>total_profit</code>, <code>avg_profit_per_order</code>, <code>avg_margin_ratio</code>, <code>total_discount</code>, <code>avg_discount</code>, <code>discount_rate</code>, <code>high_value_order_rate</code>), <strong>temporal</strong> (<code>recency_days</code>, <code>customer_lifetime_days</code>, <code>avg_inter_order_days</code>), and <strong>product breadth</strong> (<code>n_unique_products</code>, <code>n_unique_categories</code>, <code>n_unique_departments</code>).</p>
+<p><strong>Table 1</strong></p>
+<p><em>Feature-Matrix Triage (39 columns → 18 included, 21 excluded)</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Excluded group</th>
+<th style="text-align: left;">Columns</th>
+<th style="text-align: left;">Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Derived RFM labels</td>
+<td style="text-align: left;"><code>loyalty_tier</code>, <code>rfm_score</code>, <code>r_score</code>, <code>f_score</code>, <code>m_score</code>, <code>is_high_value_customer</code>, <code>orders_bucket</code></td>
+<td style="text-align: left;">Computed from features already in the matrix; including them lets the algorithm reconstruct a label instead of discovering structure. Used post-hoc.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Categorical preferences</td>
+<td style="text-align: left;"><code>preferred_category</code> (44 levels), <code>preferred_department</code>, <code>preferred_ship_mode</code></td>
+<td style="text-align: left;">Encoding a 44-level categorical would dominate distance without proportionate signal. Profiled post-hoc.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Shipping metrics</td>
+<td style="text-align: left;"><code>late_rate</code>, <code>early_rate</code>, <code>avg_shipping_days</code>, <code>avg_shipping_delay</code>, <code>total_late_orders</code></td>
+<td style="text-align: left;">Prior EDA established these are near-uniform across every tier and segment — distance without discrimination.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Collinear revenue</td>
+<td style="text-align: left;"><code>avg_revenue</code></td>
+<td style="text-align: left;">Correlates 0.62 with <code>total_revenue</code> and <code>avg_order_value</code>; a third revenue-derived measure over-weights the revenue dimension.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Artefact-laden</td>
+<td style="text-align: left;"><code>clv_proxy</code></td>
+<td style="text-align: left;">Extreme annualisation artefacts (short-tenure customers) would distort distances.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Structural</td>
+<td style="text-align: left;"><code>customer_id</code>, <code>first_order</code>, <code>last_order</code></td>
+<td style="text-align: left;">Identifier / datetime — temporal signal already captured by <code>recency_days</code> and <code>customer_lifetime_days</code>.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Non-discriminating</td>
+<td style="text-align: left;"><code>customer_segment</code></td>
+<td style="text-align: left;">Near-zero discriminating power per prior EDA. Used post-hoc.</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> <code>avg_inter_order_days</code> is 40.8% missing (single-order customers have no interval); imputed with a sentinel of 886 — one day above the observed maximum — to place “never returned” at maximum distance from repeat buyers in that dimension.</p>
+</section>
+<section id="preprocessing" class="level3">
+<h3 class="anchored" data-anchor-id="preprocessing">Preprocessing</h3>
+<p>Features were standardised with <code>StandardScaler</code> (zero mean, unit variance). This is a decision, not a default: <code>total_revenue</code> spans a range of $9,428 and <code>discount_rate</code> spans 0.33 — a scale ratio of ~28,000×. A two-feature K-Means (<code>total_revenue</code>, <code>discount_rate</code>) fitted unscaled versus scaled produces partitions that agree at only ARI 0.33, so scaling changes the result substantially rather than relabelling it.</p>
+</section>
+<section id="k-selection" class="level3">
+<h3 class="anchored" data-anchor-id="k-selection">k selection</h3>
+<p>K-Means was fitted for <strong>k = 2 through 12</strong> (each model persisted), and four metrics computed per k: silhouette (cohesion vs.&nbsp;separation), Davies–Bouldin (within- vs.&nbsp;between-cluster scatter), Calinski–Harabasz (between- vs.&nbsp;within-cluster dispersion), and inertia (the elbow). Each geometry metric was ranked honestly across k (Figure 1, Table 2).</p>
+</section>
+<section id="algorithms-and-validation" class="level3">
+<h3 class="anchored" data-anchor-id="algorithms-and-validation">Algorithms and validation</h3>
+<p>Three structurally different algorithms were fitted at k = 6 — <strong>K-Means</strong> (centroid, spherical assumption), <strong>Ward</strong> agglomerative (hierarchical, minimum-variance merges), and a <strong>Gaussian mixture model</strong> (probabilistic, full covariance, soft assignment). Partition robustness was measured by pairwise adjusted Rand index; the primary algorithm was chosen by highest silhouette. Structure was then decomposed with PCA (linear, interpretable loadings) and UMAP (nonlinear, local-neighbourhood topology). <code>random_state = 42</code> throughout.</p>
+</section>
+<section id="software" class="level3">
+<h3 class="anchored" data-anchor-id="software">Software</h3>
+<p>Python 3.10 with <code>scikit-learn</code> (K-Means, <code>AgglomerativeClustering</code>, <code>GaussianMixture</code>, PCA, the four metrics), <code>umap-learn</code>, <code>pandas</code>, <code>numpy</code>, and <code>matplotlib</code>.</p>
+</section>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<section id="k-6-chosen-on-a-two-metric-convergence" class="level3">
+<h3 class="anchored" data-anchor-id="k-6-chosen-on-a-two-metric-convergence">k = 6, chosen on a two-metric convergence</h3>
+<p>The sweep has a clear trap and a clear answer (Figure 1, Table 2). <strong>k = 2 wins outright</strong> — first on silhouette (0.43), Davies–Bouldin (0.99), and Calinski–Harabasz (16,231) — but this is the small-<em>k</em> bias all three metrics share: a binary split maximises between-cluster separation by construction, and a two-segment base has no operational content the tier system doesn’t already carry. Setting k = 2 aside, the contest is <strong>k = 5 versus k = 6</strong>. k = 5 edges silhouette by 0.001 (negligible); <strong>k = 6 wins Davies–Bouldin decisively — 1.10 versus 1.21</strong> — and the inertia elbow bends through the k = 5–6 range. k = 6 is the smallest non-trivial partition where <em>two</em> metrics improve together, and six segments are operationally legible. <strong>k = 6 is locked.</strong></p>
+<p><strong>Figure 1</strong></p>
+<p><em>k-Selection Sweep: Four Metrics Across k = 2–12</em></p>
+<p><img src="assets/fig1_k_selection_sweep.png" class="img-fluid" alt="Four line panels of clustering metrics against k from 2 to 12. Silhouette: peaks at k=2 (0.43), drops, small local bump at k=5 to 6 (0.32). Davies-Bouldin: minimum at k=2 (0.99), rises to 1.37 at k=4, then a sharp local minimum at k=6 (1.10). Calinski-Harabasz: monotonically decreasing from k=2. Inertia: smooth decreasing curve with the elbow around k=5 to 6. A dashed red line marks k=6 in every panel."></p>
+<p><em>Note.</em> Green dot = each metric’s optimum (all at k = 2, the bias). Red line = the chosen k = 6.</p>
+<p><strong>Table 2</strong></p>
+<p><em>Sweep Metrics for the Leading Candidates</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">k</th>
+<th style="text-align: right;">Silhouette</th>
+<th style="text-align: right;">Davies–Bouldin</th>
+<th style="text-align: right;">Calinski–Harabasz</th>
+<th style="text-align: right;">Inertia</th>
+<th style="text-align: left;">Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">2</td>
+<td style="text-align: right;">0.433</td>
+<td style="text-align: right;">0.991</td>
+<td style="text-align: right;">16,231</td>
+<td style="text-align: right;">208,137</td>
+<td style="text-align: left;">wins all — small-<em>k</em> bias, no operational content</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">5</td>
+<td style="text-align: right;">0.322</td>
+<td style="text-align: right;">1.215</td>
+<td style="text-align: right;">9,258</td>
+<td style="text-align: right;">133,067</td>
+<td style="text-align: left;">silhouette by 0.001; DB weak</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>6</strong></td>
+<td style="text-align: right;"><strong>0.321</strong></td>
+<td style="text-align: right;"><strong>1.102</strong></td>
+<td style="text-align: right;"><strong>8,465</strong></td>
+<td style="text-align: right;"><strong>121,881</strong></td>
+<td style="text-align: left;"><strong>DB + silhouette improve together; elbow region</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">7</td>
+<td style="text-align: right;">0.288</td>
+<td style="text-align: right;">1.246</td>
+<td style="text-align: right;">7,969</td>
+<td style="text-align: right;">112,108</td>
+<td style="text-align: left;">both metrics worsen</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Silhouette recomputed on a 15,000-row sample (<code>random_state = 42</code>); DB, CH, inertia on the full 20,652.</p>
+</section>
+<section id="the-partition-is-moderately-robust-across-algorithms" class="level3">
+<h3 class="anchored" data-anchor-id="the-partition-is-moderately-robust-across-algorithms">The partition is moderately robust across algorithms</h3>
+<p>K-Means, Ward, and the Gaussian mixture see <strong>broadly the same structure but disagree on boundaries</strong> (Figure 2). Pairwise adjusted Rand indices are K-Means↔︎Ward <strong>0.58</strong>, K-Means↔︎GMM <strong>0.56</strong>, Ward↔︎GMM <strong>0.62</strong> — all in the moderate band. K-Means is the tightest (silhouette 0.32 vs.&nbsp;Ward 0.27, GMM 0.20) and is the primary algorithm. The GMM soft-assignment check is reassuring: <strong>no customer falls below 0.50 posterior probability</strong> for its cluster, only 2.1% below 0.70, and <strong>88.0% sit at or above 0.99</strong> — effectively hard assignment, meaning the six clusters correspond to genuine density separations rather than arbitrary cuts through diffuse space. But the ARI band is the honest headline: this is a partly algorithm-dependent partition, and the profiling should be read with that caveat.</p>
+<p><strong>Figure 2</strong></p>
+<p><em>Cross-Algorithm Agreement and Per-Algorithm Silhouette (k = 6)</em></p>
+<p><img src="assets/fig2_cross_algorithm.png" class="img-fluid" alt="Left: a 3x3 adjusted Rand index heatmap for K-Means, Ward, and GMM — off-diagonal values 0.56, 0.58, 0.62. Right: silhouette bars — K-Means 0.321, Ward 0.271, GMM 0.202."></p>
+<p><em>Note.</em> ARI of 1.0 on the diagonal; the off-diagonal 0.56–0.62 is moderate agreement.</p>
+</section>
+<section id="the-feature-space-has-one-dominant-axis" class="level3">
+<h3 class="anchored" data-anchor-id="the-feature-space-has-one-dominant-axis">The feature space has one dominant axis</h3>
+<p>PCA on the 18 standardised features shows <strong>PC1 alone captures 52.2% of total variance</strong>, PC2 adds 11.9%, PC3 10.0%; the space reaches 80% variance at 4 components and 95% at 9 (Figure 3). <strong>PC1 is an engagement-depth axis</strong> (Figure 4) — its five heaviest loadings are <code>n_unique_categories</code> (0.32), <code>n_unique_products</code> (0.32), <code>total_items</code> (0.31), <code>n_unique_departments</code> (0.31), and <code>total_revenue</code> (0.31); volume, breadth, and revenue load together because they are structurally correlated, and the negative loading on <code>avg_inter_order_days</code> (−0.30) fixes the polarity (engaged at the positive end, non-returning at the negative). <strong>PC2 is a financial-quality axis</strong> — <code>avg_profit_per_order</code> (−0.51), <code>avg_margin_ratio</code> (−0.43), <code>avg_discount</code> (−0.41), <code>high_value_order_rate</code> (−0.38) — and it loads near-zero on <code>orders</code> (0.03), so <strong>engagement depth and financial quality are independent axes</strong>: a customer can be high-frequency and low-margin, or the reverse.</p>
+<p><strong>Figure 3</strong></p>
+<p><em>PCA Explained Variance</em></p>
+<p><img src="assets/fig3_pca_variance.png" class="img-fluid" alt="Bar-and-line chart of PCA explained variance for 18 components. PC1 bar at 52 percent, PC2 at 12 percent, PC3 at 10 percent, then a rapid decline. The cumulative line reaches 80 percent at 4 components, 90 percent at 7, 95 percent at 9."></p>
+<p><em>Note.</em> The steep first bar is the signature of a feature space dominated by one axis of covariation.</p>
+<p><strong>Figure 4</strong></p>
+<p><em>PC1 and PC2 Feature Loadings</em></p>
+<p><img src="assets/fig4_pca_loadings.png" class="img-fluid" alt="Two sorted horizontal bar charts. PC1 loadings: unique categories, unique products, total items, unique departments, total revenue, orders all near plus 0.30 to 0.32; inter-order gap at minus 0.30. PC2 loadings: recency and product-breadth terms slightly positive; profit per order minus 0.51, margin ratio minus 0.43, avg discount minus 0.41, high-value rate minus 0.38; orders near zero."></p>
+<p><em>Note.</em> PC2’s near-zero loading on <code>orders</code> is the evidence that the two axes are independent.</p>
+</section>
+<section id="the-six-clusters" class="level3">
+<h3 class="anchored" data-anchor-id="the-six-clusters">The six clusters</h3>
+<p>The K-Means partition splits the 20,652 customers into six clusters of sharply different character (Figure 5, Figure 6, Table 3). Three are <strong>single-order populations</strong> (mean orders 1.0, product breadth ≈ 1) that differ only in ticket and margin: <strong>cluster 1</strong> (low-ticket, $139 AOV, positive margin), <strong>cluster 6</strong> (moderate-ticket, $508 AOV), and <strong>cluster 3</strong> — same one-order profile but a mean margin ratio of <strong>−1.27</strong> and mean profit of <strong>−$375 per order</strong>. <strong>Cluster 5</strong> is 240 customers who each made a single $1,271 purchase (100% high-value-order rate, 100% Computers). <strong>Cluster 2</strong> is the high-engagement extreme: 6.3 orders, 43.8 items, 9.5 products, a 735-day lifetime, a 41-day inter-order gap. <strong>Cluster 4</strong> is the middle: 3.3 orders, 6.0 products — but a mean recency of <strong>391 days</strong>, the longest absence of any cluster.</p>
+<p><strong>Figure 5</strong></p>
+<p><em>The Six Clusters in the PCA Plane</em></p>
+<p><img src="assets/fig5_pca_projection.png" class="img-fluid" alt="Scatter of all 20,652 customers on PC1 (engagement depth) and PC2 (financial quality), coloured by cluster. Clusters 1, 3, 5, 6 compress at PC1 near minus 3 (low engagement); cluster 3 stretches up into positive PC2, cluster 5 stretches down. Clusters 2 (right) and 4 (centre) spread along positive PC1, cluster 2 furthest right."></p>
+<p><em>Note.</em> PC1 = engagement depth (52% of variance), PC2 = financial quality (12%). Cluster 3’s extreme negative margin projects it up the PC2 axis (sign convention inverted).</p>
+<p>The nonlinear UMAP embedding (Figure 6) tells a consistent story with a sharper edge: the multi-order clusters 2 and 4 form <strong>one contiguous mass</strong> on the right — they are adjacent regions of a single density, not two islands — while the single-order populations (1, 3, 5, 6) break into many small fragments on the left. This is the visual form of the moderate silhouette: real structure, soft boundaries.</p>
+<p><strong>Figure 6</strong></p>
+<p><em>The Six Clusters in the UMAP Embedding</em></p>
+<p><img src="assets/fig6_umap_projection.png" class="img-fluid" alt="UMAP scatter of 20,652 customers coloured by cluster. The right side is one contiguous mass split between cluster 2 (blue) and cluster 4 (teal). The left side is many small fragments, mostly cluster 1 (grey). Cluster 5 (purple) forms one compact island top-left; cluster 3 (red) forms two small islands; cluster 6 (amber) spreads across the top."></p>
+<p><em>Note.</em> UMAP preserves local neighbourhoods, not global distances; the gap between the left fragments and the right mass reflects the one-order versus multi-order divide.</p>
+<p><strong>Table 3</strong></p>
+<p><em>The Six Customer Clusters</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">#</th>
+<th style="text-align: left;">Name</th>
+<th style="text-align: right;">Customers</th>
+<th style="text-align: right;">% base</th>
+<th style="text-align: right;">Mean orders</th>
+<th style="text-align: right;">Mean AOV</th>
+<th style="text-align: right;">Mean margin</th>
+<th style="text-align: right;">Revenue</th>
+<th style="text-align: right;">% revenue</th>
+<th style="text-align: left;">Dominant tier</th>
+<th style="text-align: left;">Top category</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">One-and-Done Low-Ticket</td>
+<td style="text-align: right;">5,857</td>
+<td style="text-align: right;">28.4</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">$139</td>
+<td style="text-align: right;">+0.21</td>
+<td style="text-align: right;">$0.83M</td>
+<td style="text-align: right;">2.5</td>
+<td style="text-align: left;">Standard (97%)</td>
+<td style="text-align: left;">Video Games</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Loyal High-Value Core</td>
+<td style="text-align: right;">5,597</td>
+<td style="text-align: right;">27.1</td>
+<td style="text-align: right;">6.3</td>
+<td style="text-align: right;">$582</td>
+<td style="text-align: right;">+0.14</td>
+<td style="text-align: right;">$20.2M</td>
+<td style="text-align: right;">61.0</td>
+<td style="text-align: left;">Loyal 70% / Champion 26%</td>
+<td style="text-align: left;">Cleats</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">Negative-Margin Anomaly</td>
+<td style="text-align: right;">573</td>
+<td style="text-align: right;">2.8</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">$328</td>
+<td style="text-align: right;"><strong>−1.27</strong></td>
+<td style="text-align: right;">$0.19M</td>
+<td style="text-align: right;">0.6</td>
+<td style="text-align: left;">Standard (95%)</td>
+<td style="text-align: left;">Children’s Clothing</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">Mid-Tier Fading</td>
+<td style="text-align: right;">6,505</td>
+<td style="text-align: right;">31.5</td>
+<td style="text-align: right;">3.3</td>
+<td style="text-align: right;">$510</td>
+<td style="text-align: right;">+0.11</td>
+<td style="text-align: right;">$10.6M</td>
+<td style="text-align: right;">32.1</td>
+<td style="text-align: left;">Standard 71% / Loyal 28%</td>
+<td style="text-align: left;">Cleats</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">Single-Purchase Premium</td>
+<td style="text-align: right;">240</td>
+<td style="text-align: right;">1.2</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">$1,271</td>
+<td style="text-align: right;">+0.26</td>
+<td style="text-align: right;">$0.31M</td>
+<td style="text-align: right;">0.9</td>
+<td style="text-align: left;">Standard (79%)</td>
+<td style="text-align: left;">Computers (100%)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">One-and-Done Moderate-Ticket</td>
+<td style="text-align: right;">1,880</td>
+<td style="text-align: right;">9.1</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">$508</td>
+<td style="text-align: right;">+0.24</td>
+<td style="text-align: right;">$0.96M</td>
+<td style="text-align: right;">2.9</td>
+<td style="text-align: left;">Standard (97%)</td>
+<td style="text-align: left;">Cameras</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Margin = mean <code>avg_margin_ratio</code>. Cluster 5’s <code>clv_proxy</code> is undefined (zero-day tenure); cluster 6’s averages $28,330, an annualisation artefact.</p>
+</section>
+<section id="the-loyalty-tier-refinement" class="level3">
+<h3 class="anchored" data-anchor-id="the-loyalty-tier-refinement">The loyalty-tier refinement</h3>
+<p>Cross-tabulating cluster against the RFM loyalty tier is the study’s central result (Figure 7). <strong>Cluster 2 is the Loyal + Champion tiers.</strong> Its own composition is 70.2% Loyal-tier and 26.4% Champion-tier customers (only 3.4% Standard); read the other way, it contains <strong>99.4% of every Champion in the base and 66.8% of the Loyal tier</strong>, with cluster 4 holding a further 30.5% of Loyal. The tier system’s top two bands consolidate into one data-driven group. But the <strong>Standard tier does not survive as a unit</strong>: its 13,057 customers are split 43.7% into cluster 1, 35.2% into cluster 4, 14.0% into cluster 6, and 4.2% into the negative-margin cluster 3 — subpopulations that differ in ticket size, margin, product category, and financial outcome, which a four-level threshold system treats as one. <strong>This decomposition of Standard is what the clustering adds</strong> over the existing taxonomy.</p>
+<p><strong>Figure 7</strong></p>
+<p><em>Cluster Composition by RFM Loyalty Tier (row-normalised)</em></p>
+<p><img src="assets/fig7_cluster_x_loyalty_tier.png" class="img-fluid" alt="A 6x4 heatmap, clusters as rows, loyalty tiers (At Risk, Standard, Loyal, Champion) as columns, cells row-normalised to percent. Cluster 2's row is 3% Standard, 70% Loyal, 26% Champion. Every other cluster's row is 71–97% Standard. The Champion column is zero except for cluster 2."></p>
+<p><em>Note.</em> Each row sums to 100%. Cluster 4 also carries 28% Loyal — it straddles the Standard/Loyal boundary.</p>
+</section>
+<section id="two-null-findings-confirmed" class="level3">
+<h3 class="anchored" data-anchor-id="two-null-findings-confirmed">Two null findings confirmed</h3>
+<p><strong>Customer segment carries no structure.</strong> Consumer, Corporate, and Home Office proportions sit within ±3 points of each other across all six clusters — segment membership should never be a clustering input or a stratification variable. <strong>Late-delivery rate is systemic.</strong> Cluster mean late rates run from <strong>0.533 to 0.567</strong> — a 3.4-point spread around 0.54 — so the operational failure documented in the companion studies does not interact with customer type, and no customer-level segmentation can address it. Both were established in prior EDA; the clustering reproduces them in an independent frame (Figure 8 shows the economic weight of each cluster).</p>
+<p><strong>Figure 8</strong></p>
+<p><em>Population Share Versus Revenue Share by Cluster</em></p>
+<p><img src="assets/fig8_cluster_economics.png" class="img-fluid" alt="Paired bars per cluster. Cluster 1: 28.4% of customers, 2.5% of revenue. Cluster 2: 27.1% / 61.0%. Cluster 3: 2.8% / 0.6%. Cluster 4: 31.5% / 32.1%. Cluster 5: 1.2% / 0.9%. Cluster 6: 9.1% / 2.9%."></p>
+<p><em>Note.</em> Clusters 2 and 4 — 58.6% of customers — generate 93.1% of revenue.</p>
+</section>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<section id="principal-findings" class="level3">
+<h3 class="anchored" data-anchor-id="principal-findings">Principal findings</h3>
+<p>Three results define the segmentation. First, <strong>k = 6 is defensible but not forced</strong> — it is the smallest partition where two internal metrics agree, chosen against a small-<em>k</em> bias that would otherwise select a useless binary split. Second, <strong>the partition refines the loyalty tiers, it does not overturn them</strong>: it consolidates the Loyal and Champion tiers into one financially dominant group (cluster 2: 27% of customers, 61% of revenue) and decomposes the Standard tier — 63% of the base — into five structurally distinct clusters. Third, <strong>the algorithm found a customer type without being told to</strong>: cluster 3, 573 customers whose single orders carry a mean margin ratio of −1.27 and a mean loss of −$375 per order. This is the customer-side reflection of the catalogue-level margin anomaly documented in the companion product study — a subset of orders priced below cost. Clustering surfaced these customers with no profitability feature steering it there; the negative-margin signal rode in on the general engagement geometry.</p>
+</section>
+<section id="the-mechanism-worth-naming" class="level3">
+<h3 class="anchored" data-anchor-id="the-mechanism-worth-naming">The mechanism worth naming</h3>
+<p>PC1 carries 52% of the variance and is almost entirely engagement depth — how many products, categories, and departments a customer touches. The customer base varies primarily along <em>how deeply someone shops</em>, not along what they spend per order, how they were served, or which segment they belong to. That is why the loyalty tiers (which are built from recency, frequency, and monetary rank) map cleanly onto the clustering at the top — cluster 2 is high on every PC1 feature — and why they fail in the middle: the Standard tier collects everyone who is <em>not</em> deeply engaged, and that is a heterogeneous group by definition. The clustering’s contribution is to give that group five names.</p>
+</section>
+<section id="limitations-and-honest-assessment" class="level3">
+<h3 class="anchored" data-anchor-id="limitations-and-honest-assessment">Limitations and honest assessment</h3>
+<p>Silhouette is <strong>0.32 — moderate, not high</strong>. The clusters are not spherically separated in 18-dimensional space; they overlap at boundaries, particularly clusters 1↔︎6 (both single-order, differing in ticket) and 2↔︎4 (both multi-order, differing in recency). The ARI band of 0.56–0.62 confirms the partition is <strong>partly algorithm-dependent</strong> — the three algorithms see similar broad structure but disagree on which customers sit near the boundaries. The two micro-clusters (3 and 5, together 4% of the base) are small; they are density-genuine (GMM assigns them crisply) but any per-cluster statistic on 240 customers carries wide uncertainty. The sentinel imputation for <code>avg_inter_order_days</code> is a modelling choice that pushes the single-order population to one extreme of that dimension by construction. The partition is <strong>a lens, not a ground truth</strong>: downstream work should use it alongside the RFM tiers, not as a replacement.</p>
+</section>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
+<p>The six-cluster segmentation earns its place by doing one thing the fixed-threshold loyalty system cannot: it disaggregates the Standard tier into low-ticket transient buyers, moderate- and premium-ticket single purchasers, a fading mid-tier, and a negative-margin group — while confirming that the Loyal and Champion tiers are a single coherent, revenue-dominant population. It also re-confirms, from an independent direction, that customer segment and delivery experience carry no customer-level structure. The persisted label table is available for downstream targeting and modelling.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Constante, F., Silva, F., &amp; Pereira, A. (2019). <em>DataCo smart supply chain for big data analysis</em> (Version 5) [Data set]. Mendeley Data. https://doi.org/10.17632/8gx2fvg2k6.5</p>
+<p>Caliński, T., &amp; Harabasz, J. (1974). A dendrite method for cluster analysis. <em>Communications in Statistics, 3</em>(1), 1–27. https://doi.org/10.1080/03610927408827101</p>
+<p>Davies, D. L., &amp; Bouldin, D. W. (1979). A cluster separation measure. <em>IEEE Transactions on Pattern Analysis and Machine Intelligence, PAMI-1</em>(2), 224–227. https://doi.org/10.1109/TPAMI.1979.4766909</p>
+<p>Hubert, L., &amp; Arabie, P. (1985). Comparing partitions. <em>Journal of Classification, 2</em>(1), 193–218. https://doi.org/10.1007/BF01908075</p>
+<p>McInnes, L., Healy, J., &amp; Melville, J. (2018). UMAP: Uniform manifold approximation and projection for dimension reduction. <em>arXiv:1802.03426.</em> https://arxiv.org/abs/1802.03426</p>
+<p>Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., &amp; Duchesnay, É. (2011). Scikit-learn: Machine learning in Python. <em>Journal of Machine Learning Research, 12</em>, 2825–2830.</p>
+<p>Rousseeuw, P. J. (1987). Silhouettes: A graphical aid to the interpretation and validation of cluster analysis. <em>Journal of Computational and Applied Mathematics, 20</em>, 53–65. https://doi.org/10.1016/0377-0427(87)90125-7</p>
+<hr>
+<p><em>Analysis and figures by the author. An unsupervised segmentation of one customer base; silhouette is 0.32 and the partition is one analytical lens, not a definitive taxonomy.</em></p>
+
+
+<div id="contact" class="connect-section" style="text-align: center; padding: 50px 20px; background: #f9f9f9; border-radius: 15px; border: 1px solid #eaeaea; margin-top: 40px;">
+<h3 style="color: #2c3e50; font-weight: 700; margin-bottom: 15px; border: none;" class="anchored">Let's Collaborate</h3>
+<p style="color: #666; max-width: 650px; margin: 0 auto 30px auto; font-size: 1.05rem; line-height: 1.6;">Available for high-impact <strong>Business Intelligence, Power BI Engineering, and Advanced Data Analytics</strong> projects. Connect with me or hire me directly through the platforms below.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
+<a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-linkedin"></i> LinkedIn</a>
+<a href="https://github.com/mkhanmuneer" class="btn btn-dark" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-github"></i> GitHub</a>
+<a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" target="_blank" rel="noopener" style="color: white; padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-graph-up"></i> Kaggle</a>
+<a href="https://www.upwork.com/freelancers/~018de8553286a1d00c" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-briefcase"></i> Upwork</a>
+<a href="https://www.fiverr.com/neuronvision" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-lightning-charge"></i> Fiverr</a>
+</div>
+</div>
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/mkhanmuneer\.github\.io\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 Muhammad Khan Muneer</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.upwork.com/freelancers/~018de8553286a1d00c">
+<p>Hire on Upwork</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.fiverr.com/neuronvision">
+<p>Hire on Fiverr</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

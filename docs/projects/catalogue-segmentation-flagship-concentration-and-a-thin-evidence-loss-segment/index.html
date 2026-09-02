@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Muhammad Khan Muneer">
+<meta name="keywords" content="unsupervised learning, K-means clustering, Ward agglomerative clustering, Gaussian mixture model, spectral clustering, silhouette score, adjusted Rand index, bootstrap scaler selection, small sample clustering, revenue concentration, product rationalisation, PCA, leave-one-out sensitivity, Python, scikit-learn">
+<meta name="description" content="An unsupervised segmentation of a 118-product e-commerce catalogue on 12 volume, price, margin, tenure, and reach features. Small-N discipline: the scaler is chosen by a 200-sample bootstrap (StandardScaler ARI 0.83 vs RobustScaler 0.44, Wilcoxon p < .001), not convention; k = 5 is selected on averaged rank across three geometry metrics and confirmed by the Ward dendrogram’s largest merge gap. Validation: K-Means, Ward, and a Gaussian mixture agree at ARI ≥ 0.98; Spectral clustering is a documented negative result — its k-NN affinity graph fractures into 3 disconnected components at N = 118. The finding: cluster 0 — 9 products, 7.6% of the catalogue — carries 88.2% of revenue and 87.9% of profit; clusters 1 and 2 are 84.7% of products and 7.8% of revenue. The bounded finding: a 3-product loss-making micro-segment (mean margin −3.2%), reported with a leave-one-out sensitivity table because 33 combined orders cannot support a generalised segment rate.">
+
+<title>Catalogue Structure to Rationalisation Decisions: A Five-Cluster Segmentation of 118 Products, With a Bounded Loss-Making Micro-Segment – Muhammad Khan Muneer</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-ca0cfe78a00f84493d894d8af57a3a20.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": true,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="../../styles/custom.css">
+<meta property="og:title" content="Muhammad Khan Muneer — Data Science &amp; BI Portfolio">
+<meta property="og:description" content="Engineering ML-driven analytics and automated decision systems.">
+<meta property="og:image" content="https://mkhanmuneer.github.io/projects/catalogue-segmentation-flagship-concentration-and-a-thin-evidence-loss-segment/assets/fig5_cluster_feature_profile.png">
+<meta property="og:site_name" content="M. Khan Muneer Portfolio">
+<meta property="og:image:alt" content="A 12-row by 5-column heatmap of cluster mean feature values, z-scored against the catalogue. Cluster 0 is strongly high on total orders (+3.4), total profit (+3.2), destination countries (+2.8), lifecycle days (+1.4). Cluster 2 is high on units per order, lifecycle days, recency days. Cluster 3 is high on avg price (+1.8), profit per order (+2.9), revenue margin (+1.0), discount rate (+1.2), high-value order rate (+2.4). Cluster 4 is extreme high on avg price (+3.9) and high-value order rate (+3.0) but extreme low on profit per order (−2.4) and revenue margin (−3.3).">
+<meta property="og:image:height" content="1135">
+<meta property="og:image:width" content="1750">
+<meta name="twitter:title" content="Catalogue Structure to Rationalisation Decisions: A Five-Cluster Segmentation of 118 Products, With a Bounded Loss-Making Micro-Segment – Muhammad Khan Muneer">
+<meta name="twitter:description" content="An unsupervised segmentation of a 118-product e-commerce catalogue on 12 volume, price, margin, tenure, and reach features. Small-N discipline: the scaler is chosen by a 200-sample bootstrap (StandardScaler ARI 0.83 vs RobustScaler 0.44, Wilcoxon p < .001), not convention; k = 5 is selected on averaged rank across three geometry metrics and confirmed by the Ward dendrogram’s largest merge gap. Validation: K-Means, Ward, and a Gaussian mixture agree at ARI ≥ 0.98; Spectral clustering is a documented negative result — its k-NN affinity graph fractures into 3 disconnected components at N = 118. The finding: cluster 0 — 9 products, 7.6% of the catalogue — carries 88.2% of revenue and 87.9% of profit; clusters 1 and 2 are 84.7% of products and 7.8% of revenue. The bounded finding: a 3-product loss-making micro-segment (mean margin −3.2%), reported with a leave-one-out sensitivity table because 33 combined orders cannot support a generalised segment rate.">
+<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/catalogue-segmentation-flagship-concentration-and-a-thin-evidence-loss-segment/assets/fig5_cluster_feature_profile.png">
+<meta name="twitter:creator" content="@iMKhanMuneer">
+<meta name="twitter:site" content="@iMKhanMuneer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="A 12-row by 5-column heatmap of cluster mean feature values, z-scored against the catalogue. Cluster 0 is strongly high on total orders (+3.4), total profit (+3.2), destination countries (+2.8), lifecycle days (+1.4). Cluster 2 is high on units per order, lifecycle days, recency days. Cluster 3 is high on avg price (+1.8), profit per order (+2.9), revenue margin (+1.0), discount rate (+1.2), high-value order rate (+2.4). Cluster 4 is extreme high on avg price (+3.9) and high-value order rate (+3.0) but extreme low on profit per order (−2.4) and revenue margin (−3.3).">
+<meta name="twitter:image-height" content="1135">
+<meta name="twitter:image-width" content="1750">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#featured-projects"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/iMKhanMuneer"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.kaggle.com/muhammadkhanmuneer"> <i class="bi bi-graph-up" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#contact"> 
+<span class="menu-text">Contact</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#method" id="toc-method" class="nav-link" data-scroll-target="#method">Method</a>
+  <ul class="collapse">
+  <li><a href="#data-source" id="toc-data-source" class="nav-link" data-scroll-target="#data-source">Data source</a></li>
+  <li><a href="#feature-matrix" id="toc-feature-matrix" class="nav-link" data-scroll-target="#feature-matrix">Feature matrix</a></li>
+  <li><a href="#preprocessing-selecting-the-scaler" id="toc-preprocessing-selecting-the-scaler" class="nav-link" data-scroll-target="#preprocessing-selecting-the-scaler">Preprocessing: selecting the scaler</a></li>
+  <li><a href="#k-selection" id="toc-k-selection" class="nav-link" data-scroll-target="#k-selection">k selection</a></li>
+  <li><a href="#algorithm-quartet-and-validation" id="toc-algorithm-quartet-and-validation" class="nav-link" data-scroll-target="#algorithm-quartet-and-validation">Algorithm quartet and validation</a></li>
+  <li><a href="#software" id="toc-software" class="nav-link" data-scroll-target="#software">Software</a></li>
+  </ul></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
+  <ul class="collapse">
+  <li><a href="#k-5-on-averaged-rank-and-a-dendrogram-gap" id="toc-k-5-on-averaged-rank-and-a-dendrogram-gap" class="nav-link" data-scroll-target="#k-5-on-averaged-rank-and-a-dendrogram-gap">k = 5, on averaged rank and a dendrogram gap</a></li>
+  <li><a href="#three-algorithms-agree-spectral-clustering-is-a-documented-negative-result" id="toc-three-algorithms-agree-spectral-clustering-is-a-documented-negative-result" class="nav-link" data-scroll-target="#three-algorithms-agree-spectral-clustering-is-a-documented-negative-result">Three algorithms agree; spectral clustering is a documented negative result</a></li>
+  <li><a href="#the-five-clusters" id="toc-the-five-clusters" class="nav-link" data-scroll-target="#the-five-clusters">The five clusters</a></li>
+  <li><a href="#revenue-architecture-the-concentration-finding" id="toc-revenue-architecture-the-concentration-finding" class="nav-link" data-scroll-target="#revenue-architecture-the-concentration-finding">Revenue architecture: the concentration finding</a></li>
+  <li><a href="#the-loss-making-micro-segment-bounded" id="toc-the-loss-making-micro-segment-bounded" class="nav-link" data-scroll-target="#the-loss-making-micro-segment-bounded">The loss-making micro-segment, bounded</a></li>
+  <li><a href="#a-grain-mismatch-with-the-companion-product-study" id="toc-a-grain-mismatch-with-the-companion-product-study" class="nav-link" data-scroll-target="#a-grain-mismatch-with-the-companion-product-study">A grain mismatch with the companion product study</a></li>
+  <li><a href="#principal-component-structure" id="toc-principal-component-structure" class="nav-link" data-scroll-target="#principal-component-structure">Principal-component structure</a></li>
+  </ul></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a>
+  <ul class="collapse">
+  <li><a href="#principal-findings" id="toc-principal-findings" class="nav-link" data-scroll-target="#principal-findings">Principal findings</a></li>
+  <li><a href="#small-n-methodology-made-explicit" id="toc-small-n-methodology-made-explicit" class="nav-link" data-scroll-target="#small-n-methodology-made-explicit">Small-N methodology, made explicit</a></li>
+  <li><a href="#what-the-partition-adds" id="toc-what-the-partition-adds" class="nav-link" data-scroll-target="#what-the-partition-adds">What the partition adds</a></li>
+  <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations">Limitations</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Catalogue Structure to Rationalisation Decisions: A Five-Cluster Segmentation of 118 Products, With a Bounded Loss-Making Micro-Segment</h1>
+<p class="subtitle lead">Unsupervised clustering at product grain — nine products carry 88% of revenue, the remaining 109 split into four analytically distinct groups, and a three-product negative-margin cluster is reported with a leave-one-out sensitivity check rather than overstated confidence.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Machine Learning</div>
+    <div class="quarto-category">Unsupervised Learning</div>
+    <div class="quarto-category">Clustering</div>
+    <div class="quarto-category">Dimensionality Reduction</div>
+    <div class="quarto-category">Model Evaluation</div>
+    <div class="quarto-category">Bootstrapping</div>
+    <div class="quarto-category">Sensitivity Analysis</div>
+    <div class="quarto-category">Product Analytics</div>
+    <div class="quarto-category">Retail Analytics</div>
+    <div class="quarto-category">Python</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>An unsupervised segmentation of a 118-product e-commerce catalogue on 12 volume, price, margin, tenure, and reach features. <strong>Small-N discipline:</strong> the scaler is chosen by a 200-sample bootstrap (StandardScaler ARI 0.83 vs RobustScaler 0.44, Wilcoxon <em>p</em> &lt; .001), not convention; <strong>k = 5</strong> is selected on averaged rank across three geometry metrics and confirmed by the Ward dendrogram’s largest merge gap. <strong>Validation:</strong> K-Means, Ward, and a Gaussian mixture agree at ARI ≥ 0.98; Spectral clustering is a documented negative result — its <em>k</em>-NN affinity graph fractures into 3 disconnected components at N = 118. <strong>The finding:</strong> cluster 0 — 9 products, 7.6% of the catalogue — carries <strong>88.2% of revenue and 87.9% of profit</strong>; clusters 1 and 2 are 84.7% of products and 7.8% of revenue. <strong>The bounded finding:</strong> a 3-product loss-making micro-segment (mean margin −3.2%), reported with a leave-one-out sensitivity table because 33 combined orders cannot support a generalised segment rate.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Muhammad Khan Muneer </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+<div>
+  <div class="keywords">
+    <div class="block-title">Keywords</div>
+    <p>unsupervised learning, K-means clustering, Ward agglomerative clustering, Gaussian mixture model, spectral clustering, silhouette score, adjusted Rand index, bootstrap scaler selection, small sample clustering, revenue concentration, product rationalisation, PCA, leave-one-out sensitivity, Python, scikit-learn</p>
+  </div>
+</div>
+
+</header>
+
+
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+<p>This study segments a 118-product e-commerce catalogue by unsupervised clustering, to test whether the catalogue contains structurally distinct product groups and, if so, where its commercial weight sits. The analytical table is the product-grain Gold layer of a companion medallion pipeline; the clustering was fitted once and persisted, and every figure here is rebuilt from those artefacts. Because the sample is small — 118 products against a target of 8–12 features — several methodological choices that would be routine at larger scale are re-established from evidence. The scaler is selected by a 200-sample bootstrap comparison (StandardScaler partition-stability ARI 0.83 vs.&nbsp;RobustScaler 0.44; paired Wilcoxon <em>p</em> &lt; .001), and <strong>k = 5</strong> is chosen on averaged rank across silhouette, the Davies–Bouldin index, and the Calinski–Harabasz score, then independently confirmed by the Ward dendrogram, whose largest merge-distance gap in the final descent falls exactly at the k = 5 → k = 4 step. K-Means, Ward, and a Gaussian mixture model produce near-identical partitions (pairwise ARI ≥ .98); spectral clustering diverges (ARI ≈ .62) and is reported as a <strong>documented negative result</strong> — its <em>k</em>-nearest-neighbour affinity graph fractures into three disconnected components before any clustering objective runs, a property of the sample size, not of non-convex structure the other methods miss. The partition’s principal finding is an extreme, product-count-independent concentration: <strong>cluster 0 — 9 products, 7.6% of the catalogue — accounts for 88.2% of revenue and 87.9% of profit</strong>, while clusters 1 and 2 together hold 84.7% of products and 7.8% of revenue. The most carefully bounded finding is a <strong>three-product loss-making micro-segment</strong> (mean revenue margin −3.2%; two elliptical trainers and a golf rangefinder), reported with a leave-one-out sensitivity table because its 33 combined orders cannot support a generalised segment-level rate.</p>
+<p><em>Keywords:</em> unsupervised learning, K-means clustering, bootstrap scaler selection, small-sample clustering, adjusted Rand index, revenue concentration, product rationalisation, PCA</p>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>A companion study of this product catalogue profiled all 118 items along a price-versus-margin quadrant and established, at the level of individual products, that a small number of “anchor” items carry most of the catalogue’s revenue. This study asks a different question with a different method: does the catalogue <em>partition</em> — do the 118 products fall into a small number of structurally coherent groups when clustered simultaneously on volume, price, margin, tenure, and geographic reach? And if so, what does that partition add over the two-axis quadrant view?</p>
+<p>The exercise operates under a constraint the customer-grain segmentation it adapts from did not face: <strong>N = 118</strong>. At that size the feature-to-observation ratio, the choice of scaler, the number of clusters the data can support, and the reliability of cross-algorithm agreement all have to be established from this dataset’s own evidence rather than inherited by default. The analysis is built around that constraint — every preprocessing and selection decision is backed by a named statistical procedure with a test statistic or a resampling distribution, and the two smallest clusters are profiled at full per-product resolution with an explicit sensitivity analysis rather than summarised by a mean over three points.</p>
+</section>
+<section id="method" class="level2">
+<h2 class="anchored" data-anchor-id="method">Method</h2>
+<section id="data-source" class="level3">
+<h3 class="anchored" data-anchor-id="data-source">Data source</h3>
+<p>One analytical table, <code>product_features_gold</code> (118 rows × 38 columns), one row per distinct product aggregated over the full transaction history (January 2015 – January 2018). No missing values in any column, no duplicate products, no perfectly identical column pairs.</p>
+</section>
+<section id="feature-matrix" class="level3">
+<h3 class="anchored" data-anchor-id="feature-matrix">Feature matrix</h3>
+<p>All 38 source columns were triaged: <strong>12 enter the feature matrix, 26 are excluded with a stated reason</strong> (Table 1). Two columns receive a transform before scaling — <code>total_orders</code> is log1p-compressed (strictly positive, heavily right-skewed), and <code>total_profit</code> is passed through a sign-preserving transform — the sign of the value times log1p of its magnitude — because it carries negative values for the loss-making products and standard log1p is undefined on negatives. The remaining ten features are already on bounded or naturally interpretable scales and are standardised directly. The resulting feature-to-observation ratio is 1:9.8, inside the 8–12-feature target for N = 118. A residual collinearity pass left two pairs above an absolute correlation of 0.85 — <code>total_orders_log</code> ↔︎ <code>n_destination_countries</code> (.87) and <code>lifecycle_days</code> ↔︎ <code>n_destination_countries</code> (.87) — both retained on the judgement that demand volume, geographic reach, and catalogue tenure are distinct business axes that happen to correlate at this scale.</p>
+<p><strong>Table 1</strong></p>
+<p><em>Feature-Matrix Triage (38 columns → 12 included, 26 excluded)</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Group</th>
+<th style="text-align: left;">Columns</th>
+<th style="text-align: left;">Disposition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Volume (transformed)</td>
+<td style="text-align: left;"><code>total_orders</code> (log1p), <code>total_profit</code> (sign-preserving log)</td>
+<td style="text-align: left;"><strong>Included</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Linear, standardised</td>
+<td style="text-align: left;"><code>avg_price</code>, <code>avg_units_per_order</code>, <code>avg_profit_per_order</code>, <code>revenue_margin_pct</code>, <code>discount_rate</code>, <code>late_rate</code>, <code>lifecycle_days</code>, <code>recency_days</code>, <code>n_destination_countries</code>, <code>high_value_order_rate</code></td>
+<td style="text-align: left;"><strong>Included</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Identifiers / text</td>
+<td style="text-align: left;"><code>product_name</code>, <code>product_name_canonical</code></td>
+<td style="text-align: left;">Excluded — row keys</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Categoricals (held for post-hoc)</td>
+<td style="text-align: left;"><code>category_name</code>, <code>department_name</code>, <code>price_tier</code>, <code>demand_bucket</code>, <code>margin_bucket</code>, <code>primary_customer_segment</code></td>
+<td style="text-align: left;">Excluded — derived buckets or profiling variables; used post-hoc</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Near-uniform categoricals</td>
+<td style="text-align: left;"><code>preferred_ship_mode</code>, <code>dominant_delivery_type</code>, <code>preferred_transaction_type</code></td>
+<td style="text-align: left;">Excluded — one value ≈ 99% of rows</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Structurally uniform</td>
+<td style="text-align: left;"><code>avg_shipping_days</code> (CV ≈ 4.3%), <code>avg_scheduled_days</code> (CV ≈ 4.1%)</td>
+<td style="text-align: left;">Excluded — near-zero discriminating variance</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Temporal / circular</td>
+<td style="text-align: left;"><code>first_sold</code>, <code>last_sold</code>, <code>peak_order_hour</code></td>
+<td style="text-align: left;">Excluded — captured by <code>lifecycle_days</code> / <code>recency_days</code>; hour is circular</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Collinear (dropped member)</td>
+<td style="text-align: left;"><code>total_units</code>, <code>n_unique_customers</code>, <code>avg_revenue_per_order</code>, <code>total_revenue</code>, <code>total_discount</code>, <code>avg_margin_ratio</code>, <code>n_destination_regions</code>, <code>avg_discount</code>, <code>avg_late_delivery_risk</code>, <code>avg_shipping_delay</code></td>
+<td style="text-align: left;">Excluded — correlate above 0.85 with a feature already in the matrix; shadow of it</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Nine pairs exceeded an absolute correlation of 0.85 in the initial audit; the more interpretable or revenue-weighted member of each was kept (e.g.&nbsp;<code>revenue_margin_pct</code> over <code>avg_margin_ratio</code>; <code>late_rate</code> over two continuous delivery-failure measures; <code>avg_price</code> over absolute-discount and per-order-revenue terms).</p>
+</section>
+<section id="preprocessing-selecting-the-scaler" class="level3">
+<h3 class="anchored" data-anchor-id="preprocessing-selecting-the-scaler">Preprocessing: selecting the scaler</h3>
+<p><code>StandardScaler</code> was chosen, not assumed, on four diagnostics. (a) A D’Agostino–Pearson omnibus test rejects normality for <strong>11 of 12 features</strong> at a Bonferroni-corrected α = .00417; <code>late_rate</code> is the sole feature statistically indistinguishable from normal. (b) Decomposing the K-Means objective directly — a feature’s variance share equals its share of the unscaled squared-Euclidean metric — shows <code>lifecycle_days</code> alone would carry <strong>65.9%</strong> of the unscaled distance, with <code>avg_price</code> (29.4%) and <code>recency_days</code> (3.8%) bringing the top three to <strong>99.2%</strong>; unscaled, the clustering would ignore nine of twelve features. (c) The raw scale ratio between the widest and narrowest feature is ~41,500×. (d) The decisive test: refitting the scaler-and-K-Means pipeline on <strong>200 bootstrap resamples</strong> and scoring each against the full-sample partition gives <strong>StandardScaler a mean ARI of 0.83</strong> (<em>SD</em> 0.08) against <strong>RobustScaler’s 0.44</strong> (<em>SD</em> 0.30); a paired Wilcoxon signed-rank test rejects equality at <em>p</em> &lt; .001. At N = 118, RobustScaler’s median/IQR estimates carry more sampling variability than StandardScaler’s mean/SD estimates, and that instability propagates into the assignments — the theoretically “safer” choice was tested and the evidence rejected it.</p>
+</section>
+<section id="k-selection" class="level3">
+<h3 class="anchored" data-anchor-id="k-selection">k selection</h3>
+<p>K-Means was fitted for <strong>k = 2 through 8</strong> (each model persisted); above k = 8, average cluster membership drops below ~15 products. Three geometry metrics were computed per k and converted to ranks (silhouette and Calinski–Harabasz descending, Davies–Bouldin ascending); the mean rank identifies the most balanced non-trivial <em>k</em> (Figure 1, Table 2).</p>
+</section>
+<section id="algorithm-quartet-and-validation" class="level3">
+<h3 class="anchored" data-anchor-id="algorithm-quartet-and-validation">Algorithm quartet and validation</h3>
+<p>Four structurally different algorithms were fitted at the locked <em>k</em> — <strong>K-Means</strong> (centroid), <strong>Ward</strong> agglomerative (hierarchical, minimum-variance), a full-covariance <strong>Gaussian mixture model</strong> (probabilistic, soft assignment), and <strong>spectral clustering</strong> (graph affinity, <em>k</em>-NN with <code>n_neighbors</code> = 5). Partition robustness was measured by pairwise adjusted Rand index; the primary partition was chosen as K-Means. The Ward merge history and, for the disagreeing algorithm, the graph Laplacian’s connected-component structure were examined directly. <code>random_state</code> = 42 throughout.</p>
+</section>
+<section id="software" class="level3">
+<h3 class="anchored" data-anchor-id="software">Software</h3>
+<p>Python 3.10 with <code>scikit-learn</code> (<code>KMeans</code>, <code>AgglomerativeClustering</code>, <code>GaussianMixture</code>, <code>SpectralClustering</code>, <code>PCA</code>, the clustering metrics), <code>scipy</code> (<code>linkage</code>, <code>normaltest</code>, <code>wilcoxon</code>, <code>connected_components</code>), <code>umap-learn</code>, <code>pandas</code>, <code>numpy</code>, and <code>matplotlib</code>.</p>
+</section>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<section id="k-5-on-averaged-rank-and-a-dendrogram-gap" class="level3">
+<h3 class="anchored" data-anchor-id="k-5-on-averaged-rank-and-a-dendrogram-gap">k = 5, on averaged rank and a dendrogram gap</h3>
+<p>No single metric names an outright winner (Figure 1, Table 2). Silhouette peaks across k = 5–7 (0.427–0.431) after climbing from k = 2’s 0.350; Davies–Bouldin is lowest at k = 7 (0.925) but nearly as low at k = 4 (0.985); Calinski–Harabasz is highest at the trivial k = 2 and dips to a trough at k = 4. Averaging the three ranks per <em>k</em> gives <strong>k = 5 the best mean rank, 2.00</strong> (first on silhouette, third on Davies–Bouldin, second on Calinski–Harabasz), ahead of k = 7 (2.33) and k = 8 (3.67). k = 7 is not adopted: at N = 118 it drives average cluster size to ~17 products, near the floor below which per-cluster statistics on the smallest splits become unreliable. <strong>k = 5 is locked.</strong></p>
+<p><strong>Figure 1</strong></p>
+<p><em>k-Selection Sweep: Four Metrics Across k = 2–8</em></p>
+<p><img src="assets/fig1_k_selection_sweep.png" class="img-fluid" alt="Four line panels of clustering metrics against k from 2 to 8. Inertia declines smoothly. Silhouette climbs from 0.35 at k=2 to a plateau of about 0.43 across k=5 to 7. Davies-Bouldin dips to 0.98 at k=4, rises to 1.00 at k=5, falls to 0.93 at k=7. Calinski-Harabasz is highest at k=2, troughs at k=4, partially recovers. A dashed red line marks k=5 in every panel."></p>
+<p><em>Note.</em> Red line = the selected k = 5. k = 2 wins Calinski–Harabasz alone (small-<em>k</em> bias) and ranks worst overall.</p>
+<p><strong>Table 2</strong></p>
+<p><em>Sweep Metrics and Averaged Rank</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">k</th>
+<th style="text-align: right;">Silhouette</th>
+<th style="text-align: right;">Davies–Bouldin</th>
+<th style="text-align: right;">Calinski–Harabasz</th>
+<th style="text-align: right;">Mean rank</th>
+<th style="text-align: left;">Note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">2</td>
+<td style="text-align: right;">0.350</td>
+<td style="text-align: right;">1.216</td>
+<td style="text-align: right;">49.28</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: left;">wins CH only — small-<em>k</em> bias</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">3</td>
+<td style="text-align: right;">0.374</td>
+<td style="text-align: right;">1.059</td>
+<td style="text-align: right;">45.45</td>
+<td style="text-align: right;">5.33</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">4</td>
+<td style="text-align: right;">0.384</td>
+<td style="text-align: right;">0.985</td>
+<td style="text-align: right;">40.12</td>
+<td style="text-align: right;">4.67</td>
+<td style="text-align: left;">CH trough</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>5</strong></td>
+<td style="text-align: right;"><strong>0.429</strong></td>
+<td style="text-align: right;"><strong>1.000</strong></td>
+<td style="text-align: right;"><strong>47.03</strong></td>
+<td style="text-align: right;"><strong>2.00</strong></td>
+<td style="text-align: left;"><strong>most balanced — locked</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">6</td>
+<td style="text-align: right;">0.427</td>
+<td style="text-align: right;">1.173</td>
+<td style="text-align: right;">44.82</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">7</td>
+<td style="text-align: right;">0.428</td>
+<td style="text-align: right;">0.925</td>
+<td style="text-align: right;">46.86</td>
+<td style="text-align: right;">2.33</td>
+<td style="text-align: left;">rejected — ~17 products/cluster</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">8</td>
+<td style="text-align: right;">0.406</td>
+<td style="text-align: right;">1.027</td>
+<td style="text-align: right;">47.01</td>
+<td style="text-align: right;">3.67</td>
+<td style="text-align: left;"></td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Silhouette, Davies–Bouldin, and Calinski–Harabasz computed on the full 118-product scaled matrix. Rank = mean of the three metric ranks.</p>
+</section>
+<section id="three-algorithms-agree-spectral-clustering-is-a-documented-negative-result" class="level3">
+<h3 class="anchored" data-anchor-id="three-algorithms-agree-spectral-clustering-is-a-documented-negative-result">Three algorithms agree; spectral clustering is a documented negative result</h3>
+<p>K-Means, Ward, and the Gaussian mixture produce <strong>near-identical partitions</strong> (Figure 2): pairwise adjusted Rand indices are K-Means↔︎GMM <strong>1.000</strong> (exactly the same partition), K-Means↔︎Ward <strong>0.981</strong>, Ward↔︎GMM <strong>0.981</strong>. Silhouettes sit within 0.002 (K-Means 0.429, Ward 0.431, GMM 0.429). The GMM’s soft assignments are effectively hard — <strong>all 118 products carry a maximum posterior probability ≥ 0.99</strong> — so there is no genuinely ambiguous product between two clusters. The Ward dendrogram supplies independent, convergent evidence for k = 5 (Figure 3): the merge that collapses five clusters into four costs <strong>3.69</strong> more in linkage distance than the previous merge — the largest gap in the hierarchy’s final descent outside the terminal collapse to a single cluster — so cutting at k = 5 avoids forcing together two groups Ward’s own criterion treats as markedly more distant than anything merged below.</p>
+<p><strong>Figure 2</strong></p>
+<p><em>Cross-Algorithm Agreement and Per-Algorithm Silhouette (k = 5)</em></p>
+<p><img src="assets/fig2_cross_algorithm.png" class="img-fluid" alt="Left: a 4x4 adjusted Rand index heatmap for K-Means, Ward, GMM, Spectral. K-Means/Ward/GMM off-diagonal values are 0.98 to 1.00; Spectral against each of the three is 0.62. Right: silhouette bars — K-Means 0.429, Ward 0.431, GMM 0.429, Spectral 0.361."></p>
+<p><em>Note.</em> ARI benchmarks: &gt; .75 excellent, .45–.75 moderate, &lt; .45 fragile.</p>
+<p><strong>Figure 3</strong></p>
+<p><em>Ward Dendrogram, Truncated to 30 Subtrees, With the k = 5 Cut</em></p>
+<p><img src="assets/fig3_ward_dendrogram.png" class="img-fluid" alt="A Ward linkage dendrogram truncated to 30 leaves, coloured into five clusters below a dashed red cut line at linkage distance about 13.5. The vertical gap between the merge at 11.6 (six to five clusters) and the merge at 15.3 (five to four) is visibly the largest in the upper hierarchy apart from the final collapse near 29."></p>
+<p><em>Note.</em> Final-descent merge distances: k = 6→5 at 11.6, k = 5→4 at 15.3 (a 3.69 jump), k = 4→3 at 17.0, k = 2→1 at 29.1.</p>
+<p><strong>Spectral clustering diverges, and the reason is mechanical</strong> (Figure 4). It agrees with each of the other three algorithms at only ARI ≈ .62. Rebuilding its 5-nearest-neighbour affinity graph and computing the normalised Laplacian shows <strong>three eigenvalues at zero</strong> — under a standard result, the multiplicity of the zero eigenvalue equals the number of connected components — and a direct connected-components check confirms the graph <strong>fractures into exactly three disconnected pieces before any clustering objective runs</strong>. Two K-Means clusters (the 9-product and the 45-product groups) each form their own isolated component; the other three clusters (55 + 6 + 3 = 64 products) collapse into a single connected blob that spectral clustering then re-splits on local graph density rather than on the variance structure the other three algorithms agree on. This is a property of <em>k</em>-NN affinity at N = 118 with 12 features, not the discovery of non-convex structure the centroid, hierarchical, and probabilistic methods miss — and raising <code>n_neighbors</code> cannot repair a graph whose sparsity is a property of the sample. Spectral clustering is retained here as a mechanistically explained negative result, not a competing partition.</p>
+<p><strong>Figure 4</strong></p>
+<p><em>The Spectral Affinity Graph Fragments Before Clustering</em></p>
+<p><img src="assets/fig4_knn_graph_fragmentation.png" class="img-fluid" alt="A stacked bar chart of three graph components. Component 1 holds 64 products, composed of K-Means clusters 1 (55), 3 (6), and 4 (3). Component 2 holds 45 products, entirely K-Means cluster 2. Component 3 holds 9 products, entirely K-Means cluster 0."></p>
+<p><em>Note.</em> Components from the symmetrised 5-NN connectivity graph on the 12-feature scaled matrix.</p>
+</section>
+<section id="the-five-clusters" class="level3">
+<h3 class="anchored" data-anchor-id="the-five-clusters">The five clusters</h3>
+<p>The K-Means partition splits the 118 products into groups of sharply different character and size (Figure 5, Table 3): <strong>9</strong>, <strong>55</strong>, <strong>45</strong>, <strong>6</strong>, and <strong>3</strong> products. Two clusters hold the bulk of the catalogue by count (100 of 118, 84.7%) while two are genuinely small.</p>
+<ul>
+<li><strong>Cluster 0 — Flagship Volume Anchors (9 products).</strong> Mean order count <strong>15,082</strong>, roughly 11× the catalogue mean, and mean destination-country reach <strong>148</strong> against a catalogue mean of 45. Mid-price ($148), ordinary margin (11.9%), the longest tenure of any cluster (1,005 days), 100% “Very High” demand, concentrated in the Fan Shop department (44%). No single product category dominates — the nine span about nine categories at one product each.</li>
+<li><strong>Cluster 1 — Emerging Long Tail (55 products).</strong> Nearly half the catalogue by count. Mean order count only <strong>159</strong>, mean tenure just <strong>99 days</strong> (against the 444-day catalogue mean), mid-price ($171), ordinary margin (11.6%). A large population of comparatively new, low-individual-volume products, leaning to the Outdoors department (46%).</li>
+<li><strong>Cluster 2 — Budget Catalogue Fixtures (45 products).</strong> The <strong>lowest mean price of any cluster ($32)</strong>, the highest units per order (3.0), the <strong>longest mean tenure (837 days)</strong> and least-recent activity (287 days since last sale), 87% “Budget” price tier. Long-standing low-ticket staples, not recent additions; Outdoors department (58%).</li>
+<li><strong>Cluster 3 — Premium Tech &amp; Outdoor (6 products).</strong> Mean price <strong>$641</strong>, the <strong>highest revenue margin of any substantial cluster (16.2%)</strong> and the highest per-order profit ($85), 100% “Luxury” price tier, spanning a Dell laptop, a webcam, a lawn mower, porcelain crafts, a dumbbell set, and a children’s bicycle. The most profitable-per-transaction group.</li>
+<li><strong>Cluster 4 — Loss-Making Micro-Segment (3 products).</strong> The <strong>highest mean price ($1,200)</strong> but the <strong>only negative mean revenue margin (−3.2%)</strong> and negative per-order profit (−$35), the shortest tenure (1.7 days), 100% “Very Low” demand. Two elliptical trainers and a golf rangefinder; examined at full resolution below.</li>
+</ul>
+<p><strong>Figure 5</strong></p>
+<p><em>Standardised Feature Means by Cluster</em></p>
+<p><img src="assets/fig5_cluster_feature_profile.png" class="img-fluid" alt="A 12-row by 5-column heatmap of cluster mean feature values, z-scored against the catalogue. Cluster 0 is strongly high on total orders (+3.4), total profit (+3.2), destination countries (+2.8), lifecycle days (+1.4). Cluster 2 is high on units per order, lifecycle days, recency days. Cluster 3 is high on avg price (+1.8), profit per order (+2.9), revenue margin (+1.0), discount rate (+1.2), high-value order rate (+2.4). Cluster 4 is extreme high on avg price (+3.9) and high-value order rate (+3.0) but extreme low on profit per order (−2.4) and revenue margin (−3.3)."></p>
+<p><em>Note.</em> Each cell is the cluster’s mean for that feature, standardised against the full catalogue (red = above catalogue average, blue = below). Original units in Table 3.</p>
+<p><strong>Table 3</strong></p>
+<p><em>The Five Product Clusters</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">#</th>
+<th style="text-align: left;">Name</th>
+<th style="text-align: right;">Products</th>
+<th style="text-align: right;">% catalogue</th>
+<th style="text-align: right;">Mean orders</th>
+<th style="text-align: right;">Mean price</th>
+<th style="text-align: right;">Mean margin</th>
+<th style="text-align: right;">Mean tenure (days)</th>
+<th style="text-align: left;">Dominant dept.</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Flagship Volume Anchors</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">7.6</td>
+<td style="text-align: right;">15,082</td>
+<td style="text-align: right;">$148</td>
+<td style="text-align: right;">11.9%</td>
+<td style="text-align: right;">1,005</td>
+<td style="text-align: left;">Fan Shop (44%)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Emerging Long Tail</td>
+<td style="text-align: right;">55</td>
+<td style="text-align: right;">46.6</td>
+<td style="text-align: right;">159</td>
+<td style="text-align: right;">$171</td>
+<td style="text-align: right;">11.6%</td>
+<td style="text-align: right;">99</td>
+<td style="text-align: left;">Outdoors (46%)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Budget Catalogue Fixtures</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">38.1</td>
+<td style="text-align: right;">294</td>
+<td style="text-align: right;">$32</td>
+<td style="text-align: right;">12.5%</td>
+<td style="text-align: right;">837</td>
+<td style="text-align: left;">Outdoors (58%)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">Premium Tech &amp; Outdoor</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">5.1</td>
+<td style="text-align: right;">340</td>
+<td style="text-align: right;">$641</td>
+<td style="text-align: right;">16.2%</td>
+<td style="text-align: right;">43</td>
+<td style="text-align: left;">Technology (33%)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">Loss-Making Micro-Segment</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2.5</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">$1,200</td>
+<td style="text-align: right;">−3.2%</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">—</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Mean margin = mean <code>revenue_margin_pct</code>. Cluster 4’s per-product values are in Table 4.</p>
+</section>
+<section id="revenue-architecture-the-concentration-finding" class="level3">
+<h3 class="anchored" data-anchor-id="revenue-architecture-the-concentration-finding">Revenue architecture: the concentration finding</h3>
+<p>Cluster identity is almost entirely decoupled from cluster size (Figure 6). <strong>Cluster 0 — 9 products, 7.6% of the catalogue — accounts for 88.2% of total revenue, 87.9% of total profit, and 85.0% of all orders.</strong> The two largest clusters by product count, clusters 1 and 2, together hold <strong>84.7% of the catalogue (100 of 118 products) but only 7.8% of revenue</strong> (4.4% + 3.5%) — a long tail of modest individual contribution. Cluster 3, six products, contributes 3.9% of revenue at the catalogue’s best margin. Cluster 4 is the only group with a <strong>negative profit share (−0.04%)</strong> on a small positive revenue share (0.13%) — destroying value in aggregate, however small its footprint. This is not a novelty the clustering discovered so much as a precise characterisation of a concentration the catalogue always carried: the analytical value is in identifying exactly which nine products hold the weight, and in resolving the remaining 109 into four distinct groups rather than one undifferentiated tail.</p>
+<p><strong>Figure 6</strong></p>
+<p><em>Product Share Versus Revenue and Profit Share by Cluster</em></p>
+<p><img src="assets/fig6_revenue_architecture.png" class="img-fluid" alt="Grouped bar chart. Cluster 0: 7.6% of products, 88.2% of revenue, 87.9% of profit. Cluster 1: 46.6% of products, 4.4% revenue, 4.4% profit. Cluster 2: 38.1% of products, 3.5% revenue, 3.6% profit. Cluster 3: 5.1% of products, 3.9% revenue, 4.1% profit. Cluster 4: 2.5% of products, 0.1% revenue, roughly zero profit."></p>
+<p><em>Note.</em> Shares of catalogue totals ($33.05M revenue, $3.97M profit).</p>
+</section>
+<section id="the-loss-making-micro-segment-bounded" class="level3">
+<h3 class="anchored" data-anchor-id="the-loss-making-micro-segment-bounded">The loss-making micro-segment, bounded</h3>
+<p>At <em>n</em> = 3, cluster-level means are unstable descriptors — a single product moves the aggregate materially — so cluster 4 is profiled at full per-product resolution with a leave-one-out sensitivity check (Table 4). <strong>All three products carry negative revenue margin</strong> (−1.8% to −4.2%): this is a consistent pattern, not a mix that averages negative. But their combined order count is <strong>33</strong> (8 + 10 + 15), so every rate-based statistic is estimated from a genuinely thin base. The leave-one-out table makes the fragility concrete: dropping the Sole E35 trainer shifts the cluster’s mean price by −33%; dropping the Bushnell rangefinder shifts mean price by +25% and mean margin by −15%. The cluster’s aggregate statistics are reported because they describe these three products accurately — they are <strong>not</strong> extended into a claim about a stable, generalisable “loss-making trainer segment,” because 33 orders cannot support that generalisation.</p>
+<p><strong>Table 4</strong></p>
+<p><em>Cluster 4 — Per-Product Values and Leave-One-Out Sensitivity</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Product</th>
+<th style="text-align: right;">Orders</th>
+<th style="text-align: right;">Price</th>
+<th style="text-align: right;">Revenue</th>
+<th style="text-align: right;">Profit</th>
+<th style="text-align: right;">Margin</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Sole E35 elliptical trainer</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">$2,000</td>
+<td style="text-align: right;">$26,410</td>
+<td style="text-align: right;">−$965</td>
+<td style="text-align: right;">−3.65%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Sole E25 elliptical trainer</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">$1,000</td>
+<td style="text-align: right;">$9,415</td>
+<td style="text-align: right;">−$170</td>
+<td style="text-align: right;">−1.80%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Bushnell Pro X7 rangefinder</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">$600</td>
+<td style="text-align: right;">$6,063</td>
+<td style="text-align: right;">−$256</td>
+<td style="text-align: right;">−4.22%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Cluster mean</strong></td>
+<td style="text-align: right;"><strong>11</strong></td>
+<td style="text-align: right;"><strong>$1,200</strong></td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;"><strong>−3.23%</strong></td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Leave-one-out mean shifts: excluding Sole E35 → mean price −33.3%; excluding Bushnell → mean price +25.0%, mean margin −15.4%; excluding Sole E25 → mean margin +22.1%.</p>
+</section>
+<section id="a-grain-mismatch-with-the-companion-product-study" class="level3">
+<h3 class="anchored" data-anchor-id="a-grain-mismatch-with-the-companion-product-study">A grain mismatch with the companion product study</h3>
+<p>The companion product analysis located a transaction-level negative-margin anomaly concentrated in three categories — Children’s Clothing, Cameras, and Garden. Cluster 4 contains none of those categories (its members are tagged Strength Training, Basketball, and Kids’ Golf Clubs), so the two signals were checked directly. Each of the three anomaly categories resolves to <strong>exactly one product</strong> in this 118-product catalogue — a children’s heater, a webcam, a lawn mower — and <strong>all three carry solidly positive product-grain margin</strong> (13.0%, 12.6%, 14.4%), every one above the catalogue mean. Scanning the catalogue for negative product-grain margin independently of category returns <strong>exactly the three products in cluster 4</strong>, with no near-misses. The transaction-level anomaly and the product-grain loss-making cluster are <strong>distinct phenomena</strong>: the order-level losses in those three categories are absorbed by a majority of profitable orders for the same product (occasional discounting), whereas cluster 4’s products run unprofitable on average across their own thin history.</p>
+</section>
+<section id="principal-component-structure" class="level3">
+<h3 class="anchored" data-anchor-id="principal-component-structure">Principal-component structure</h3>
+<p>PCA on the 12 standardised features gives no low-dimensional summary (Figure 7): <strong>PC1 captures 35.8%, PC2 19.0%</strong> (54.9% in the 2D plane), and five of twelve components are needed for 80% of variance. Read as an interpretive aid rather than a complete picture (Figure 8, Figure 9), <strong>PC1 is a combined scale, reach, and tenure axis</strong> — <code>lifecycle_days</code> (−0.44), <code>n_destination_countries</code> (−0.40), <code>avg_units_per_order</code> (−0.34), and <code>total_orders_log</code> (−0.34) load together, opposed by <code>avg_price</code> (+0.33) — and <strong>PC2 is a near-pure profitability axis</strong>: <code>avg_profit_per_order</code> (+0.56), <code>total_profit_log</code> (+0.46), and <code>revenue_margin_pct</code> (+0.40). In the plane, cluster 0 separates cleanly along PC1 (long tenure, broad reach, high volume) and cluster 4 sits far to the opposite end (short tenure, narrow reach, high price), consistent with the feature-mean profiles.</p>
+<p><strong>Figure 7</strong></p>
+<p><em>PCA Explained Variance</em></p>
+<p><img src="assets/fig7_pca_variance.png" class="img-fluid" alt="Bar-and-line chart of PCA explained variance for 12 components. PC1 bar at 36%, PC2 at 19%, PC3 at 13%, then a gradual decline. The cumulative line reaches 80% at 5 components, 90% at 6, 95% at 7."></p>
+<p><em>Note.</em> No small set of components represents this feature space; the 2D projection discards 45% of the information.</p>
+<p><strong>Figure 8</strong></p>
+<p><em>The Five Clusters in the PCA Plane</em></p>
+<p><img src="assets/fig8_pca_projection.png" class="img-fluid" alt="Scatter of 118 products on PC1 (scale, reach and tenure, 35.8%) and PC2 (profitability, 19.0%), coloured by cluster. Cluster 0 (flagship) sits at strongly negative PC1 on the left; cluster 4 (loss-making) sits at strongly positive PC1 far right; clusters 1, 2, 3 occupy the centre, with cluster 2 forming a tight diagonal streak."></p>
+<p><em>Note.</em> 54.9% of total variance shown — read qualitatively.</p>
+<p><strong>Figure 9</strong></p>
+<p><em>PC1 and PC2 Feature Loadings</em></p>
+<p><img src="assets/fig9_pca_loadings.png" class="img-fluid" alt="Two sorted horizontal bar charts. PC1: lifecycle days, destination countries, units per order, total orders (log), recency, total profit (symlog) all load negative around −0.3 to −0.44; avg price +0.33 and high-value order rate +0.27 load positive. PC2: profit per order +0.56, total profit +0.46, revenue margin +0.40, discount rate +0.27 load positive; recency days −0.34 is the largest negative."></p>
+<p><em>Note.</em> PC2 loads near zero on order volume and price, making it a comparatively clean profitability dimension.</p>
+</section>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<section id="principal-findings" class="level3">
+<h3 class="anchored" data-anchor-id="principal-findings">Principal findings</h3>
+<p>Two findings define the segmentation, and they are deliberately asymmetric in the confidence they carry. The first is an <strong>extreme revenue concentration</strong>: nine products, 7.6% of the catalogue, hold 88% of its revenue and profit, while 100 products (85% of the catalogue) hold under 8% of revenue. The clustering did not discover this concentration — it was always in the data — but it names the nine products precisely and resolves the long tail into four structurally distinct groups: comparatively new low-volume items (cluster 1), low-ticket long-standing staples (cluster 2), a small high-margin premium group (cluster 3), and a negative-margin micro-segment (cluster 4). The second finding is that <strong>micro-segment</strong>, and it is reported with matching restraint: three products, all genuinely loss-making, but on a 33-order evidence base too thin to generalise into a segment-level rate — so the leave-one-out sensitivity is presented alongside the aggregate, not buried.</p>
+</section>
+<section id="small-n-methodology-made-explicit" class="level3">
+<h3 class="anchored" data-anchor-id="small-n-methodology-made-explicit">Small-N methodology, made explicit</h3>
+<p>The value of this exercise is as much in the constraints it worked under as in the partition it produced. Three lessons carry beyond this dataset. <strong>Scaler choice is empirical at small N.</strong> The bootstrap comparison rejected RobustScaler — the intuitively “safe near outliers” option — because its median/IQR estimates are themselves noisy across resamples of 118 points; the scaler was chosen by a resampling distribution and a paired test, not by convention. <strong>Graph-affinity clustering carries a sample-size dependency that centroid methods do not.</strong> Spectral clustering’s <em>k</em>-nearest-neighbour graph fractured into three disconnected components before any objective ran; this is a property of the substrate — sparse <em>k</em>-NN affinity at N = 118 with 12 features — and is not repairable by tuning <code>n_neighbors</code>. Any clustering exercise on comparably small, moderately dimensional data should expect the entire graph-affinity family to behave this way. <strong>The smallest clusters get profiled, not summarised.</strong> With every product a named entity, the two three- and six-member clusters were inspected item by item, with an explicit sensitivity table, rather than reduced to a mean over a handful of points.</p>
+</section>
+<section id="what-the-partition-adds" class="level3">
+<h3 class="anchored" data-anchor-id="what-the-partition-adds">What the partition adds</h3>
+<p>The companion product study framed each product on a two-dimensional price-versus-margin plane. The five-cluster partition does not reproduce those quadrants, and it should not — it operates across 12 dimensions simultaneously. What it produces instead are separations the two-axis view collapses: a volume-and-reach flagship group whose defining feature is order scale, not its position on any price–margin plane; and a luxury-price, negative-margin micro-segment that a quadrant framework would merge with other high-price products. The grain-mismatch check is part of that contribution — it establishes that the transaction-level margin anomaly and the product-grain loss-making cluster are two different things, not one signal at two resolutions.</p>
+</section>
+<section id="limitations" class="level3">
+<h3 class="anchored" data-anchor-id="limitations">Limitations</h3>
+<p>Silhouette is <strong>0.43</strong> — a moderate separation, not a crisp one; the clusters overlap at their boundaries, and clusters 1 and 2 in particular occupy adjacent regions of the PCA plane. N = 118 is small enough that the two micro-clusters’ per-product statistics carry wide uncertainty, which the leave-one-out table quantifies but does not remove. The partition is one analytical lens on the catalogue’s structure, to be read alongside the price–margin view rather than as a replacement for it. A UMAP embedding was computed as a secondary check but is not reported: at this sample size its layout of the smallest clusters is sensitive to the neighbourhood-size hyperparameter, so the deterministic PCA projection is the canonical spatial reference here.</p>
+</section>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
+<p>A five-cluster segmentation of the 118-product catalogue, validated across three algorithms and an independent dendrogram gap, isolates the nine products that carry 88% of the catalogue’s commercial weight and resolves the remaining 109 into four analytically distinct groups — a long emerging tail, low-ticket fixtures, a high-margin premium handful, and a three-product loss-making micro-segment reported with explicit sensitivity bounds. The methodological findings — that the scaler must be chosen by resampling at this N, and that graph-affinity clustering breaks down on a sample this size — are portable to any small-catalogue segmentation. The persisted label table is available for downstream rationalisation work.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Constante, F., Silva, F., &amp; Pereira, A. (2019). <em>DataCo smart supply chain for big data analysis</em> (Version 5) [Data set]. Mendeley Data. https://doi.org/10.17632/8gx2fvg2k6.5</p>
+<p>Caliński, T., &amp; Harabasz, J. (1974). A dendrite method for cluster analysis. <em>Communications in Statistics, 3</em>(1), 1–27. https://doi.org/10.1080/03610927408827101</p>
+<p>Davies, D. L., &amp; Bouldin, D. W. (1979). A cluster separation measure. <em>IEEE Transactions on Pattern Analysis and Machine Intelligence, PAMI-1</em>(2), 224–227. https://doi.org/10.1109/TPAMI.1979.4766909</p>
+<p>Hubert, L., &amp; Arabie, P. (1985). Comparing partitions. <em>Journal of Classification, 2</em>(1), 193–218. https://doi.org/10.1007/BF01908075</p>
+<p>Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., &amp; Duchesnay, É. (2011). Scikit-learn: Machine learning in Python. <em>Journal of Machine Learning Research, 12</em>, 2825–2830.</p>
+<p>Rousseeuw, P. J. (1987). Silhouettes: A graphical aid to the interpretation and validation of cluster analysis. <em>Journal of Computational and Applied Mathematics, 20</em>, 53–65. https://doi.org/10.1016/0377-0427(87)90125-7</p>
+<p>von Luxburg, U. (2007). A tutorial on spectral clustering. <em>Statistics and Computing, 17</em>(4), 395–416. https://doi.org/10.1007/s11222-007-9033-z</p>
+<hr>
+<p><em>Analysis and figures by the author. An unsupervised segmentation of one 118-product catalogue; silhouette is 0.43 and the smallest clusters rest on thin evidence, quantified in the text.</em></p>
+
+
+<div id="contact" class="connect-section" style="text-align: center; padding: 50px 20px; background: #f9f9f9; border-radius: 15px; border: 1px solid #eaeaea; margin-top: 40px;">
+<h3 style="color: #2c3e50; font-weight: 700; margin-bottom: 15px; border: none;" class="anchored">Let's Collaborate</h3>
+<p style="color: #666; max-width: 650px; margin: 0 auto 30px auto; font-size: 1.05rem; line-height: 1.6;">Available for high-impact <strong>Business Intelligence, Power BI Engineering, and Advanced Data Analytics</strong> projects. Connect with me or hire me directly through the platforms below.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
+<a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-linkedin"></i> LinkedIn</a>
+<a href="https://github.com/mkhanmuneer" class="btn btn-dark" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-github"></i> GitHub</a>
+<a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" target="_blank" rel="noopener" style="color: white; padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-graph-up"></i> Kaggle</a>
+<a href="https://www.upwork.com/freelancers/~018de8553286a1d00c" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-briefcase"></i> Upwork</a>
+<a href="https://www.fiverr.com/neuronvision" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-lightning-charge"></i> Fiverr</a>
+</div>
+</div>
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/mkhanmuneer\.github\.io\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 Muhammad Khan Muneer</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.upwork.com/freelancers/~018de8553286a1d00c">
+<p>Hire on Upwork</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.fiverr.com/neuronvision">
+<p>Hire on Fiverr</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Muhammad Khan Muneer">
+<meta name="keywords" content="exploratory data analysis, Part 1 crime, index crime, spatial concentration, Lorenz curve, Gini coefficient, Herfindahl index, crime severity score, temporal crime patterns, crime clock, weapon modality, firearm involvement, missing data, co-missingness, police records, descriptive statistics, Python, pandas">
+<meta name="description" content="An exploratory read of 407,826 Part 1 (index) crime incidents, 2012–2022. Composition: 63.7% property / 36.3% violent; Larceny alone is 43% of the cohort. Concentration: the 10 busiest neighbourhoods (3.6% of the city) hold 17.5% of incidents and the top 50 hold 50.3% — but the Lorenz-curve Gini is 0.50, moderate, not the near-1.0 that a Herfindahl-style index (inflated by the 278-neighbourhood count) suggests. Severity: the engineered CrimeSeverityScore is functionally discrete within each category (per-category SD under 0.5 for five of the eight categories); only Robbery and Aggravated Assault carry real weapon-driven spread. A data-quality finding: the 87,358 incidents with no recorded victim gender also lack a recorded age 88% of the time — gender-missing and age-missing co-occur rather than arising independently.">
+
+<title>A Four-Lens Exploratory Analysis of 407,826 Urban Part 1 Crime Incidents – Muhammad Khan Muneer</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-ca0cfe78a00f84493d894d8af57a3a20.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": true,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="../../styles/custom.css">
+<meta property="og:title" content="Muhammad Khan Muneer — Data Science &amp; BI Portfolio">
+<meta property="og:description" content="Engineering ML-driven analytics and automated decision systems.">
+<meta property="og:image" content="https://mkhanmuneer.github.io/projects/part-1-crime-incident-eda-four-lens-concentration-severity-spatial-inequality/assets/fig1_category_composition.png">
+<meta property="og:site_name" content="M. Khan Muneer Portfolio">
+<meta property="og:image:alt" content="Horizontal stacked bars for the eight offence categories, ordered by total count. Larceny 175,484 (entirely property, with a note that 64,101 are larceny-from-auto); Burglary 68,163 split into a property portion and a violent portion; Aggravated Assault 62,871 (violent); Robbery 50,251 (violent); Auto Theft 42,283 (property); Homicide 3,309 (violent); Rape 3,307 (violent); Arson 2,158 (property).">
+<meta property="og:image:height" content="908">
+<meta property="og:image:width" content="1653">
+<meta name="twitter:title" content="A Four-Lens Exploratory Analysis of 407,826 Urban Part 1 Crime Incidents – Muhammad Khan Muneer">
+<meta name="twitter:description" content="An exploratory read of 407,826 Part 1 (index) crime incidents, 2012–2022. Composition: 63.7% property / 36.3% violent; Larceny alone is 43% of the cohort. Concentration: the 10 busiest neighbourhoods (3.6% of the city) hold 17.5% of incidents and the top 50 hold 50.3% — but the Lorenz-curve Gini is 0.50, moderate, not the near-1.0 that a Herfindahl-style index (inflated by the 278-neighbourhood count) suggests. Severity: the engineered CrimeSeverityScore is functionally discrete within each category (per-category SD under 0.5 for five of the eight categories); only Robbery and Aggravated Assault carry real weapon-driven spread. A data-quality finding: the 87,358 incidents with no recorded victim gender also lack a recorded age 88% of the time — gender-missing and age-missing co-occur rather than arising independently.">
+<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/part-1-crime-incident-eda-four-lens-concentration-severity-spatial-inequality/assets/fig1_category_composition.png">
+<meta name="twitter:creator" content="@iMKhanMuneer">
+<meta name="twitter:site" content="@iMKhanMuneer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Horizontal stacked bars for the eight offence categories, ordered by total count. Larceny 175,484 (entirely property, with a note that 64,101 are larceny-from-auto); Burglary 68,163 split into a property portion and a violent portion; Aggravated Assault 62,871 (violent); Robbery 50,251 (violent); Auto Theft 42,283 (property); Homicide 3,309 (violent); Rape 3,307 (violent); Arson 2,158 (property).">
+<meta name="twitter:image-height" content="908">
+<meta name="twitter:image-width" content="1653">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#featured-projects"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/iMKhanMuneer"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.kaggle.com/muhammadkhanmuneer"> <i class="bi bi-graph-up" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#contact"> 
+<span class="menu-text">Contact</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#method" id="toc-method" class="nav-link" data-scroll-target="#method">Method</a>
+  <ul class="collapse">
+  <li><a href="#data-source" id="toc-data-source" class="nav-link" data-scroll-target="#data-source">Data source</a></li>
+  <li><a href="#measures" id="toc-measures" class="nav-link" data-scroll-target="#measures">Measures</a></li>
+  <li><a href="#analytic-approach" id="toc-analytic-approach" class="nav-link" data-scroll-target="#analytic-approach">Analytic approach</a></li>
+  <li><a href="#software" id="toc-software" class="nav-link" data-scroll-target="#software">Software</a></li>
+  </ul></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
+  <ul class="collapse">
+  <li><a href="#volume" id="toc-volume" class="nav-link" data-scroll-target="#volume">Volume</a></li>
+  <li><a href="#the-temporal-picture" id="toc-the-temporal-picture" class="nav-link" data-scroll-target="#the-temporal-picture">The temporal picture</a></li>
+  <li><a href="#severity" id="toc-severity" class="nav-link" data-scroll-target="#severity">Severity</a></li>
+  <li><a href="#spatial-concentration" id="toc-spatial-concentration" class="nav-link" data-scroll-target="#spatial-concentration">Spatial concentration</a></li>
+  <li><a href="#data-quality" id="toc-data-quality" class="nav-link" data-scroll-target="#data-quality">Data quality</a></li>
+  </ul></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a>
+  <ul class="collapse">
+  <li><a href="#principal-findings" id="toc-principal-findings" class="nav-link" data-scroll-target="#principal-findings">Principal findings</a></li>
+  <li><a href="#the-interesting-mechanism" id="toc-the-interesting-mechanism" class="nav-link" data-scroll-target="#the-interesting-mechanism">The interesting mechanism</a></li>
+  <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations">Limitations</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">A Four-Lens Exploratory Analysis of 407,826 Urban Part 1 Crime Incidents</h1>
+<p class="subtitle lead">Profiling eleven years of a large U.S. city’s serious-crime records across volume, time, severity, and space — a moderate (Gini 0.50) rather than extreme spatial concentration, a near-discrete composite severity score, and a demographic-recording gap in which victim gender and victim age go missing together.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Exploratory Data Analysis</div>
+    <div class="quarto-category">Descriptive Statistics</div>
+    <div class="quarto-category">Spatial Analysis</div>
+    <div class="quarto-category">Temporal Analysis</div>
+    <div class="quarto-category">Inequality Metrics</div>
+    <div class="quarto-category">Data Quality</div>
+    <div class="quarto-category">Crime Analytics</div>
+    <div class="quarto-category">Public Safety</div>
+    <div class="quarto-category">Python</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>An exploratory read of 407,826 Part 1 (index) crime incidents, 2012–2022. <strong>Composition:</strong> 63.7% property / 36.3% violent; Larceny alone is 43% of the cohort. <strong>Concentration:</strong> the 10 busiest neighbourhoods (3.6% of the city) hold 17.5% of incidents and the top 50 hold 50.3% — but the Lorenz-curve Gini is <strong>0.50</strong>, moderate, not the near-1.0 that a Herfindahl-style index (inflated by the 278-neighbourhood count) suggests. <strong>Severity:</strong> the engineered <code>CrimeSeverityScore</code> is functionally discrete within each category (per-category SD under 0.5 for five of the eight categories); only Robbery and Aggravated Assault carry real weapon-driven spread. <strong>A data-quality finding:</strong> the 87,358 incidents with no recorded victim gender also lack a recorded age 88% of the time — gender-missing and age-missing co-occur rather than arising independently.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Muhammad Khan Muneer </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">June 2024</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+<div>
+  <div class="keywords">
+    <div class="block-title">Keywords</div>
+    <p>exploratory data analysis, Part 1 crime, index crime, spatial concentration, Lorenz curve, Gini coefficient, Herfindahl index, crime severity score, temporal crime patterns, crime clock, weapon modality, firearm involvement, missing data, co-missingness, police records, descriptive statistics, Python, pandas</p>
+  </div>
+</div>
+
+</header>
+
+
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+<p>This study profiles 407,826 Part 1 (index) crime incidents recorded by a large U.S. municipal police department between 2012 and 2022, drawn from an open-data portal and processed through a medallion ETL pipeline into a single analytical table. The analysis is organised around four lenses — volume, temporal pattern, severity, and spatial concentration — with every reported quantity recomputed from the source table. Property offences account for 63.7% of the cohort and violent offences 36.3%; larceny alone is 43%. Incident volume was stable at roughly 3,400 per month until a downward shift in 2020. Spatial concentration is real but moderate: the 10 busiest neighbourhoods (3.6% of the city’s 278) carry 17.5% of incidents and the top 50 carry 50.3%, yet the Lorenz-curve Gini coefficient is 0.50 — a materially different headline from the 0.99 that a Herfindahl-style diversity index returns once its dependence on the neighbourhood count is accounted for. The engineered composite severity score is near-discrete within each offence category (per-category <em>SD</em> under 0.5 for five of the eight categories); only robbery and aggravated assault carry meaningful weapon-driven variation, and firearm involvement is concentrated in three violent categories. A data-quality finding closes the analysis: of the 87,358 incidents with no recorded victim gender, 88% also carry no recorded victim age, indicating that the two fields go missing together in the source records rather than through independent processes.</p>
+<p><em>Keywords:</em> exploratory data analysis, Part 1 crime, spatial concentration, Lorenz curve, crime severity score, temporal crime patterns, firearm involvement, co-missingness</p>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Municipal open-data portals now publish incident-level crime records at a scale that supports population-level description without any survey instrument. Those records are an operational by-product of records management, not a research dataset, and their analytical value depends on reading them for what they are: a census of <em>reported and classified</em> incidents, with the recording gaps and definitional conventions of the agency that produced them.</p>
+<p>This exploratory analysis takes one such extract — every Part 1 offence a large U.S. city logged over an eleven-year window — and profiles it along four lenses. <strong>Volume</strong> asks how many incidents there are and how they divide across offence category and crime type. <strong>Time</strong> asks when incidents occur, at the resolution of year, month, weekday, and hour. <strong>Severity</strong> asks how serious they are, using a composite score that combines offence category with weapon modality. <strong>Space</strong> asks how geographically concentrated they are, and whether the distribution is heavy-tailed enough to justify place-based rather than uniform resourcing. A fifth pass audits the recording gaps the four lenses have to read around.</p>
+<p>No causal claim is made anywhere. Where a pattern invites a “because”, the analysis reports the relevant cross-tabulation and lets the reader see the differential composition directly.</p>
+</section>
+<section id="method" class="level2">
+<h2 class="anchored" data-anchor-id="method">Method</h2>
+<section id="data-source" class="level3">
+<h3 class="anchored" data-anchor-id="data-source">Data source</h3>
+<p>The data are a single extract of Part 1 (index) crime incidents — homicide, rape, robbery, aggravated assault, burglary, larceny, auto theft, and arson — reported to a large U.S. city’s police department between 1 January 2012 and 10 December 2022, obtained from the city’s municipal open-data portal and retrieved on 13 December 2022. The jurisdiction is not identified in this article; the analysis concerns method and structure, not a specific city. The raw export was processed through a four-tier medallion ETL pipeline (documented in a companion article) that resolved sentinel values, harmonised controlled vocabularies, validated coordinates against the city bounding box, and filtered to the 88-code Part 1 dimension, yielding a fully populated analytical table of <strong>407,826</strong> incidents and 36 columns.</p>
+</section>
+<section id="measures" class="level3">
+<h3 class="anchored" data-anchor-id="measures">Measures</h3>
+<p>Each incident carries the offence <strong>category</strong> (eight levels) and top-level <strong>crime type</strong> (<code>Property Crime</code> / <code>Violent Crime</code>); <strong>victim demographics</strong> (gender, race, ethnicity, age — all operator-recorded, with substantial and uneven missingness); a <strong>temporal decomposition</strong> of the UTC-aware timestamp (hour, minute, weekday, part-of-day, weekend and night-time flags); <strong>coordinates</strong> and three spatial descriptors (nine patrol districts, 278 named neighbourhoods, a three-state inside/outside field); and three engineered <strong>severity</strong> fields — <code>CrimeCategoryIndex</code> (ordinal 1–8), <code>WeaponSeverityIndex</code> (1–5 lethality gradient), and the composite <code>CrimeSeverityScore</code> = (<code>BaseCrimeSeverity</code> × 10) + <code>WeaponSeverityIndex</code>, which ranges 11–55. Victim age was mean-imputed in the pipeline (fill value 37.83); the imputation is the subject of the data-quality section. Districts are labelled D1–D9 by descending incident volume and neighbourhoods by rank only, so the analysis does not turn on the identity of any place.</p>
+</section>
+<section id="analytic-approach" class="level3">
+<h3 class="anchored" data-anchor-id="analytic-approach">Analytic approach</h3>
+<p>The analysis is descriptive throughout: counts, proportions, and cross-tabulations for the categorical structure; monthly and daily resampling with rolling windows for the temporal picture; the <code>CrimeSeverityScore</code> mean, standard deviation, and 5th–95th-percentile band per category for the severity lens. Spatial concentration is quantified three ways — cumulative top-<em>N</em> neighbourhood shares (a Pareto reading), the Lorenz-curve <strong>Gini coefficient</strong> on neighbourhood incident counts, and a Herfindahl-style <strong>Gini–Simpson diversity index</strong> (1 − Σ<em>pᵢ</em>²) — because the three measures disagree in an instructive way. All quantities were recomputed from the analytical table; no value is read off a chart.</p>
+</section>
+<section id="software" class="level3">
+<h3 class="anchored" data-anchor-id="software">Software</h3>
+<p>Analysis in Python 3 with <code>pandas</code> and <code>numpy</code>; figures in <code>matplotlib</code>. Maps are rendered on a local kilometre grid centred on the cohort centroid, with no basemap and no absolute coordinates.</p>
+</section>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<section id="volume" class="level3">
+<h3 class="anchored" data-anchor-id="volume">Volume</h3>
+<p>The cohort is <strong>63.7% property crime</strong> (259,660 incidents) and <strong>36.3% violent crime</strong> (148,166) — a mix typical of U.S. Part 1 data, where acquisitive offences dominate numerically. Larceny alone is 43% of all incidents (175,484), of which 64,101 are larceny-from-auto; burglary (68,163), aggravated assault (62,871), robbery (50,251), and auto theft (42,283) follow. The three highest-severity categories are the smallest by count: homicide (3,309), rape (3,307), arson (2,158). Burglary is the only category that spans both crime types — 28,428 incidents classed violent (forcible entry to an occupied structure) against 39,735 classed property — which is a genuine split in the source’s own classification, not a join artefact (Figure 1, Table 1).</p>
+<p><strong>Figure 1</strong></p>
+<p><em>Incident Count by Offence Category, Split by Crime Type</em></p>
+<p><img src="assets/fig1_category_composition.png" class="img-fluid" alt="Horizontal stacked bars for the eight offence categories, ordered by total count. Larceny 175,484 (entirely property, with a note that 64,101 are larceny-from-auto); Burglary 68,163 split into a property portion and a violent portion; Aggravated Assault 62,871 (violent); Robbery 50,251 (violent); Auto Theft 42,283 (property); Homicide 3,309 (violent); Rape 3,307 (violent); Arson 2,158 (property)."></p>
+<p><em>Note.</em> Burglary is the only category with mass in both the property and violent segments.</p>
+<p><strong>Table 1</strong></p>
+<p><em>Cohort Composition by Offence Category (n = 407,826)</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Category</th>
+<th style="text-align: right;">Incidents</th>
+<th style="text-align: right;">% of cohort</th>
+<th style="text-align: left;">Crime type</th>
+<th style="text-align: right;">Mean severity</th>
+<th style="text-align: right;">Firearm share</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Larceny</td>
+<td style="text-align: right;">175,484</td>
+<td style="text-align: right;">43.0</td>
+<td style="text-align: left;">Property</td>
+<td style="text-align: right;">11.0</td>
+<td style="text-align: right;">0.0%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Burglary</td>
+<td style="text-align: right;">68,163</td>
+<td style="text-align: right;">16.7</td>
+<td style="text-align: left;">Property + Violent</td>
+<td style="text-align: right;">21.0</td>
+<td style="text-align: right;">0.0%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Aggravated Assault</td>
+<td style="text-align: right;">62,871</td>
+<td style="text-align: right;">15.4</td>
+<td style="text-align: left;">Violent</td>
+<td style="text-align: right;">33.0</td>
+<td style="text-align: right;">30.8%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Robbery</td>
+<td style="text-align: right;">50,251</td>
+<td style="text-align: right;">12.3</td>
+<td style="text-align: left;">Violent</td>
+<td style="text-align: right;">43.2</td>
+<td style="text-align: right;">48.8%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Auto Theft</td>
+<td style="text-align: right;">42,283</td>
+<td style="text-align: right;">10.4</td>
+<td style="text-align: left;">Property</td>
+<td style="text-align: right;">21.0</td>
+<td style="text-align: right;">0.0%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Homicide</td>
+<td style="text-align: right;">3,309</td>
+<td style="text-align: right;">0.8</td>
+<td style="text-align: left;">Violent</td>
+<td style="text-align: right;">54.7</td>
+<td style="text-align: right;">86.5%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Rape</td>
+<td style="text-align: right;">3,307</td>
+<td style="text-align: right;">0.8</td>
+<td style="text-align: left;">Violent</td>
+<td style="text-align: right;">41.0</td>
+<td style="text-align: right;">0.3%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Arson</td>
+<td style="text-align: right;">2,158</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: left;">Property</td>
+<td style="text-align: right;">32.9</td>
+<td style="text-align: right;">0.1%</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Mean severity is the mean <code>CrimeSeverityScore</code>. Firearm share is the percentage of the category’s incidents whose unified weapon value is any firearm type.</p>
+</section>
+<section id="the-temporal-picture" class="level3">
+<h3 class="anchored" data-anchor-id="the-temporal-picture">The temporal picture</h3>
+<p>Monthly volume held near <strong>3,400 incidents</strong> from 2012 through 2019, then stepped down in 2020 to roughly 2,400–2,500 and stayed there through 2022 (annual totals fall from ~41,000 to ~29,000). The final data point, December 2022, is a partial month by construction and is excluded from any trend reading (Figure 2).</p>
+<p><strong>Figure 2</strong></p>
+<p><em>Monthly Part 1 Incident Volume, 2012–2022</em></p>
+<p><img src="assets/fig2_monthly_volume.png" class="img-fluid" alt="A line of incidents per month from January 2012 to December 2022. The series oscillates seasonally around roughly 3,400 per month through 2019, drops during a shaded band in early 2020, and runs around 2,400 to 2,900 per month thereafter. The final month falls sharply to under 1,000, annotated as a partial month at the data cut-off."></p>
+<p><em>Note.</em> Day-to-day volume is moderately variable (<em>M</em> = 102 incidents/day, <em>SD</em> = 23, <em>CV</em> ≈ 0.23), so trend is best read at the 30–90-day rolling window rather than on raw daily counts.</p>
+<p>Within the day, <strong>31.1%</strong> of incidents fall in the Night bucket (21:00–04:59), against 20.9% in the Morning bucket; the hour-by-weekday view locates the structure precisely (Figure 3). The quietest stretch is <strong>03:00–06:00 every day</strong>; the single busiest hour-cell is <strong>Friday 17:00–18:00</strong>. The categorical mix shifts with the clock: violent categories (aggravated assault, robbery) take a larger share of night-time incidents while larceny’s share falls (Figure 4). The weekend share of incidents is <strong>27.2%</strong>, slightly <em>below</em> the 28.6% a uniform 2-of-7 split would give; rape (31.2%) and aggravated assault (31.2%) are the most weekend-skewed categories, burglary the least (24.0%) (Table 2).</p>
+<p><strong>Figure 3</strong></p>
+<p><em>Incident Volume by Hour of Day and Weekday</em></p>
+<p><img src="assets/fig3_crime_clock.png" class="img-fluid" alt="A 7-by-24 heatmap, weekdays as rows and hours as columns, colour-scaled by incident count. A dark low-volume block spans roughly 02:00 to 07:00 across all seven days. The brightest cells are in the late afternoon and early evening on weekdays, with the single brightest cell at Friday 17:00 to 18:00. Midnight (hour 0) is also relatively bright every day."></p>
+<p><em>Note.</em> The bright midnight column reflects incidents timestamped at exactly 00:00 when only a date was known.</p>
+<p><strong>Figure 4</strong></p>
+<p><em>Offence-Category Mix by Part of Day and by Weekday / Weekend</em></p>
+<p><img src="assets/fig4_temporal_composition.png" class="img-fluid" alt="Two panels of 100%-stacked horizontal bars. Left: the four parts of day, each bar showing the eight-category composition. The Night bar has a visibly larger aggravated-assault and robbery share and a smaller larceny share than the Morning, Afternoon, and Evening bars. Right: weekday versus weekend, showing a similar but smaller compositional shift toward violent categories on the weekend."></p>
+<p><em>Note.</em> Each bar is normalised to 100%; the comparison is of composition, not volume.</p>
+<p><strong>Table 2</strong></p>
+<p><em>Temporal Distribution of Incidents</em></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Split</th>
+<th style="text-align: left;">Level</th>
+<th style="text-align: right;">Incidents</th>
+<th style="text-align: right;">% of cohort</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Part of day</td>
+<td style="text-align: left;">Night (21:00–04:59)</td>
+<td style="text-align: right;">126,927</td>
+<td style="text-align: right;">31.1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">Afternoon (12:00–16:59)</td>
+<td style="text-align: right;">101,932</td>
+<td style="text-align: right;">25.0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">Evening (17:00–20:59)</td>
+<td style="text-align: right;">93,830</td>
+<td style="text-align: right;">23.0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">Morning (05:00–11:59)</td>
+<td style="text-align: right;">85,137</td>
+<td style="text-align: right;">20.9</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Weekday</td>
+<td style="text-align: left;">Friday (highest)</td>
+<td style="text-align: right;">61,479</td>
+<td style="text-align: right;">15.1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">Sunday (lowest)</td>
+<td style="text-align: right;">54,206</td>
+<td style="text-align: right;">13.3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Weekend flag</td>
+<td style="text-align: left;">Saturday + Sunday</td>
+<td style="text-align: right;">110,757</td>
+<td style="text-align: right;">27.2</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Uniform-baseline weekend share = 2/7 ≈ 28.6%; the observed 27.2% is marginally below it. Per-category weekend share ranges from rape (31.2%) down to burglary (24.0%).</p>
+</section>
+<section id="severity" class="level3">
+<h3 class="anchored" data-anchor-id="severity">Severity</h3>
+<p>The cohort-mean <code>CrimeSeverityScore</code> is <strong>21.8</strong> (<em>SD</em> = 11.8), corresponding to a base severity of 2 with a weapon index at the floor — the central tendency of a cohort weighted toward acquisitive crime with little weapon information. The score is <strong>functionally discrete within each category</strong>: five of the eight categories have a per-category <em>SD</em> below 0.5 (rape, arson, burglary, auto theft, larceny), so a box or violin plot of the raw score mostly shows single spikes (Figure 5). Only robbery (<em>SD</em> = 1.9) and aggravated assault (<em>SD</em> = 1.7) carry real internal spread — precisely the categories where the weapon distinction moves the score.</p>
+<p><strong>Figure 5</strong></p>
+<p><em>Composite Severity Score by Offence Category</em></p>
+<p><img src="assets/fig5_severity_by_category.png" class="img-fluid" alt="Categories ordered top to bottom by mean severity: Homicide 54.7, Robbery 43.2, Rape 41.0, Aggravated Assault 33.0, Arson 32.9, Burglary 21.0, Auto Theft 21.0, Larceny 11.0. Each row shows a dot at the mean and a light bar spanning the 5th to 95th percentile. The Homicide, Robbery, and Aggravated Assault bars have visible width; Rape, Arson, Burglary, Auto Theft, and Larceny render as points with no visible spread."></p>
+<p><em>Note.</em> Bars span the 5th–95th percentile. Standard deviations printed at right. The near-zero spread for five of the eight categories is a property of the score’s construction, not of the underlying incidents.</p>
+<p>Weapon modality is dominated by the two operator-truth tokens: <strong>69.1%</strong> of incidents carry <code>Not Applicable</code> (the operator’s affirmative “no weapon involved”) and a further 4.9% carry <code>Unknown</code>; the dimension’s coarse <code>Other</code> bucket adds 7.0%. Firearms (any type) are involved in <strong>11.4%</strong> of the cohort — but that share is concentrated in three violent categories: <strong>86.5%</strong> of homicides, <strong>48.8%</strong> of robberies, and <strong>30.8%</strong> of aggravated assaults, against effectively zero for every property category and for rape (0.3%) (Figure 6). Knives appear in 4.5% of incidents and personal weapons (hands, feet) in 2.3%.</p>
+<p><strong>Figure 6</strong></p>
+<p><em>Firearm Involvement by Offence Category</em></p>
+<p><img src="assets/fig6_firearm_by_category.png" class="img-fluid" alt="Horizontal bars of the share of each category's incidents involving a firearm. Homicide 86.5%, Robbery 48.8%, Aggravated Assault 30.8%, then a sharp drop to Rape 0.3%, Arson 0.1%, and 0.0% for Auto Theft, Burglary, and Larceny."></p>
+<p><em>Note.</em> “Firearm” aggregates every firearm value in the unified weapon vocabulary (handgun, rifle, shotgun, automatic variants).</p>
+</section>
+<section id="spatial-concentration" class="level3">
+<h3 class="anchored" data-anchor-id="spatial-concentration">Spatial concentration</h3>
+<p>Incident density has a single dominant core and falls off smoothly toward the edges of the built area, with no secondary cluster (Figure 7). Across the 278 named neighbourhoods, the distribution is heavy-tailed but the strength of that description depends on the measure (Figure 8, Table 3). The <strong>Pareto reading</strong> is unambiguous: the 10 busiest neighbourhoods — 3.6% of all neighbourhoods — carry <strong>17.5%</strong> of incidents (a 4.9× over-representation), the top 25 carry 32.7%, and the top 50 cross the halfway mark at <strong>50.3%</strong>. The <strong>Lorenz-curve Gini coefficient</strong> on neighbourhood counts is <strong>0.50</strong> — moderate inequality, comparable to a national income distribution, not extreme. A <strong>Gini–Simpson diversity index</strong> (1 − Σ<em>pᵢ</em>²) returns 0.99, which looks like near-perfect evenness until one notes that its ceiling for 278 units is 1 − 1/278 ≈ 0.996; the index is measuring category count as much as concentration. The Pareto shares and the Gini are the defensible headline figures; the diversity index is reported only to show why it should not be.</p>
+<p><strong>Figure 7</strong></p>
+<p><em>Incident Density on a Local Kilometre Grid</em></p>
+<p><img src="assets/fig7_spatial_density.png" class="img-fluid" alt="A log-scaled hexbin density map of all 407,826 geocoded incidents, plotted as kilometres east and north of the cohort centroid with no basemap or absolute coordinates. Density is highest in a broad central region and tapers toward the periphery, with a narrow lower extension. No separate second hotspot is visible."></p>
+<p><em>Note.</em> Axes are kilometres from the cohort centroid. The city is not identified.</p>
+<p><strong>Figure 8</strong></p>
+<p><em>Neighbourhood-Level Concentration — Pareto and Lorenz Views</em></p>
+<p><img src="assets/fig8_spatial_concentration.png" class="img-fluid" alt="Left: a Pareto curve of cumulative incident share against neighbourhood rank for 278 neighbourhoods, with marked points at the top 10 (17.5%), top 25 (32.7%), and top 50 (50.3%). Right: a Lorenz curve of cumulative incident share against cumulative neighbourhood share, bowed below the diagonal of perfect equality, labelled with a Gini coefficient of 0.496."></p>
+<p><em>Note.</em> Both panels exclude the small <code>Unknown</code>-neighbourhood arm (1,005 incidents).</p>
+<p><strong>Table 3</strong></p>
+<p><em>Spatial Distribution and Concentration</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Measure</th>
+<th style="text-align: left;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Patrol districts (labelled D1–D9 by volume)</td>
+<td style="text-align: left;">D1 14.9% · D2 14.2% · D3 11.7% · D4 11.5% · D5 11.5% · D6 10.2% · D7 9.9% · D8 8.2% · D9 7.6% · Unknown 0.2%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Inside / Outside / Unknown</td>
+<td style="text-align: left;">39.0% / 46.5% / 14.5%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Incidents at a repeat <code>location</code> string</td>
+<td style="text-align: left;">399,788 (98.0%)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Top-10 / top-25 / top-50 neighbourhood share</td>
+<td style="text-align: left;">17.5% / 32.7% / 50.3%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Lorenz-curve Gini (neighbourhood counts)</td>
+<td style="text-align: left;">0.50</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Gini–Simpson diversity (1 − Σ<em>pᵢ</em>²)</td>
+<td style="text-align: left;">0.99 (ceiling for 278 units ≈ 0.996)</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> The 98.0% repeat-<code>location</code> share overstates true address recurrence: many incidents are logged against broad descriptors (cross-streets, block ranges) that absorb many distinct events. Inside-leaning categories are burglary (80.6% inside); outside-leaning are homicide (81.8%), auto theft (76.7%), and robbery (57.2%).</p>
+</section>
+<section id="data-quality" class="level3">
+<h3 class="anchored" data-anchor-id="data-quality">Data quality</h3>
+<p>Every Part 1-defining column (<code>crime_type</code>, <code>crime_category</code>, <code>crime_subcategory</code>, <code>weapon_unified</code>) and the harmonised <code>inside_outside</code> field is fully populated — the pipeline routes operator signal into explicit tokens (<code>Unknown</code>, <code>Not Applicable</code>) rather than leaving parallel <code>NaN</code> tracks, so column-level missingness reads as zero across the analytical set (Table 4). The substantive coverage caveats remain: <strong>ethnicity is 97.6% <code>Unknown</code></strong> and cannot support any per-ethnicity analysis, and race is 29.4% <code>Unknown</code>.</p>
+<p>The clearest recording-process signal is a <strong>co-missingness</strong> pattern between victim gender and victim age. Of the <strong>87,358</strong> incidents with gender <code>Unknown</code>, only <strong>12%</strong> carry a genuine recorded age — the other 88% carry the pipeline’s imputed fill value (37.83) — against <strong>94–95%</strong> genuine-age coverage for incidents recorded as male or female (Figure 9). The two fields do not go missing independently; the same records that lack a victim gender disproportionately lack a victim age. The most economical explanation is a single upstream gap — incidents logged without a victim interview at all — rather than two unrelated data-entry lapses, though confirming that would need record-level linkage this analysis does not have.</p>
+<p><strong>Figure 9</strong></p>
+<p><em>Victim Gender and Victim Age Go Missing Together</em></p>
+<p><img src="assets/fig9_gender_age_comissingness.png" class="img-fluid" alt="Left panel: age distributions for incidents recorded as Female (n=153,663), Male (n=166,655), and Unknown gender (n=87,358). The Female and Male curves are broad and centred in the twenties to forties. The Unknown-gender curve is almost flat except for a single tall spike at age 37.83, the imputed fill value. Right panel: the percentage of incidents carrying a real recorded age is 94% for Male, 95% for Female, and 12% for Unknown gender."></p>
+<p><em>Note.</em> The <code>Unknown</code>-gender age distribution collapses to the imputed mean because 88% of those rows had no age to record.</p>
+<p><strong>Table 4</strong></p>
+<p><em>Data-Quality Summary for the Analytical Columns</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Column group</th>
+<th style="text-align: left;">Column-level missingness</th>
+<th style="text-align: left;">Substantive caveat</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Offence classification (<code>crime_type</code>, <code>crime_category</code>, <code>crime_subcategory</code>, <code>weapon_unified</code>)</td>
+<td style="text-align: left;">0% (guaranteed by the Part 1 inner join)</td>
+<td style="text-align: left;">none</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Spatial context (<code>inside_outside</code>, <code>latitude</code>, <code>longitude</code>)</td>
+<td style="text-align: left;">0%</td>
+<td style="text-align: left;"><code>Unknown</code> inside/outside (14.5%) concentrates in acquisitive categories where the distinction is genuinely ambiguous</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">District / neighbourhood</td>
+<td style="text-align: left;">0% (explicit <code>Unknown</code> member)</td>
+<td style="text-align: left;"><code>Unknown</code> district 980 rows, <code>Unknown</code> neighbourhood 1,005 rows</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Race / ethnicity</td>
+<td style="text-align: left;">0% (explicit <code>Unknown</code> token)</td>
+<td style="text-align: left;">ethnicity 97.6% <code>Unknown</code> — unusable; race 29.4% <code>Unknown</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Gender / age</td>
+<td style="text-align: left;">0% (imputed)</td>
+<td style="text-align: left;">87,358 incidents have <code>Unknown</code> gender; 88% of them also lack a real age (Figure 9)</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Zero column-level missingness is a property of the operator-truth pipeline, not evidence of complete records; the substantive-caveat column is where the real coverage limits live.</p>
+</section>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<section id="principal-findings" class="level3">
+<h3 class="anchored" data-anchor-id="principal-findings">Principal findings</h3>
+<p>The cohort behaves the way major-city Part 1 data usually does at the top level: property-dominated, larceny-heavy, with a small violent tail that carries the severity. Two findings are less generic. First, <strong>spatial concentration is moderate, not extreme</strong> — the Lorenz Gini of 0.50 and the top-50 share of 50.3% describe a distribution where place-based resourcing has real leverage but is not the overwhelming story a “0.99 concentration index” would imply; the choice of inequality measure changes the headline, and the count-sensitive diversity index is the wrong one to lead with. Second, the engineered <strong>severity score is near-discrete</strong> — useful as an ordinal sort key and as a compact category proxy, but not as a continuous outcome, because within seven of the eight categories it takes essentially one value.</p>
+</section>
+<section id="the-interesting-mechanism" class="level3">
+<h3 class="anchored" data-anchor-id="the-interesting-mechanism">The interesting mechanism</h3>
+<p>The gender/age <strong>co-missingness</strong> is the finding most likely to matter for downstream modelling. An analyst who treats <code>Unknown</code> gender as just another category, and the imputed age as just another number, will be feeding a model 87,358 rows in which <em>two</em> predictors are simultaneously synthetic. The pattern also means that any demographic-stratified result on this cohort is really a result conditioned on “the victim was interviewed”, which is not a neutral selection. The safe move downstream is to carry an indicator for the co-missing rows and check model behaviour with and without them.</p>
+</section>
+<section id="limitations" class="level3">
+<h3 class="anchored" data-anchor-id="limitations">Limitations</h3>
+<p>The records are a census of <em>classified and recorded</em> incidents, not of victimisation; unreported and unclassified events are absent by construction. The <code>IsRepeatLocation</code> flag (98.0%) is inflated by coarse location descriptors and should not be read as an address-recurrence rate. Hour-of-day is analysed as recorded and has not been independently verified against the agency’s clock convention, so the exact night boundary carries some uncertainty. The 2020 volume shift is described, not explained. All figures are single-cohort and single-jurisdiction.</p>
+</section>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
+<p>Across volume, time, severity, and space, the cohort is internally coherent and the pipeline’s engineered fields behave as designed. The two results worth carrying forward are that neighbourhood-level concentration is moderate rather than extreme once measured honestly, and that the demographic-recording gap is structured — victim gender and victim age are missing on the same incidents — in a way that constrains what any demographic analysis on this data can claim.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Ceccato, V., &amp; Uittenbogaard, A. C. (2014). Space–time dynamics of crime in transport nodes. <em>Annals of the Association of American Geographers, 104</em>(1), 131–150. https://doi.org/10.1080/00045608.2013.846150</p>
+<p>Gini, C. (1921). Measurement of inequality of incomes. <em>The Economic Journal, 31</em>(121), 124–126. https://doi.org/10.2307/2223319</p>
+<p>Harris, C. R., Millman, K. J., van der Walt, S. J., Gommers, R., Virtanen, P., Cournapeau, D., Wieser, E., Taylor, J., Berg, S., Smith, N. J., Kern, R., Picus, M., Hoyer, S., van Kerkwijk, M. H., Brett, M., Haldane, A., del Río, J. F., Wiebe, M., Peterson, P., … Oliphant, T. E. (2020). Array programming with NumPy. <em>Nature, 585</em>, 357–362. https://doi.org/10.1038/s41586-020-2649-2</p>
+<p>Hunter, J. D. (2007). Matplotlib: A 2D graphics environment. <em>Computing in Science &amp; Engineering, 9</em>(3), 90–95. https://doi.org/10.1109/MCSE.2007.55</p>
+<p>Simpson, E. H. (1949). Measurement of diversity. <em>Nature, 163</em>, 688. https://doi.org/10.1038/163688a0</p>
+<p>The pandas development team. (2020). <em>pandas-dev/pandas: Pandas</em> [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.3509134</p>
+<p>Weisburd, D. (2015). The law of crime concentration and the criminology of place. <em>Criminology, 53</em>(2), 133–157. https://doi.org/10.1111/1745-9125.12070</p>
+<p>Baltimore Police Department. (2022). <em>Part 1 crime data</em> [Data set]. Open Baltimore. Retrieved December 13, 2022, from https://data.baltimorecity.gov/</p>
+<hr>
+<p><em>Analysis and figures by the author. A descriptive study of one agency’s recorded incidents; no quantity here supports a causal claim, and no result generalises beyond the single jurisdiction and eleven-year window analysed.</em></p>
+
+
+<div id="contact" class="connect-section" style="text-align: center; padding: 50px 20px; background: #f9f9f9; border-radius: 15px; border: 1px solid #eaeaea; margin-top: 40px;">
+<h3 style="color: #2c3e50; font-weight: 700; margin-bottom: 15px; border: none;" class="anchored">Let's Collaborate</h3>
+<p style="color: #666; max-width: 650px; margin: 0 auto 30px auto; font-size: 1.05rem; line-height: 1.6;">Available for high-impact <strong>Business Intelligence, Power BI Engineering, and Advanced Data Analytics</strong> projects. Connect with me or hire me directly through the platforms below.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
+<a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-linkedin"></i> LinkedIn</a>
+<a href="https://github.com/mkhanmuneer" class="btn btn-dark" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-github"></i> GitHub</a>
+<a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" target="_blank" rel="noopener" style="color: white; padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-graph-up"></i> Kaggle</a>
+<a href="https://www.upwork.com/freelancers/~018de8553286a1d00c" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-briefcase"></i> Upwork</a>
+<a href="https://www.fiverr.com/neuronvision" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-lightning-charge"></i> Fiverr</a>
+</div>
+</div>
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/mkhanmuneer\.github\.io\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 Muhammad Khan Muneer</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.upwork.com/freelancers/~018de8553286a1d00c">
+<p>Hire on Upwork</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.fiverr.com/neuronvision">
+<p>Hire on Fiverr</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

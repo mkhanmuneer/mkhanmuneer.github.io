@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Muhammad Khan Muneer">
+<meta name="keywords" content="product analytics, catalogue diagnostic, revenue concentration, Pareto, profit margin, price tiers, discount analysis, demand distribution, product lifecycle, cost accounting anomaly, exploratory data analysis, Python, pandas">
+<meta name="description" content="A diagnostic of how demand, revenue, and margin distribute across 118 products. Anchor concentration: nine products carry 88% of catalogue revenue; the median product earns $18,461 against a top product’s $6.2M (337×). The Economy-over-Luxury paradox: Luxury (26 products) leads on total revenue, but Economy (7 products) leads 2× on revenue-per-product and on margin — and margin is flat within one point across all five price tiers. A structural margin anomaly: 18.7% of order-items are negative-margin at a rate that is uniform across every operational dimension, and 87% of the catastrophic losses fall on the same nine anchors — the signature of a cost-accounting treatment, not a discounting or fulfilment failure. Discount is not a lever: every product discounts at ~11% of revenue and margin is flat across discount deciles.">
+
+<title>Anchor Concentration and the Economy-Over-Luxury Paradox: A Catalogue Diagnostic for 118 Products – Muhammad Khan Muneer</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-ca0cfe78a00f84493d894d8af57a3a20.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": true,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="../../styles/custom.css">
+<meta property="og:title" content="Muhammad Khan Muneer — Data Science &amp; BI Portfolio">
+<meta property="og:description" content="Engineering ML-driven analytics and automated decision systems.">
+<meta property="og:image" content="https://mkhanmuneer.github.io/projects/catalogue-anchor-concentration-economy-over-luxury-paradox/assets/fig1_anchor_concentration.png">
+<meta property="og:site_name" content="M. Khan Muneer Portfolio">
+<meta property="og:image:height" content="934">
+<meta property="og:image:width" content="2325">
+<meta name="twitter:title" content="Anchor Concentration and the Economy-Over-Luxury Paradox: A Catalogue Diagnostic for 118 Products – Muhammad Khan Muneer">
+<meta name="twitter:description" content="A diagnostic of how demand, revenue, and margin distribute across 118 products. Anchor concentration: nine products carry 88% of catalogue revenue; the median product earns $18,461 against a top product’s $6.2M (337×). The Economy-over-Luxury paradox: Luxury (26 products) leads on total revenue, but Economy (7 products) leads 2× on revenue-per-product and on margin — and margin is flat within one point across all five price tiers. A structural margin anomaly: 18.7% of order-items are negative-margin at a rate that is uniform across every operational dimension, and 87% of the catastrophic losses fall on the same nine anchors — the signature of a cost-accounting treatment, not a discounting or fulfilment failure. Discount is not a lever: every product discounts at ~11% of revenue and margin is flat across discount deciles.">
+<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/catalogue-anchor-concentration-economy-over-luxury-paradox/assets/fig1_anchor_concentration.png">
+<meta name="twitter:creator" content="@iMKhanMuneer">
+<meta name="twitter:site" content="@iMKhanMuneer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image-height" content="934">
+<meta name="twitter:image-width" content="2325">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#featured-projects"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/iMKhanMuneer"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.kaggle.com/muhammadkhanmuneer"> <i class="bi bi-graph-up" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#contact"> 
+<span class="menu-text">Contact</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#method" id="toc-method" class="nav-link" data-scroll-target="#method">Method</a>
+  <ul class="collapse">
+  <li><a href="#data-source" id="toc-data-source" class="nav-link" data-scroll-target="#data-source">Data source</a></li>
+  <li><a href="#variables-and-measures" id="toc-variables-and-measures" class="nav-link" data-scroll-target="#variables-and-measures">Variables and measures</a></li>
+  <li><a href="#analytical-approach" id="toc-analytical-approach" class="nav-link" data-scroll-target="#analytical-approach">Analytical approach</a></li>
+  <li><a href="#software" id="toc-software" class="nav-link" data-scroll-target="#software">Software</a></li>
+  </ul></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
+  <ul class="collapse">
+  <li><a href="#anchor-concentration" id="toc-anchor-concentration" class="nav-link" data-scroll-target="#anchor-concentration">Anchor concentration</a></li>
+  <li><a href="#the-economy-over-luxury-paradox" id="toc-the-economy-over-luxury-paradox" class="nav-link" data-scroll-target="#the-economy-over-luxury-paradox">The Economy-over-Luxury paradox</a></li>
+  <li><a href="#the-margin-distribution-behaves-like-an-accounting-rule" id="toc-the-margin-distribution-behaves-like-an-accounting-rule" class="nav-link" data-scroll-target="#the-margin-distribution-behaves-like-an-accounting-rule">The margin distribution behaves like an accounting rule</a></li>
+  <li><a href="#discount-is-not-a-lever" id="toc-discount-is-not-a-lever" class="nav-link" data-scroll-target="#discount-is-not-a-lever">Discount is not a lever</a></li>
+  <li><a href="#delivery-is-uniform-at-the-product-grain" id="toc-delivery-is-uniform-at-the-product-grain" class="nav-link" data-scroll-target="#delivery-is-uniform-at-the-product-grain">Delivery is uniform at the product grain</a></li>
+  <li><a href="#the-bimodal-catalogue" id="toc-the-bimodal-catalogue" class="nav-link" data-scroll-target="#the-bimodal-catalogue">The bimodal catalogue</a></li>
+  <li><a href="#what-connects-to-what" id="toc-what-connects-to-what" class="nav-link" data-scroll-target="#what-connects-to-what">What connects to what</a></li>
+  </ul></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a>
+  <ul class="collapse">
+  <li><a href="#principal-findings" id="toc-principal-findings" class="nav-link" data-scroll-target="#principal-findings">Principal findings</a></li>
+  <li><a href="#the-mechanism-worth-naming" id="toc-the-mechanism-worth-naming" class="nav-link" data-scroll-target="#the-mechanism-worth-naming">The mechanism worth naming</a></li>
+  <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations">Limitations</a></li>
+  <li><a href="#modelling-targets" id="toc-modelling-targets" class="nav-link" data-scroll-target="#modelling-targets">Modelling targets</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Anchor Concentration and the Economy-Over-Luxury Paradox: A Catalogue Diagnostic for 118 Products</h1>
+<p class="subtitle lead">An exploratory product-grain analysis of a three-year e-commerce catalogue — the nine products that carry it, a margin distribution that behaves like an accounting rule, and a price ladder that does nothing for profitability.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Exploratory Data Analysis</div>
+    <div class="quarto-category">Descriptive Statistics</div>
+    <div class="quarto-category">Product Analytics</div>
+    <div class="quarto-category">Pricing Analysis</div>
+    <div class="quarto-category">Profitability Analysis</div>
+    <div class="quarto-category">Revenue Concentration</div>
+    <div class="quarto-category">Inequality Metrics</div>
+    <div class="quarto-category">Retail Analytics</div>
+    <div class="quarto-category">Python</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>A diagnostic of how demand, revenue, and margin distribute across 118 products. <strong>Anchor concentration:</strong> nine products carry <strong>88% of catalogue revenue</strong>; the median product earns $18,461 against a top product’s $6.2M (337×). <strong>The Economy-over-Luxury paradox:</strong> Luxury (26 products) leads on total revenue, but Economy (7 products) leads 2× on revenue-per-product and on margin — and margin is flat within one point across all five price tiers. <strong>A structural margin anomaly:</strong> 18.7% of order-items are negative-margin at a rate that is uniform across every operational dimension, and 87% of the catastrophic losses fall on the same nine anchors — the signature of a cost-accounting treatment, not a discounting or fulfilment failure. <strong>Discount is not a lever:</strong> every product discounts at ~11% of revenue and margin is flat across discount deciles.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Muhammad Khan Muneer </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 2024</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+<div>
+  <div class="keywords">
+    <div class="block-title">Keywords</div>
+    <p>product analytics, catalogue diagnostic, revenue concentration, Pareto, profit margin, price tiers, discount analysis, demand distribution, product lifecycle, cost accounting anomaly, exploratory data analysis, Python, pandas</p>
+  </div>
+</div>
+
+</header>
+
+
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+<p>This study is a descriptive product-grain analysis of the <em>DataCo</em> e-commerce catalogue — 118 products across 50 categories and 11 departments, characterised from three years of order-item transactions (January 2015 – January 2018). The objective is to map how demand, revenue, and margin distribute across the catalogue. The analytical table is the validated Gold layer of a companion medallion pipeline; every measure is recomputed from it. Three findings define the catalogue. <strong>Revenue is concentrated in fewer than ten products:</strong> the top nine carry <strong>88.2% of the $33.1M total</strong>, the median product earns $18,461 against a top product’s $6.23M (a factor of 337), and the same nine products lead on every metric that scales with volume. <strong>The price ladder does not price:</strong> Luxury (26 products) leads on total revenue at $12.0M, but Economy (7 products) leads on revenue per product at $998,000 — more than double Luxury’s $460,000 — and on margin at 12.5%; across all five tiers the margin spread is under one point. <strong>The margin distribution behaves like an accounting rule:</strong> the order-item profit-margin ratio has a hard ceiling at 0.50, 18.7% of order-items are negative-margin at a rate uniform across payment type, shipping mode, customer segment, price tier, and delivery outcome (18.3%–18.9%), and 87% of the 6,301 loss-exceeds-sale order-items fall on the same nine anchor products — consistent with a source-system cost revaluation applied to high-volume lines rather than a discounting or fulfilment failure. Discounting is a fixed ~11%-of-revenue rule with no margin gradient. Delivery is uniform: mean product late rate 55.2%, bell-shaped, no revenue trade-off. No causal claim is made.</p>
+<p><em>Keywords:</em> product analytics, revenue concentration, Pareto, profit margin, price tiers, discount analysis, cost-accounting anomaly</p>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>The companion operations and customer studies of this dataset examined how orders flow and who places them. This study turns to the catalogue — the 118 products themselves, each treated as an entity with its own demand history, margin profile, delivery record, and customer reach, derived directly from the 180,519-line transaction record.</p>
+<p>The unit of analysis is the <strong>product</strong>. Every field is aggregated from the transaction stream to one row per product. That grain reveals structure invisible at coarser levels: a catalogue of 118 items is not 118 comparable businesses but a handful of blockbusters and a long tail of diversity lines, and the difference between the two is a factor of hundreds on every commercial metric.</p>
+<p>Two findings recur across every section. The first is <strong>concentration</strong>: revenue, orders, units, and customer reach all collapse onto the same nine products. The second is <strong>structural uniformity</strong>: margin, discount rate, and delivery performance are near-constant across the catalogue, unmoved by price, category, or volume — which means the levers that would normally shape a product’s economics are, in this business, not doing so.</p>
+</section>
+<section id="method" class="level2">
+<h2 class="anchored" data-anchor-id="method">Method</h2>
+<section id="data-source" class="level3">
+<h3 class="anchored" data-anchor-id="data-source">Data source</h3>
+<p>Two tables. <code>product_features_gold</code> (118 rows × 38 columns), one row per product with no missing values in any field. <code>fact_logistics_gold</code> (180,519 rows × 44 columns) at order-item grain, used for the transaction-level margin and discount distributions. The catalogue spans 50 categories, 11 departments, and five price tiers — Budget (45 products), Economy (7), Mid-Range (26), Premium (14), Luxury (26). Over the observation window it generated <strong>$33,054,402 in revenue and $3,966,903 in profit — a 12.0% overall margin</strong>.</p>
+</section>
+<section id="variables-and-measures" class="level3">
+<h3 class="anchored" data-anchor-id="variables-and-measures">Variables and measures</h3>
+<p><strong>Demand:</strong> <code>total_orders</code>, <code>total_units</code>, <code>n_unique_customers</code>. <strong>Profitability:</strong> <code>total_revenue</code>, <code>total_profit</code>, <code>revenue_margin_pct</code> (= profit ÷ revenue × 100), and <code>avg_margin_ratio</code> (the mean of the order-item <code>profit_margin_ratio</code>, itself order profit ÷ net sales). <strong>Pricing:</strong> <code>avg_price</code>, <code>price_tier</code>. <strong>Discount:</strong> <code>avg_discount</code> (mean dollar discount) and <code>discount_rate</code> (total discount ÷ total revenue). <strong>Fulfilment:</strong> <code>late_rate</code>, <code>avg_late_delivery_risk</code>, <code>avg_shipping_delay</code>. <strong>Lifecycle:</strong> <code>lifecycle_days</code> (first to last sale), <code>recency_days</code> (days since last sale). Quintile labels <code>demand_bucket</code> and <code>margin_bucket</code> are also carried.</p>
+</section>
+<section id="analytical-approach" class="level3">
+<h3 class="anchored" data-anchor-id="analytical-approach">Analytical approach</h3>
+<p>Descriptive. Distributions are summarised for the demand, revenue, margin, discount, delivery, and lifecycle families; concentration is quantified with cumulative revenue shares. The negative-margin anomaly is investigated by cross-tabulating the order-item negative-margin flag against every operational dimension, then decomposing the extreme-loss subgroup (margin ratio &lt; −1.0) by product. Discount effect is tested with a decile analysis of margin at transaction grain and a product-grain scatter. Pairwise Pearson correlations span 16 product features. No model is fitted; a target-viability scan is summarised in the Discussion.</p>
+</section>
+<section id="software" class="level3">
+<h3 class="anchored" data-anchor-id="software">Software</h3>
+<p>Python 3.10 with <code>pandas</code>, <code>numpy</code>, and <code>matplotlib</code>.</p>
+</section>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<section id="anchor-concentration" class="level3">
+<h3 class="anchored" data-anchor-id="anchor-concentration">Anchor concentration</h3>
+<p>Revenue is not spread across 118 products; it sits in nine (Figure 1). The <strong>top nine products carry 88.2% of the $33.1M catalogue revenue</strong>; the top product — the Field &amp; Stream Sportsman 16 Gun Fire Safe — alone accounts for <strong>18.8%</strong> ($6.23M). The median product earns $18,461, so the top product outsells the median by a factor of <strong>337</strong>. The distribution has no middle: a product is a high-velocity engine or a long-tail diversity line, with almost nothing between. The same nine products lead on total orders (top product 20,359 vs.&nbsp;median 282), total units, and unique customer reach (top product 10,046 customers vs.&nbsp;median 280) — one cluster of blockbusters visible at the top of every volume distribution (Figure 2). They span <strong>all five price tiers</strong> (Table 1), so the concentration is not a pricing effect.</p>
+<p><strong>Table 1</strong></p>
+<p><em>The Nine Anchor Products</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Product</th>
+<th style="text-align: left;">Price tier</th>
+<th style="text-align: right;">Orders</th>
+<th style="text-align: right;">Revenue</th>
+<th style="text-align: right;">Margin</th>
+<th style="text-align: right;">Late rate</th>
+<th style="text-align: right;">Customers</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Field &amp; Stream Sportsman 16 Gun Fire Safe</td>
+<td style="text-align: left;">Luxury</td>
+<td style="text-align: right;">15,164</td>
+<td style="text-align: right;">$6.23M</td>
+<td style="text-align: right;">12.1%</td>
+<td style="text-align: right;">54.9%</td>
+<td style="text-align: right;">8,759</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Perfect Fitness Perfect Rip Deck</td>
+<td style="text-align: left;">Economy</td>
+<td style="text-align: right;">20,359</td>
+<td style="text-align: right;">$3.97M</td>
+<td style="text-align: right;">12.4%</td>
+<td style="text-align: right;">54.7%</td>
+<td style="text-align: right;">10,046</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Diamondback Women’s Serene Classic bike</td>
+<td style="text-align: left;">Luxury</td>
+<td style="text-align: right;">12,299</td>
+<td style="text-align: right;">$3.70M</td>
+<td style="text-align: right;">11.6%</td>
+<td style="text-align: right;">54.4%</td>
+<td style="text-align: right;">7,788</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Nike Men’s Free 5.0+ Running Shoe</td>
+<td style="text-align: left;">Mid-Range</td>
+<td style="text-align: right;">11,092</td>
+<td style="text-align: right;">$3.30M</td>
+<td style="text-align: right;">11.5%</td>
+<td style="text-align: right;">54.5%</td>
+<td style="text-align: right;">7,377</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Nike Men’s Dri-FIT Victory Golf Polo</td>
+<td style="text-align: left;">Economy</td>
+<td style="text-align: right;">17,869</td>
+<td style="text-align: right;">$2.83M</td>
+<td style="text-align: right;">12.4%</td>
+<td style="text-align: right;">54.6%</td>
+<td style="text-align: right;">9,468</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Pelican Sunstream 100 Kayak</td>
+<td style="text-align: left;">Premium</td>
+<td style="text-align: right;">13,727</td>
+<td style="text-align: right;">$2.79M</td>
+<td style="text-align: right;">11.6%</td>
+<td style="text-align: right;">54.7%</td>
+<td style="text-align: right;">8,277</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Nike Men’s CJ Elite 2 TD Football Cleat</td>
+<td style="text-align: left;">Mid-Range</td>
+<td style="text-align: right;">18,783</td>
+<td style="text-align: right;">$2.60M</td>
+<td style="text-align: right;">12.0%</td>
+<td style="text-align: right;">54.4%</td>
+<td style="text-align: right;">9,717</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">O’Brien Men’s Neoprene Life Vest</td>
+<td style="text-align: left;">Budget</td>
+<td style="text-align: right;">16,623</td>
+<td style="text-align: right;">$2.60M</td>
+<td style="text-align: right;">12.3%</td>
+<td style="text-align: right;">54.5%</td>
+<td style="text-align: right;">9,134</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Under Armour Girls’ Toddler Spine Surge shoe</td>
+<td style="text-align: left;">Budget</td>
+<td style="text-align: right;">9,825</td>
+<td style="text-align: right;">$1.14M</td>
+<td style="text-align: right;">11.1%</td>
+<td style="text-align: right;">55.1%</td>
+<td style="text-align: right;">6,774</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>These nine</strong></td>
+<td style="text-align: left;"><strong>all 5 tiers</strong></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>$29.1M (88.2%)</strong></td>
+<td style="text-align: right;"><strong>~12%</strong></td>
+<td style="text-align: right;"><strong>~55%</strong></td>
+<td style="text-align: right;"></td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Median product across the full catalogue: 282 orders, $18,461 revenue, 280 customers.</p>
+<p><strong>Figure 1</strong></p>
+<p><em>Product Revenue: Top 15 and the Cumulative Curve</em></p>
+<p><img src="assets/fig1_anchor_concentration.png" class="img-fluid" alt="Left: horizontal bars of lifetime revenue for the top 15 of 118 products; the top nine (amber) run from about 1.1 to 6.2 million dollars, then a sharp drop to a blue tail under 0.6 million. Right: cumulative share of catalogue revenue against products ranked by revenue — the curve reaches 88.2% by the ninth product and flattens."></p>
+<p><em>Note.</em> The top product ($6.23M) is 337× the median ($18,461). The nine amber bars are the “anchor” set referenced throughout.</p>
+<p><strong>Figure 2</strong></p>
+<p><em>Total Orders Versus Total Revenue (log–log), by Price Tier</em></p>
+<p><img src="assets/fig2_volume_cluster.png" class="img-fluid" alt="Log-log scatter of total lifetime orders against total lifetime revenue for 118 products, coloured by price tier. The bulk sits between 10 and 1,000 orders and 3,000 to 200,000 dollars; nine points (circled) sit isolated in the top-right corner at roughly 10,000+ orders and 1–6 million dollars, separated from the rest by a wide empty gap. The nine span Budget, Economy, Mid-Range, Premium, and Luxury tiers."></p>
+<p><em>Note.</em> The nine revenue anchors are also the nine order-volume, unit-volume, and customer-reach leaders — a single collinear cluster.</p>
+</section>
+<section id="the-economy-over-luxury-paradox" class="level3">
+<h3 class="anchored" data-anchor-id="the-economy-over-luxury-paradox">The Economy-over-Luxury paradox</h3>
+<p>The catalogue’s price ladder separates products by price but not by economics (Figure 3). <strong>Luxury (26 products) generates the most total revenue at $12.0M</strong>, as designed. But <strong>Economy — only 7 products — generates the most revenue per product at $998,000</strong>, more than double Luxury’s $460,000, and carries the highest revenue margin at <strong>12.5%</strong>. Across all five tiers the margin runs 11.6%–12.5% — a spread under one percentage point. Pricing higher does not lift margin; pricing lower does not compress it. Premium occupies the weakest position: fewest orders (15,704), lowest margin (11.6%), second-lowest total revenue. Whether the seven Economy products are an underexploited template or seven non-generalising outliers is the open strategic question the data raises but cannot settle (Table 2).</p>
+<p><strong>Table 2</strong></p>
+<p><em>Financials by Price Tier</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Price tier</th>
+<th style="text-align: right;">Products</th>
+<th style="text-align: right;">Total revenue</th>
+<th style="text-align: right;">Revenue / product</th>
+<th style="text-align: right;">Order volume</th>
+<th style="text-align: right;">Revenue margin</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Budget</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">$4.64M</td>
+<td style="text-align: right;">$103,000</td>
+<td style="text-align: right;">39,902</td>
+<td style="text-align: right;">11.9%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Economy</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">$6.99M</td>
+<td style="text-align: right;"><strong>$998,000</strong></td>
+<td style="text-align: right;">39,620</td>
+<td style="text-align: right;"><strong>12.5%</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Mid-Range</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">$6.33M</td>
+<td style="text-align: right;">$243,000</td>
+<td style="text-align: right;">32,374</td>
+<td style="text-align: right;">11.8%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Premium</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">$3.12M</td>
+<td style="text-align: right;">$223,000</td>
+<td style="text-align: right;">15,704</td>
+<td style="text-align: right;">11.6%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Luxury</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;"><strong>$11.97M</strong></td>
+<td style="text-align: right;">$460,000</td>
+<td style="text-align: right;">32,163</td>
+<td style="text-align: right;">11.9%</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Luxury leads on total revenue; Economy leads on revenue per product and margin. The full-tier margin spread is 0.9 points.</p>
+<p><strong>Figure 3</strong></p>
+<p><em>Price Tier: Total Revenue, Revenue per Product, and Margin</em></p>
+<p><img src="assets/fig3_economy_over_luxury.png" class="img-fluid" alt="Three bar panels by price tier. Total revenue (USD millions): Budget 4.6, Economy 7.0, Mid-Range 6.3, Premium 3.1, Luxury 12.0. Revenue per product (USD thousands): Budget 103, Economy 998, Mid-Range 243, Premium 223, Luxury 460. Revenue margin: Budget 11.9%, Economy 12.5%, Mid-Range 11.8%, Premium 11.6%, Luxury 11.9%."></p>
+<p><em>Note.</em> Economy figures rest on only 7 products and should be read with that caveat; the near-flat margin panel does not.</p>
+</section>
+<section id="the-margin-distribution-behaves-like-an-accounting-rule" class="level3">
+<h3 class="anchored" data-anchor-id="the-margin-distribution-behaves-like-an-accounting-rule">The margin distribution behaves like an accounting rule</h3>
+<p>At order-item grain, the profit-margin ratio has a shape no organic pricing-and-cost process would produce (Figure 4). The positive half rises smoothly to a <strong>hard ceiling at 0.50</strong> — 888 order-items land exactly on it, the absolute maximum is 0.5006. The negative half is a <strong>discrete comb</strong>: recurring spikes at round values near −0.25, −0.75, and −1.50 rather than a smooth tail. <strong>18.7% of all order-items (33,784) are negative-margin</strong>, and <strong>6,301 lose more than the sale is worth</strong> (ratio &lt; −1.0), with 1,190 below −2.0.</p>
+<p>Cross-tabulating the negative-margin flag against every operational dimension returns a flat line (Figure 5). The rate is <strong>18.4%–18.8% by payment type, 18.3%–18.9% by shipping mode, 18.6%–18.8% by customer segment, 18.6%–18.8% by price tier, and 18.3%–18.8% by delivery outcome</strong> — a spread under one point on every split. The only exception is at department level, where Health &amp; Beauty records 23.5% against Technology’s 17.7%. No fulfilment pathway, payment method, or customer type explains the negative margins.</p>
+<p><strong>Figure 4</strong></p>
+<p><em>Order-Item Profit-Margin Ratio (log count)</em></p>
+<p><img src="assets/fig4_margin_cap_and_tail.png" class="img-fluid" alt="Histogram of the order-item profit-margin ratio on a log count axis. The positive side rises to a sharp vertical cliff at 0.50. The negative side is not a smooth tail but a comb of discrete bars, with denser clusters near minus 0.25, minus 0.75, and minus 1.5, thinning to isolated spikes down to minus 2.75."></p>
+<p><em>Note.</em> 888 order-items sit exactly at 0.50; max 0.5006. 18.7% are negative; 6,301 have ratio below −1.0.</p>
+<p><strong>Figure 5</strong></p>
+<p><em>Negative-Margin Rate by Operational Dimension</em></p>
+<p><img src="assets/fig5_negative_margin_uniformity.png" class="img-fluid" alt="Horizontal bars of negative-margin rate for every level of payment type, shipping mode, customer segment, price tier, delivery outcome, and (two) departments. Every bar lands on or beside a vertical dashed line at 18.7%, ranging 18.3% to 18.9% — except Health and Beauty at 23.5% (red) and Fitness at 17.7%."></p>
+<p><em>Note.</em> Dashed line = the 18.7% catalogue rate. The uniformity is the finding.</p>
+<p>The extreme-loss subgroup resolves the investigation (Figure 6). Its discount level ($21.05 mean vs.&nbsp;$20.66 dataset-wide), order size (2.11 units vs.&nbsp;2.13), shipping-mode mix, price-tier mix, and payment mix are all statistically indistinguishable from the full dataset. What <em>is</em> distinctive is the product: <strong>87% of the 6,301 catastrophic-loss order-items fall on just nine products — the same nine anchors</strong>. The Perfect Fitness Rip Deck alone carries 825 (13.1%); the Nike CJ Elite football cleat 805; the Nike Dri-FIT polo 702. This is the signature of a <strong>cost-accounting treatment</strong> — most plausibly wholesale cost revaluations or supplier chargebacks applied to a fixed proportion of high-volume lines in the source system. Any profit-related modelling should treat these order-items as a structurally distinct subpopulation.</p>
+<p><strong>Figure 6</strong></p>
+<p><em>Where the Catastrophic Losses Land</em></p>
+<p><img src="assets/fig6_extreme_loss_concentration.png" class="img-fluid" alt="Horizontal bars of loss-exceeds-sale order-items (margin ratio below minus 1.0) for the ten products with the most. The top nine — Perfect Fitness Rip Deck 825, Nike CJ Elite 805, Nike Dri-FIT polo 702, O'Brien life vest 640, Field &amp; Stream fire safe 616, Pelican kayak 573, Diamondback bike 495, Nike Free shoe 431, Under Armour toddler shoe 380 — each carry 6–13%; the tenth product carries 0.6%."></p>
+<p><em>Note.</em> Of 6,301 order-items with margin ratio &lt; −1.0, the top nine products account for 86.8%.</p>
+</section>
+<section id="discount-is-not-a-lever" class="level3">
+<h3 class="anchored" data-anchor-id="discount-is-not-a-lever">Discount is not a lever</h3>
+<p>Discounting in this catalogue is a fixed rule, not a tactic (Figure 7). Every product discounts at <strong>~11% of revenue</strong> — the product-grain <code>discount_rate</code> has an interquartile range of just 0.6 points — even though the <em>dollar</em> discount varies enormously (coefficient of variation 122%). Because discounts are set as a percentage of price, they carry no independent information. Binning all 180,519 order-items into discount deciles, mean margin runs from 0.126 in the lowest-discount decile to 0.118 in the highest — a <strong>0.011 range, and not even monotonic</strong> (decile 4 is the highest). There is no margin-erosion gradient. At product grain the correlation between average discount and revenue margin is a weak −0.28, driven mostly by a single high-discount, low-margin category (Computers); it is not a usable relationship.</p>
+<p><strong>Figure 7</strong></p>
+<p><em>Discount Has No Effect on Margin</em></p>
+<p><img src="assets/fig7_discount_not_a_lever.png" class="img-fluid" alt="Left: mean profit-margin ratio across ten discount deciles — a nearly flat line hovering between 0.115 and 0.127 with no trend. Right: histogram of product discount rate — a tight spike between 10% and 12% for almost all 118 products."></p>
+<p><em>Note.</em> Left: transaction grain, all 180,519 order-items. Right: product grain, discount rate = total discount ÷ total revenue.</p>
+</section>
+<section id="delivery-is-uniform-at-the-product-grain" class="level3">
+<h3 class="anchored" data-anchor-id="delivery-is-uniform-at-the-product-grain">Delivery is uniform at the product grain</h3>
+<p>The operations study found the transaction-level late rate (54.7%) invariant to shipping mode’s promise and destination region. At product grain it is invariant to the product (Figure 8): the mean product late rate is <strong>55.2%</strong>, the distribution is <strong>bell-shaped</strong> — a rarity in this notebook, where nearly every distribution is right-skewed — and only 14 of 118 products beat a 50% late rate. There is no revenue–delivery trade-off (<em>r</em> = −0.03): the nine highest-revenue products sit in the same 53%–56% band as the long tail. <code>late_rate</code> and <code>avg_late_delivery_risk</code> correlate at 0.87; both are structural properties of the fulfilment network, not product attributes. Consistently, 117 of 118 products have Standard Class as their modal shipping mode and Minor Delay as their modal outcome — near-constants at this grain.</p>
+<p><strong>Figure 8</strong></p>
+<p><em>Product Late-Delivery Rate: Distribution and Revenue Relationship</em></p>
+<p><img src="assets/fig8_delivery_uniform.png" class="img-fluid" alt="Left: histogram of product late-delivery rate — a bell shape centred near 55%, with only a thin left tail crossing below 50%. Right: scatter of late rate against total revenue on a log axis, coloured by price tier — a flat horizontal cloud around 55% across the full revenue range, including the highest-revenue products."></p>
+<p><em>Note.</em> Mean 55.2%, median 54.8%, minimum 40.0%. 14 products beat 50%.</p>
+</section>
+<section id="the-bimodal-catalogue" class="level3">
+<h3 class="anchored" data-anchor-id="the-bimodal-catalogue">The bimodal catalogue</h3>
+<p>Two structural features of the catalogue are genuinely bimodal (Figure 9). <strong>Price</strong> clusters at $50–100 and again at $300–500, thinning between $150 and $250 — the catalogue is deliberately segmented into accessible high-frequency items and high-value anchors. <strong>Lifecycle</strong> is sharper still: <strong>64 products have an active lifecycle under 200 days, 54 have one over 800 days, and not a single product falls between 200 and 800</strong> (kurtosis −1.90). The catalogue is two cohorts — short-window entrants and long-tenured anchors — and any rationalisation analysis has to treat them separately, because their commercial trajectories are not comparable.</p>
+<p><strong>Figure 9</strong></p>
+<p><em>Bimodal Structure: Price and Lifecycle</em></p>
+<p><img src="assets/fig9_bimodal_catalogue.png" class="img-fluid" alt="Left: histogram of average product price on a log axis — a cluster around 50 to 100 dollars and a second cluster around 300 to 500, with a dip between. Right: histogram of active lifecycle in days — a group of products under 200 days, a hard empty gap from 200 to 800, and a group at 800 to 1,005 days."></p>
+<p><em>Note.</em> The lifecycle gap (200–800 days) is a hard empty band, not a thin trough.</p>
+</section>
+<section id="what-connects-to-what" class="level3">
+<h3 class="anchored" data-anchor-id="what-connects-to-what">What connects to what</h3>
+<p>The product-grain correlation matrix (Figure 10) resolves into four blocks. A <strong>volume block</strong> — total orders, total units, total revenue, total profit, unique customers, destination regions and countries, lifecycle days — is bound at <em>r</em> = 0.90–1.00 (<code>total_revenue</code> with <code>total_profit</code> at 1.00; <code>total_orders</code> with <code>n_unique_customers</code> at 0.99; <code>lifecycle_days</code> with <code>n_destination_regions</code> at 0.99). A <strong>delivery block</strong> — <code>late_rate</code>, <code>avg_late_delivery_risk</code>, <code>avg_shipping_delay</code> — is bound at 0.79–0.87. The two blocks are mutually uncorrelated. And the two headline non-relationships are visible as near-white cells: <strong><code>total_revenue</code> with <code>revenue_margin_pct</code> at <em>r</em> = 0.01</strong> (scale does not buy margin) and <strong><code>total_orders</code> with <code>late_rate</code> at <em>r</em> = −0.03</strong> (volume does not buy delivery performance).</p>
+<p><strong>Figure 10</strong></p>
+<p><em>Product-Grain Correlation Matrix (16 features)</em></p>
+<p><img src="assets/fig10_correlation_matrix.png" class="img-fluid" alt="Correlation heatmap of 16 product features. A large dark-red block covers total orders, units, revenue, profit, unique customers, destination regions and countries, and lifecycle days (values 0.9 to 1.0). A second red block covers late rate, late-delivery risk, and shipping delay (0.79 to 0.87). The revenue-versus-margin cell and the orders-versus-late-rate cell are near white."></p>
+<p><em>Note.</em> Pearson <em>r</em>. Any model using more than one volume-block feature must manage the near-perfect collinearity.</p>
+</section>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<section id="principal-findings" class="level3">
+<h3 class="anchored" data-anchor-id="principal-findings">Principal findings</h3>
+<p>Three results define the catalogue. First, <strong>its commercial outcomes are concentrated in nine products</strong> — 88% of revenue, and the top of every volume, reach, and loss distribution. Any decision touching those nine has consequences an order of magnitude larger than the same decision applied to the long tail. Second, <strong>the price ladder does not price</strong>: margin is flat within a point across all five tiers, revenue-per-product is highest in the smallest tier, and the correlation between revenue scale and margin is zero. Third, <strong>the margin distribution is an artefact of the source system, not of operations</strong>: a hard 0.50 ceiling, a discrete negative comb, an 18.7% negative-margin rate uniform across every operational split, and 87% of the catastrophic losses concentrated on the nine anchors — all pointing to a cost revaluation or chargeback applied to high-volume lines upstream of anything an operations or pricing team controls.</p>
+</section>
+<section id="the-mechanism-worth-naming" class="level3">
+<h3 class="anchored" data-anchor-id="the-mechanism-worth-naming">The mechanism worth naming</h3>
+<p>The extreme-loss cluster is the sharpest finding. It is not spread thinly across the catalogue in proportion to volume; it is applied to a fixed fraction of a specific set of high-volume products, at round-number margin ratios, with a discount and basket profile identical to healthy transactions. That profile is inconsistent with genuine transaction economics — a real loss on a low-ticket item varies continuously with cost and shipping — and consistent with a batch accounting entry. The practical implication is that margin-improvement work aimed at discounting, fulfilment cost, or basket composition will not move the 18.7% figure. The conversation is with the source-system owners: are these recoverable costs (supplier chargebacks awaiting credit) or realised economic losses? The answer changes the catalogue’s true margin materially, and the data cannot resolve it.</p>
+</section>
+<section id="limitations" class="level3">
+<h3 class="anchored" data-anchor-id="limitations">Limitations</h3>
+<p>The analysis is descriptive; no relationship is shown to be causal. The Economy-tier results rest on 7 products and may not generalise. The <code>profit_margin_ratio</code> values, including the extreme negatives, are taken as recorded — the “accounting treatment” reading is an inference from their structure, not a confirmed mechanism. The final months of the window are truncated at the order-item grain (the same effect documented in the companion studies) and were excluded from any trend reading. <code>lifecycle_days</code> and <code>recency_days</code> carry an observation-window boundary effect: a product still selling in January 2018 has its last-sale date pinned at the boundary regardless of true tenure. Three products are net-loss over their history (SOLE E35 Elliptical −$965, Bushnell Rangefinder −$256, SOLE E25 Elliptical −$170); at product grain the loss otherwise nets out.</p>
+</section>
+<section id="modelling-targets" class="level3">
+<h3 class="anchored" data-anchor-id="modelling-targets">Modelling targets</h3>
+<p>A viability scan of 32 candidate product-grain columns ranks the ordinal buckets highest: <code>price_tier</code>, <code>demand_bucket</code>, <code>margin_bucket</code>, and <code>n_destination_regions</code> score 98/100 (balanced classes, clean signal, no leakage). Continuous delivery and lifecycle targets (<code>avg_shipping_days</code>, <code>recency_days</code>, <code>late_rate</code>, <code>avg_late_delivery_risk</code>) score 95–97. <code>avg_margin_ratio</code> and <code>revenue_margin_pct</code> score ~91 with mild left skew. The volume targets (<code>total_revenue</code>, <code>total_orders</code>, <code>total_units</code>, <code>n_unique_customers</code>) score ~72 — they need a log transform and explicit multicollinearity management, and profit targets additionally need the extreme-loss subpopulation handled separately. The near-degenerate categoricals — <code>preferred_ship_mode</code>, <code>dominant_delivery_type</code>, <code>primary_customer_segment</code>, <code>preferred_transaction_type</code> (each ~99% one class at product grain) — carry no discriminative signal.</p>
+</section>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
+<p>This catalogue’s economics are governed by a handful of products, a price structure that does not translate into margin, and a cost pattern that originates in the accounting system rather than the warehouse or the pricing desk. The nine anchors warrant explicit protection in any rationalisation; the margin anomaly warrants a conversation with the source-system owners; and the discount policy, whatever its merits, is not the lever for margin improvement. The companion segmentation and modelling studies build on the same Gold layer.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Constante, F., Silva, F., &amp; Pereira, A. (2019). <em>DataCo smart supply chain for big data analysis</em> (Version 5) [Data set]. Mendeley Data. https://doi.org/10.17632/8gx2fvg2k6.5</p>
+<p>Harris, C. R., Millman, K. J., van der Walt, S. J., Gommers, R., Virtanen, P., Cournapeau, D., Wieser, E., Taylor, J., Berg, S., Smith, N. J., Kern, R., Picus, M., Hoyer, S., van Kerkwijk, M. H., Brett, M., Haldane, A., del Río, J. F., Wiebe, M., Peterson, P., … Oliphant, T. E. (2020). Array programming with NumPy. <em>Nature, 585</em>, 357–362. https://doi.org/10.1038/s41586-020-2649-2</p>
+<p>Pareto, V. (1896). <em>Cours d’économie politique.</em> F. Rouge.</p>
+<p>The pandas development team. (2020). <em>pandas-dev/pandas: Pandas</em> (Version latest) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.3509134</p>
+<hr>
+<p><em>Analysis and figures by the author. A descriptive catalogue study of one dataset; no estimate here supports a causal claim, and the “accounting treatment” reading of the margin anomaly is an inference from the data’s structure, not a confirmed mechanism.</em></p>
+
+
+<div id="contact" class="connect-section" style="text-align: center; padding: 50px 20px; background: #f9f9f9; border-radius: 15px; border: 1px solid #eaeaea; margin-top: 40px;">
+<h3 style="color: #2c3e50; font-weight: 700; margin-bottom: 15px; border: none;" class="anchored">Let's Collaborate</h3>
+<p style="color: #666; max-width: 650px; margin: 0 auto 30px auto; font-size: 1.05rem; line-height: 1.6;">Available for high-impact <strong>Business Intelligence, Power BI Engineering, and Advanced Data Analytics</strong> projects. Connect with me or hire me directly through the platforms below.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
+<a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-linkedin"></i> LinkedIn</a>
+<a href="https://github.com/mkhanmuneer" class="btn btn-dark" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-github"></i> GitHub</a>
+<a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" target="_blank" rel="noopener" style="color: white; padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-graph-up"></i> Kaggle</a>
+<a href="https://www.upwork.com/freelancers/~018de8553286a1d00c" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-briefcase"></i> Upwork</a>
+<a href="https://www.fiverr.com/neuronvision" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-lightning-charge"></i> Fiverr</a>
+</div>
+</div>
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/mkhanmuneer\.github\.io\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 Muhammad Khan Muneer</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.upwork.com/freelancers/~018de8553286a1d00c">
+<p>Hire on Upwork</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.fiverr.com/neuronvision">
+<p>Hire on Fiverr</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

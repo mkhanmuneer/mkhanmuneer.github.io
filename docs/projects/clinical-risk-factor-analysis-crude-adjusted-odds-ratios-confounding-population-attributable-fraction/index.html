@@ -1,0 +1,1864 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Muhammad Khan Muneer">
+<meta name="keywords" content="odds ratio, confounding, population attributable fraction, logistic regression, stroke epidemiology, Mantel-Haenszel, attributable risk, Hosmer-Lemeshow, effect modification, Wilson confidence interval, Cramér’s V, descriptive risk score, biostatistics, Python, statsmodels">
+<meta name="description" content="A descriptive epidemiological analysis of stroke risk factors in a 5,110-patient cohort. Crude vs.&nbsp;adjusted: odds ratios before and after age adjustment. Confounding: the crude marital-status effect (OR = 4.18) collapses to 0.85 once age enters the model. Burden: Levin population attributable fractions rank elevated glucose (27.7%) and hypertension (20.8%) as the leading modifiable contributors. Diagnostics: Hosmer–Lemeshow calibration, ROC-AUC 0.845, and Mantel–Haenszel stratified analysis for effect modification.">
+
+<title>Clinical Risk-Factor Analysis of Stroke: Crude and Adjusted Odds Ratios, Confounding Diagnosis, and Population Attributable Fractions – Muhammad Khan Muneer</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-ca0cfe78a00f84493d894d8af57a3a20.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": true,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="../../styles/custom.css">
+<meta property="og:title" content="Muhammad Khan Muneer — Data Science &amp; BI Portfolio">
+<meta property="og:description" content="Engineering ML-driven analytics and automated decision systems.">
+<meta property="og:image" content="https://mkhanmuneer.github.io/projects/clinical-risk-factor-analysis-crude-adjusted-odds-ratios-confounding-population-attributable-fraction/assets/fig1_crude_or_binary.png">
+<meta property="og:site_name" content="M. Khan Muneer Portfolio">
+<meta property="og:image:alt" content="Forest plot of six binary predictors on a log odds-ratio axis. Heart disease, hypertension-by-glucose, ever-married, hypertension, and high glucose all sit between OR 3 and 5 with confidence intervals excluding 1. Obesity sits near OR 1.2 with an interval crossing 1.">
+<meta property="og:image:height" content="992">
+<meta property="og:image:width" content="1811">
+<meta name="twitter:title" content="Clinical Risk-Factor Analysis of Stroke: Crude and Adjusted Odds Ratios, Confounding Diagnosis, and Population Attributable Fractions – Muhammad Khan Muneer">
+<meta name="twitter:description" content="A descriptive epidemiological analysis of stroke risk factors in a 5,110-patient cohort. Crude vs.&nbsp;adjusted: odds ratios before and after age adjustment. Confounding: the crude marital-status effect (OR = 4.18) collapses to 0.85 once age enters the model. Burden: Levin population attributable fractions rank elevated glucose (27.7%) and hypertension (20.8%) as the leading modifiable contributors. Diagnostics: Hosmer–Lemeshow calibration, ROC-AUC 0.845, and Mantel–Haenszel stratified analysis for effect modification.">
+<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/clinical-risk-factor-analysis-crude-adjusted-odds-ratios-confounding-population-attributable-fraction/assets/fig1_crude_or_binary.png">
+<meta name="twitter:creator" content="@iMKhanMuneer">
+<meta name="twitter:site" content="@iMKhanMuneer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Forest plot of six binary predictors on a log odds-ratio axis. Heart disease, hypertension-by-glucose, ever-married, hypertension, and high glucose all sit between OR 3 and 5 with confidence intervals excluding 1. Obesity sits near OR 1.2 with an interval crossing 1.">
+<meta name="twitter:image-height" content="992">
+<meta name="twitter:image-width" content="1811">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#featured-projects"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/iMKhanMuneer"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.kaggle.com/muhammadkhanmuneer"> <i class="bi bi-graph-up" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#contact"> 
+<span class="menu-text">Contact</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#method" id="toc-method" class="nav-link" data-scroll-target="#method">Method</a>
+  <ul class="collapse">
+  <li><a href="#data-source" id="toc-data-source" class="nav-link" data-scroll-target="#data-source">Data source</a></li>
+  <li><a href="#variables-and-measures" id="toc-variables-and-measures" class="nav-link" data-scroll-target="#variables-and-measures">Variables and measures</a></li>
+  <li><a href="#statistical-analysis" id="toc-statistical-analysis" class="nav-link" data-scroll-target="#statistical-analysis">Statistical analysis</a></li>
+  <li><a href="#software" id="toc-software" class="nav-link" data-scroll-target="#software">Software</a></li>
+  </ul></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
+  <ul class="collapse">
+  <li><a href="#prevalence-and-absolute-risk" id="toc-prevalence-and-absolute-risk" class="nav-link" data-scroll-target="#prevalence-and-absolute-risk">Prevalence and absolute risk</a></li>
+  <li><a href="#crude-associations-for-binary-predictors" id="toc-crude-associations-for-binary-predictors" class="nav-link" data-scroll-target="#crude-associations-for-binary-predictors">Crude associations for binary predictors</a></li>
+  <li><a href="#crude-associations-for-multi-level-predictors" id="toc-crude-associations-for-multi-level-predictors" class="nav-link" data-scroll-target="#crude-associations-for-multi-level-predictors">Crude associations for multi-level predictors</a></li>
+  <li><a href="#tests-of-independence-and-effect-sizes" id="toc-tests-of-independence-and-effect-sizes" class="nav-link" data-scroll-target="#tests-of-independence-and-effect-sizes">Tests of independence and effect sizes</a></li>
+  <li><a href="#attributable-risk-and-population-attributable-fraction" id="toc-attributable-risk-and-population-attributable-fraction" class="nav-link" data-scroll-target="#attributable-risk-and-population-attributable-fraction">Attributable risk and population attributable fraction</a></li>
+  <li><a href="#age-adjusted-associations" id="toc-age-adjusted-associations" class="nav-link" data-scroll-target="#age-adjusted-associations">Age-adjusted associations</a></li>
+  <li><a href="#model-diagnostics" id="toc-model-diagnostics" class="nav-link" data-scroll-target="#model-diagnostics">Model diagnostics</a></li>
+  <li><a href="#subgroup-analyses-and-effect-modification" id="toc-subgroup-analyses-and-effect-modification" class="nav-link" data-scroll-target="#subgroup-analyses-and-effect-modification">Subgroup analyses and effect modification</a></li>
+  <li><a href="#a-descriptive-risk-score" id="toc-a-descriptive-risk-score" class="nav-link" data-scroll-target="#a-descriptive-risk-score">A descriptive risk score</a></li>
+  <li><a href="#consolidated-findings" id="toc-consolidated-findings" class="nav-link" data-scroll-target="#consolidated-findings">Consolidated findings</a></li>
+  </ul></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a>
+  <ul class="collapse">
+  <li><a href="#principal-findings" id="toc-principal-findings" class="nav-link" data-scroll-target="#principal-findings">Principal findings</a></li>
+  <li><a href="#confounding-by-age-the-marital-status-result" id="toc-confounding-by-age-the-marital-status-result" class="nav-link" data-scroll-target="#confounding-by-age-the-marital-status-result">Confounding by age: the marital-status result</a></li>
+  <li><a href="#the-obesity-null-result" id="toc-the-obesity-null-result" class="nav-link" data-scroll-target="#the-obesity-null-result">The obesity null result</a></li>
+  <li><a href="#strengths-and-limitations" id="toc-strengths-and-limitations" class="nav-link" data-scroll-target="#strengths-and-limitations">Strengths and limitations</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  <li><a href="#appendix-a-exploratory-smoking-analyses" id="toc-appendix-a-exploratory-smoking-analyses" class="nav-link" data-scroll-target="#appendix-a-exploratory-smoking-analyses">Appendix A: Exploratory smoking analyses</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Clinical Risk-Factor Analysis of Stroke: Crude and Adjusted Odds Ratios, Confounding Diagnosis, and Population Attributable Fractions</h1>
+<p class="subtitle lead">A descriptive epidemiological study of a 5,110-patient cohort — inferential quantification of risk-factor associations, age-confounding adjustment, and modifiable-burden estimation.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Biostatistics</div>
+    <div class="quarto-category">Statistical Inference</div>
+    <div class="quarto-category">Epidemiology</div>
+    <div class="quarto-category">Logistic Regression</div>
+    <div class="quarto-category">Regression</div>
+    <div class="quarto-category">Confounding Analysis</div>
+    <div class="quarto-category">Clinical Research</div>
+    <div class="quarto-category">Healthcare Analytics</div>
+    <div class="quarto-category">Python</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>A descriptive epidemiological analysis of stroke risk factors in a 5,110-patient cohort. <strong>Crude vs.&nbsp;adjusted:</strong> odds ratios before and after age adjustment. <strong>Confounding:</strong> the crude marital-status effect (OR = 4.18) collapses to 0.85 once age enters the model. <strong>Burden:</strong> Levin population attributable fractions rank elevated glucose (27.7%) and hypertension (20.8%) as the leading modifiable contributors. <strong>Diagnostics:</strong> Hosmer–Lemeshow calibration, ROC-AUC 0.845, and Mantel–Haenszel stratified analysis for effect modification.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Muhammad Khan Muneer </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">February 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+<div>
+  <div class="keywords">
+    <div class="block-title">Keywords</div>
+    <p>odds ratio, confounding, population attributable fraction, logistic regression, stroke epidemiology, Mantel-Haenszel, attributable risk, Hosmer-Lemeshow, effect modification, Wilson confidence interval, Cramér’s V, descriptive risk score, biostatistics, Python, statsmodels</p>
+  </div>
+</div>
+
+</header>
+
+
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+<p>This study quantifies the magnitude and uncertainty of the association between each of eight baseline risk factors and stroke in a cross-sectional cohort of 5,110 patients (249 stroke events; prevalence 4.87%). Crude odds ratios (<em>OR</em>s) were estimated from 2 × 2 contingency tables with Fisher exact tests; independence was assessed with chi-square tests and bias-corrected Cramér’s <em>V</em>, with Bonferroni correction for multiple comparisons. Epidemiological burden was expressed as attributable risk and the Levin population attributable fraction (PAF). Age-adjusted <em>OR</em>s were obtained from a sequence of logistic regression models, culminating in a joint model containing age and five predictors. The joint model was evaluated for calibration (Hosmer–Lemeshow), discrimination (ROC-AUC), and collinearity (variance inflation factors), and key associations were re-examined with Mantel–Haenszel stratified analysis and the Breslow–Day test for homogeneity. Five predictors showed significant crude associations (<em>OR</em>s 3.4–4.7). Age was the dominant predictor and confounder: the crude <em>OR</em> for having ever been married (4.18) collapsed to 0.85 after age adjustment, identifying it as a pure age artefact. Elevated glucose (age-adjusted <em>OR</em> = 1.83) and hypertension (1.60) retained independent signal; obesity was null across every analysis. Elevated glucose (PAF = 27.7%) and hypertension (PAF = 20.8%) were the leading modifiable contributors to cohort stroke burden. The joint model was well calibrated (<em>p</em> = .43) with an in-sample ROC-AUC of 0.845. All estimates are descriptive; the design does not support causal inference.</p>
+<p><em>Keywords:</em> stroke, odds ratio, confounding, population attributable fraction, logistic regression, Mantel–Haenszel, descriptive epidemiology</p>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Risk-factor epidemiology asks three questions in sequence: <em>how large</em> is the association between an exposure and an outcome, <em>how certain</em> are we of that estimate, and <em>what survives</em> adjustment for competing explanations. A preceding exploratory analysis of this cohort established which baseline variables carry a signal for stroke and identified age as the dominant correlate. The present study takes those variables and answers the three questions inferentially — through odds ratios and their confidence intervals, formal tests of independence, attributable-risk decomposition, and a staged logistic-regression adjustment for age.</p>
+<p>The analysis draws exclusively on a single curated analytical table of 5,110 patients and 24 fields and does not revisit earlier processing stages. Four constraints inherited from the exploratory phase shape every interpretation that follows:</p>
+<ol type="1">
+<li><strong>Class imbalance.</strong> With 249 stroke-positive patients among 5,110, the positive rate is 4.87% and the negative-to-positive ratio is 19.5:1. This is a population fact, not a modelling nuisance. It implies that odds ratios carry asymmetrically wide confidence intervals on the upper side, and that absolute risk differences deserve as much interpretive weight as relative measures. Both are reported throughout.</li>
+<li><strong>Body-mass-index imputation.</strong> 201 BMI values (3.93%) were imputed during data preparation; a sensitivity caveat attaches to every BMI-derived result.</li>
+<li><strong>Smoking-status imputation.</strong> 1,544 smoking-status values (30.22%) were imputed. This rate is high enough that all smoking analyses are confined to Appendix A and treated as exploratory and hypothesis-generating only.</li>
+<li><strong>Age as the dominant confounder.</strong> Age correlates with stroke at a point-biserial <em>r</em> of .245 (<em>p</em> &lt; .001) and is associated with several other predictors. Age is therefore a mandatory covariate in every adjusted model.</li>
+</ol>
+<p>Six fields were excluded from inferential analysis on substantive grounds established earlier: residence type and gender (Cramér’s <em>V</em> of .007 and .000 against stroke, with fully overlapping confidence intervals); the underweight-BMI indicator (a rare subgroup, <em>n</em> = 343, with too few events for a stable estimate); and three engineered interaction terms (age², age × glucose, age × BMI), which are reserved for predictive modelling and are not appropriate for epidemiological odds-ratio interpretation.</p>
+</section>
+<section id="method" class="level2">
+<h2 class="anchored" data-anchor-id="method">Method</h2>
+<section id="data-source" class="level3">
+<h3 class="anchored" data-anchor-id="data-source">Data source</h3>
+<p>The cohort is the widely used open <em>Stroke Prediction Dataset</em> (fedesoriano, 2021), comprising 5,110 patient records with demographic attributes, lifestyle indicators, medical history, and a binary stroke outcome. The file was processed through a medallion-style extract–transform–load pipeline (raw → cleaned → imputed → feature-engineered) and persisted as a columnar analytical table; the exploratory-analysis stage that precedes this study documented the cleaning, imputation, and feature-construction steps. The analytical table used here contains 5,110 rows and 24 columns, including the binary integer encoding of the outcome (<code>stroke_num</code>) alongside the original label column. No rows were dropped for the analyses below except where a predictor was missing for a specific model, in which case that model uses complete cases for its predictor set.</p>
+</section>
+<section id="variables-and-measures" class="level3">
+<h3 class="anchored" data-anchor-id="variables-and-measures">Variables and measures</h3>
+<p>The outcome is incident stroke (<code>stroke</code> = “Yes”), encoded 1/0. Binary predictors are hypertension, heart disease, ever-married status, elevated glucose (<code>avg_glucose_level</code> &gt; 140 mg/dL), the joint hypertension-and-elevated-glucose indicator, and obesity (BMI ≥ 30). Multi-level predictors are work type (private, self-employed, government, child-care, never-worked) and a four-level age band (young 0–29 years, mid 30–44, mature 45–59, senior 60–82). Age also enters models as a continuous covariate in years.</p>
+</section>
+<section id="statistical-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="statistical-analysis">Statistical analysis</h3>
+<p><strong>Prevalence.</strong> Stroke prevalence was estimated overall and within strata, with 95% Wilson score confidence intervals (Wilson, 1927). The Wilson interval was chosen over the normal approximation because the latter has poor coverage for proportions near zero and can return negative bounds; at a prevalence below 5% this is a material choice.</p>
+<p><strong>Crude associations.</strong> For each binary predictor, a 2 × 2 table of exposure by outcome yielded an odds ratio with a 95% confidence interval and a Fisher exact <em>p</em>-value (Fisher, 1922). Fisher’s exact test was used throughout rather than the chi-square approximation because several exposed groups are small (the joint hypertension–glucose group has 178 members), and the exact test errs conservatively. For multi-level predictors, each non-reference level was compared with a fixed reference (private work; the young age band) using the same 2 × 2 machinery. Multiple comparisons within each predictor family were controlled with a Bonferroni-adjusted α.</p>
+<p><strong>Tests of independence and effect sizes.</strong> Each categorical predictor was tested against the outcome with a chi-square test of independence, reporting the statistic, degrees of freedom, and a <em>p</em>-value, together with a bias-corrected Cramér’s <em>V</em> (Bergsma, 2013) as a sample-size-robust effect-size measure on a common 0–1 scale. A Bonferroni-adjusted threshold (α* = .05 / 8 = .00625) governed significance across the eight-test family.</p>
+<p><strong>Attributable risk.</strong> For each binary predictor, attributable risk (AR, the exposed-minus-unexposed risk difference), attributable risk percent (AR%), and the Levin population attributable fraction (PAF; Levin, 1953) were computed. Exposure indicators are coded inconsistently across source columns (integer 1/0 for some, the labels “Yes”/“No” for others); all attributable-risk computations use label-aware exposure detection so that every predictor is represented. PAF is a descriptive quantity computed under a counterfactual assumption of causality that an observational cross-section cannot establish; it is reported as a burden-ranking device, not as evidence of a causal pathway.</p>
+<p><strong>Age-adjusted associations.</strong> A sequence of logistic regression models was fitted with <code>statsmodels</code>: an age-only baseline; six models each adding one predictor to age; and a joint model containing age with hypertension, heart disease, ever-married status, elevated glucose, and obesity entered simultaneously. Each model reports the Akaike information criterion (AIC), McFadden’s pseudo-<em>R</em>² (McFadden, 1974), and per-term odds ratios with 95% confidence intervals. These are descriptive epidemiological models; threshold selection, calibration for deployment, and out-of-sample validation belong to the companion predictive-modelling study.</p>
+<p><strong>Model diagnostics.</strong> The joint model was assessed for calibration with a decile-grouped Hosmer–Lemeshow test (Hosmer &amp; Lemeshow, 2000); for classification behaviour with a confusion matrix at a 0.50 cut-point (reported for completeness only, given the 4.87% base rate); for discrimination with the area under the receiver operating characteristic curve (ROC-AUC); and for collinearity with variance inflation factors (VIF), using a VIF &gt; 5 flag.</p>
+<p><strong>Subgroup analyses.</strong> Three stratified analyses (hypertension by age band, elevated glucose by age band, hypertension by gender) were run with Mantel–Haenszel pooling of stratum-specific odds ratios (Mantel &amp; Haenszel, 1959) and the Breslow–Day test for homogeneity of odds ratios (Breslow &amp; Day, 1980). A non-significant Breslow–Day result licenses the pooled estimate as the summary; a significant result would indicate effect modification.</p>
+<p><strong>Descriptive risk score.</strong> The joint model’s significant coefficients (<em>p</em> &lt; .05) were rescaled to integer point weights by division by the smallest significant coefficient, and the resulting score was mapped across the cohort to check whether it recovers the observed outcome gradient by decile.</p>
+</section>
+<section id="software" class="level3">
+<h3 class="anchored" data-anchor-id="software">Software</h3>
+<p>Analyses were conducted in Python with <code>statsmodels</code> 0.14.1 (Seabold &amp; Perktold, 2010), <code>SciPy</code> (Virtanen et al., 2020), <code>scikit-learn</code> (Pedregosa et al., 2011), <code>NumPy</code> (Harris et al., 2020), and <code>pandas</code> (The pandas development team, 2020). Figures were produced with <code>Matplotlib</code> (Hunter, 2007).</p>
+</section>
+</section>
+<section id="results" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<section id="prevalence-and-absolute-risk" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="prevalence-and-absolute-risk">Prevalence and absolute risk</h3>
+<p>At the cohort level, 249 stroke events in 5,110 patients give an overall prevalence of 4.87%, 95% CI [4.32%, 5.50%] — equivalently, 487 strokes per 10,000 patients. This is the denominator against which every relative measure below should be read: an odds ratio near 4 still describes a minority outcome within the exposed group.</p>
+<p>The age stratification (Table 1) reveals the mechanism behind the overall rate. Prevalence rises from 0.13% in the young band to 0.79% (mid), 4.83% (mature), and 13.15% (senior). The confidence intervals for the mature and senior bands do not overlap, confirming the gradient is not a sampling artefact. The senior band alone contributes 181 of 249 events — 72.7% of all strokes — from 26.9% of the cohort. By gender, male prevalence (5.11%, 95% CI [4.25%, 6.13%]) and female prevalence (4.71%, 95% CI [4.01%, 5.53%]) have substantially overlapping intervals; the difference is not distinguishable from noise at this sample size, which is the basis for excluding gender from inferential analysis.</p>
+<div class="column-page-inset">
+<p><strong>Table 1</strong></p>
+<p><em>Stroke Prevalence Overall and by Stratum, With 95% Wilson Confidence Intervals</em></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Stratum</th>
+<th style="text-align: right;"><em>n</em></th>
+<th style="text-align: right;">Events</th>
+<th style="text-align: right;">Prevalence</th>
+<th style="text-align: center;">95% CI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Whole cohort</strong></td>
+<td style="text-align: right;">5,110</td>
+<td style="text-align: right;">249</td>
+<td style="text-align: right;">4.87%</td>
+<td style="text-align: center;">[4.32%, 5.50%]</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Age band: young (0–29 y)</td>
+<td style="text-align: right;">1,515</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.13%</td>
+<td style="text-align: center;">[0.04%, 0.48%]</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Age band: mid (30–44 y)</td>
+<td style="text-align: right;">1,018</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">0.79%</td>
+<td style="text-align: center;">[0.40%, 1.54%]</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Age band: mature (45–59 y)</td>
+<td style="text-align: right;">1,201</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">4.83%</td>
+<td style="text-align: center;">[3.75%, 6.19%]</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Age band: senior (60–82 y)</td>
+<td style="text-align: right;">1,376</td>
+<td style="text-align: right;">181</td>
+<td style="text-align: right;">13.15%</td>
+<td style="text-align: center;">[11.47%, 15.04%]</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Gender: male</td>
+<td style="text-align: right;">2,115</td>
+<td style="text-align: right;">108</td>
+<td style="text-align: right;">5.11%</td>
+<td style="text-align: center;">[4.25%, 6.13%]</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Gender: female</td>
+<td style="text-align: right;">2,995</td>
+<td style="text-align: right;">141</td>
+<td style="text-align: right;">4.71%</td>
+<td style="text-align: center;">[4.01%, 5.53%]</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> CI = confidence interval. Wilson score intervals are used because the normal approximation has poor coverage for proportions near zero.</p>
+</div>
+</section>
+<section id="crude-associations-for-binary-predictors" class="level3">
+<h3 class="anchored" data-anchor-id="crude-associations-for-binary-predictors">Crude associations for binary predictors</h3>
+<p>Five of the six binary predictors reach significance at α = .05, and all five survive the Bonferroni correction for six tests (α* = .00833). The exception is obesity (<em>OR</em> = 1.22, 95% CI [0.95, 1.58], <em>p</em> = .127). The largest crude association is heart disease (<em>OR</em> = 4.71, 95% CI [3.34, 6.64]); the wide interval reflects a small exposed group (<em>n</em> = 276). The joint hypertension–glucose indicator is similar (<em>OR</em> = 4.36, 95% CI [2.88, 6.61], <em>n</em> = 178 exposed). Ever-married status carries a crude <em>OR</em> of 4.18, 95% CI [2.83, 6.19] — but married patients in this cohort are systematically older, and the age-adjusted analysis below shows this association to be an age artefact. Hypertension (<em>OR</em> = 3.70, 95% CI [2.74, 4.98]) and elevated glucose (<em>OR</em> = 3.38, 95% CI [2.59, 4.43]) complete the set, both with intervals comfortably excluding 1. Figure 1 shows the pattern: four predictors cluster between <em>OR</em> 3 and 5, obesity sits just above the reference line with an interval crossing 1, and the small-denominator predictors carry correspondingly wide intervals.</p>
+<p><strong>Table 2</strong></p>
+<p><em>Crude Odds Ratios for the Six Binary Predictors (n = 5,110)</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 17%">
+<col style="width: 13%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Predictor</th>
+<th style="text-align: right;">Exposed <em>n</em></th>
+<th style="text-align: right;">Events (exposed)</th>
+<th style="text-align: right;"><em>OR</em></th>
+<th style="text-align: center;">95% CI</th>
+<th style="text-align: right;">Fisher <em>p</em></th>
+<th style="text-align: center;">Bonferroni</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Heart disease</td>
+<td style="text-align: right;">276</td>
+<td style="text-align: right;">47</td>
+<td style="text-align: right;">4.71</td>
+<td style="text-align: center;">[3.34, 6.64]</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hypertension × high glucose</td>
+<td style="text-align: right;">178</td>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">4.36</td>
+<td style="text-align: center;">[2.88, 6.61]</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ever married</td>
+<td style="text-align: right;">3,353</td>
+<td style="text-align: right;">220</td>
+<td style="text-align: right;">4.18</td>
+<td style="text-align: center;">[2.83, 6.19]</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hypertension</td>
+<td style="text-align: right;">498</td>
+<td style="text-align: right;">66</td>
+<td style="text-align: right;">3.70</td>
+<td style="text-align: center;">[2.74, 4.98]</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">High glucose (&gt; 140 mg/dL)</td>
+<td style="text-align: right;">821</td>
+<td style="text-align: right;">93</td>
+<td style="text-align: right;">3.38</td>
+<td style="text-align: center;">[2.59, 4.43]</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Obesity (BMI ≥ 30)</td>
+<td style="text-align: right;">2,021</td>
+<td style="text-align: right;">110</td>
+<td style="text-align: right;">1.22</td>
+<td style="text-align: center;">[0.95, 1.58]</td>
+<td style="text-align: right;">.127</td>
+<td style="text-align: center;">—</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> <em>OR</em> = odds ratio; CI = confidence interval. Bonferroni-adjusted α* = .05 / 6 = .00833. Rows are ordered by <em>OR</em>.</p>
+<p><strong>Figure 1</strong></p>
+<p><em>Crude Odds Ratios for the Binary Stroke Predictors (95% CI, Logarithmic Scale)</em></p>
+<p><img src="assets/fig1_crude_or_binary.png" class="img-fluid" alt="Forest plot of six binary predictors on a log odds-ratio axis. Heart disease, hypertension-by-glucose, ever-married, hypertension, and high glucose all sit between OR 3 and 5 with confidence intervals excluding 1. Obesity sits near OR 1.2 with an interval crossing 1."></p>
+<p><em>Note.</em> Points are odds-ratio estimates; whiskers are 95% confidence intervals. Blue indicates an interval that excludes <em>OR</em> = 1; red indicates an interval that includes it. The dashed line marks the null (<em>OR</em> = 1). A logarithmic x-axis renders symmetric intervals symmetrically.</p>
+</section>
+<section id="crude-associations-for-multi-level-predictors" class="level3">
+<h3 class="anchored" data-anchor-id="crude-associations-for-multi-level-predictors">Crude associations for multi-level predictors</h3>
+<p>Work type produces a mixed picture. Self-employment carries a significant elevated <em>OR</em> of 1.61, 95% CI [1.19, 2.17], <em>p</em> = .003. Government work does not differ from private work (<em>OR</em> = 0.99, <em>p</em> = 1.00). Child-care work is strongly protective (<em>OR</em> = 0.05, 95% CI [0.01, 0.22]) — only 2 events among 687 people. The never-worked level (22 people, zero events) yields an undefined odds ratio and is omitted. These work-type patterns resist causal reading in an observational cross-section and would require age adjustment to interpret.</p>
+<p>The age-band series is the most striking result in the study. Relative to the young reference, the mid band carries <em>OR</em> = 5.99, 95% CI [1.27, 28.27]; the mature band <em>OR</em> = 38.39, 95% CI [9.36, 157.50]; and the senior band <em>OR</em> = 114.58, 95% CI [28.38, 462.62]. The very wide intervals stem from the sparse young reference (2 events), not from sparse exposed groups; the lower bounds alone (9.36 and 28.38) establish the association as large and real. A senior-band patient has crude odds of stroke more than 100 times those of a young-band patient (Figure 2).</p>
+<p><strong>Table 3</strong></p>
+<p><em>Crude Odds Ratios for Multi-Level Predictors, Each Level Versus Its Reference</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 21%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Predictor : level (vs.&nbsp;reference)</th>
+<th style="text-align: right;">Level <em>n</em></th>
+<th style="text-align: right;">Events</th>
+<th style="text-align: right;"><em>OR</em></th>
+<th style="text-align: center;">95% CI</th>
+<th style="text-align: right;">Fisher <em>p</em></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Age band: mid (vs.&nbsp;young)</td>
+<td style="text-align: right;">1,018</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">5.99</td>
+<td style="text-align: center;">[1.27, 28.27]</td>
+<td style="text-align: right;">.018</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Age band: mature (vs.&nbsp;young)</td>
+<td style="text-align: right;">1,201</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">38.39</td>
+<td style="text-align: center;">[9.36, 157.50]</td>
+<td style="text-align: right;">&lt; .001</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Age band: senior (vs.&nbsp;young)</td>
+<td style="text-align: right;">1,376</td>
+<td style="text-align: right;">181</td>
+<td style="text-align: right;">114.58</td>
+<td style="text-align: center;">[28.38, 462.62]</td>
+<td style="text-align: right;">&lt; .001</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Work type: self-employed (vs.&nbsp;private)</td>
+<td style="text-align: right;">819</td>
+<td style="text-align: right;">65</td>
+<td style="text-align: right;">1.61</td>
+<td style="text-align: center;">[1.19, 2.17]</td>
+<td style="text-align: right;">.003</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Work type: government (vs.&nbsp;private)</td>
+<td style="text-align: right;">657</td>
+<td style="text-align: right;">33</td>
+<td style="text-align: right;">0.99</td>
+<td style="text-align: center;">[0.67, 1.45]</td>
+<td style="text-align: right;">1.00</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Work type: child-care (vs.&nbsp;private)</td>
+<td style="text-align: right;">687</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: center;">[0.01, 0.22]</td>
+<td style="text-align: right;">&lt; .001</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Work type: never-worked (vs.&nbsp;private)</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">undefined</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: right;">—</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Reference categories: private work (<em>n</em> = 2,925) and the young age band (<em>n</em> = 1,515, 2 events). The never-worked level is shown for completeness but is excluded from Figure 2 because the odds ratio is undefined.</p>
+<p><strong>Figure 2</strong></p>
+<p><em>Crude Odds Ratios for Multi-Level Predictors Versus Reference (95% CI, Logarithmic Scale)</em></p>
+<p><img src="assets/fig2_crude_or_multilevel.png" class="img-fluid" alt="Forest plot on a wide log scale. The three age-band contrasts climb from OR 6 (mid) to 38 (mature) to 115 (senior). Self-employment sits just above OR 1; government work straddles 1; child-care work sits near OR 0.05."></p>
+<p><em>Note.</em> Points are odds-ratio estimates; whiskers are 95% confidence intervals. Blue indicates an interval that excludes <em>OR</em> = 1; red indicates an interval that includes it. The x-axis spans roughly four orders of magnitude to accommodate the age-band contrasts.</p>
+</section>
+<section id="tests-of-independence-and-effect-sizes" class="level3">
+<h3 class="anchored" data-anchor-id="tests-of-independence-and-effect-sizes">Tests of independence and effect sizes</h3>
+<p>All eight predictors were tested with the chi-square test of independence (no expected cell count fell below 5, so the exact tests used in the crude-OR stage were a conservative precaution the expected-count check corroborates). The Bonferroni threshold for eight tests is α* = .00625. Seven of eight predictors return <em>p</em>-values of essentially zero and survive comfortably; obesity again does not (χ²(1) = 2.34, <em>p</em> = .126, <em>V</em> = .016).</p>
+<p>Significance and effect size tell different stories (Table 4). The age band is the strongest predictor on both criteria (χ²(3) = 313.72, <em>p</em> &lt; .001, <em>V</em> = .247 — a moderate association). Every other surviving predictor has a <em>V</em> between .094 (work type) and .134 (heart disease), placing them in the small-to-small-moderate range. Some chi-square statistics are large in absolute terms — 93.0 for heart disease, 87.9 for elevated glucose — but that magnitude is partly a function of sample size; reading <em>V</em> alongside the statistic prevents mistaking statistical power for substantive association. Obesity is the clean null: statistically undetectable and negligible in effect.</p>
+<p><strong>Table 4</strong></p>
+<p><em>Chi-Square Tests of Independence Against Stroke, With Bias-Corrected Cramér’s V</em></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Predictor</th>
+<th style="text-align: right;">χ²</th>
+<th style="text-align: right;"><em>df</em></th>
+<th style="text-align: right;"><em>p</em></th>
+<th style="text-align: right;">Cramér’s <em>V</em></th>
+<th style="text-align: center;">Bonferroni</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Age band</td>
+<td style="text-align: right;">313.72</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: right;">.247</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Heart disease</td>
+<td style="text-align: right;">93.01</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: right;">.134</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Elevated glucose</td>
+<td style="text-align: right;">87.92</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: right;">.130</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hypertension</td>
+<td style="text-align: right;">83.60</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: right;">.127</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ever married</td>
+<td style="text-align: right;">59.98</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: right;">.107</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hypertension × high glucose</td>
+<td style="text-align: right;">57.11</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: right;">.105</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Work type</td>
+<td style="text-align: right;">49.16</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: right;">.094</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Obesity (BMI ≥ 30)</td>
+<td style="text-align: right;">2.34</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.126</td>
+<td style="text-align: right;">.016</td>
+<td style="text-align: center;">—</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Bonferroni-adjusted α* = .05 / 8 = .00625. Cramér’s <em>V</em> is bias-corrected per Bergsma (2013); by Cohen’s conventions, <em>V</em> ≈ .1 is a small and <em>V</em> ≈ .25 a moderate association for these degrees of freedom. Rows are ordered by χ².</p>
+</section>
+<section id="attributable-risk-and-population-attributable-fraction" class="level3">
+<h3 class="anchored" data-anchor-id="attributable-risk-and-population-attributable-fraction">Attributable risk and population attributable fraction</h3>
+<p>Table 5 translates the significant crude associations into burden measures. Elevated glucose is the leading population contributor: PAF = 27.7%, meaning that roughly 28% of cohort stroke cases would — under a causal reading the data cannot support — be prevented if elevated glucose were eliminated at its current prevalence. Its attributable risk is 7.7 percentage points (exposed rate 11.3% vs.&nbsp;unexposed 3.6%) and AR% is 67.9%. Hypertension follows (PAF = 20.8%; AR = 9.3 pp; AR% = 70.1%), then heart disease (PAF = 16.7%; AR = 12.9 pp; AR% = 75.5%). The joint hypertension–glucose indicator has the highest per-exposed burden (AR% = 73.7%) but a low PAF (10.5%) because only 3.5% of the cohort is exposed — the classic tension between a rare high-risk exposure and a widely distributed moderate one. Obesity’s PAF (8.1%) rests on a non-significant <em>OR</em> and is not credible.</p>
+<p>Figure 3 ranks the five predictors and flags the four modifiable exposures as prevention targets.</p>
+<p><strong>Table 5</strong></p>
+<p><em>Attributable Risk and Levin Population Attributable Fraction, by Predictor</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Predictor</th>
+<th style="text-align: right;">Exposed prevalence</th>
+<th style="text-align: right;">Risk if exposed</th>
+<th style="text-align: right;">Risk if unexposed</th>
+<th style="text-align: right;">AR (pp)</th>
+<th style="text-align: right;">AR%</th>
+<th style="text-align: right;">Crude <em>OR</em></th>
+<th style="text-align: right;">PAF</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">High glucose (&gt; 140 mg/dL)</td>
+<td style="text-align: right;">16.1%</td>
+<td style="text-align: right;">11.3%</td>
+<td style="text-align: right;">3.6%</td>
+<td style="text-align: right;">7.7</td>
+<td style="text-align: right;">67.9%</td>
+<td style="text-align: right;">3.38</td>
+<td style="text-align: right;">27.7%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hypertension</td>
+<td style="text-align: right;">9.8%</td>
+<td style="text-align: right;">13.3%</td>
+<td style="text-align: right;">4.0%</td>
+<td style="text-align: right;">9.3</td>
+<td style="text-align: right;">70.1%</td>
+<td style="text-align: right;">3.70</td>
+<td style="text-align: right;">20.8%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Heart disease</td>
+<td style="text-align: right;">5.4%</td>
+<td style="text-align: right;">17.0%</td>
+<td style="text-align: right;">4.2%</td>
+<td style="text-align: right;">12.9</td>
+<td style="text-align: right;">75.5%</td>
+<td style="text-align: right;">4.71</td>
+<td style="text-align: right;">16.7%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hypertension × high glucose</td>
+<td style="text-align: right;">3.5%</td>
+<td style="text-align: right;">16.9%</td>
+<td style="text-align: right;">4.4%</td>
+<td style="text-align: right;">12.4</td>
+<td style="text-align: right;">73.7%</td>
+<td style="text-align: right;">4.36</td>
+<td style="text-align: right;">10.5%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Obesity (BMI ≥ 30)</td>
+<td style="text-align: right;">39.6%</td>
+<td style="text-align: right;">5.4%</td>
+<td style="text-align: right;">4.5%</td>
+<td style="text-align: right;">0.9</td>
+<td style="text-align: right;">17.3%</td>
+<td style="text-align: right;">1.22</td>
+<td style="text-align: right;">8.1%</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> AR = attributable risk (exposed-minus-unexposed risk difference); pp = percentage points; AR% = attributable risk percent; PAF = population attributable fraction via Levin’s (1953) formula. PAF assumes causality for the computation only; these are burden estimates, not proven prevention gains. Rows are ordered by PAF.</p>
+<p><strong>Figure 3</strong></p>
+<p><em>Population Attributable Fraction by Predictor, With Modifiable Exposures Highlighted</em></p>
+<p><img src="assets/fig3_paf.png" class="img-fluid" alt="Horizontal bar chart of population attributable fraction. High glucose 27.7 percent and hypertension 20.8 percent are the tallest bars and are coloured as modifiable. Heart disease 16.7 percent is coloured as non-modifiable. Hypertension-by-glucose 10.5 percent and obesity 8.1 percent follow."></p>
+<p><em>Note.</em> Green bars are modifiable exposures (prevention targets); grey is clinical/non-modifiable. PAF is recomputed directly from cohort exposure prevalence and the crude odds ratios. Causality is assumed for the computation only; the estimates describe observational burden.</p>
+</section>
+<section id="age-adjusted-associations" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="age-adjusted-associations">Age-adjusted associations</h3>
+<p><strong>Age-only baseline.</strong> Age enters with a coefficient of 0.0747 (<em>OR</em> per year = 1.078, 95% CI [1.067, 1.088], <em>p</em> &lt; .001), AIC = 1,620.26, pseudo-<em>R</em>² = .188. Each additional year multiplies the odds of stroke by about 7.8%, and age alone captures nearly 19% of the maximum possible log-likelihood improvement over a null model.</p>
+<p><strong>Individual adjusted models.</strong> Adding one predictor at a time to age (Table 6) separates the crude associations that are independent of age from those that are not. Hypertension retains its effect (age-adjusted <em>OR</em> = 1.60, 95% CI [1.17, 2.18], <em>p</em> = .004; ΔAIC = −6.1). Elevated glucose retains the largest single-predictor contribution (<em>OR</em> = 1.83, 95% CI [1.38, 2.42], <em>p</em> &lt; .001; ΔAIC = −14.7). Heart disease is retained but with an interval narrowing toward 1 (<em>OR</em> = 1.53, 95% CI [1.06, 2.20], <em>p</em> = .022). Obesity contributes nothing beyond age (<em>OR</em> = 1.03, <em>p</em> = .846).</p>
+<p>The decisive result is the collapse of the ever-married association. Its crude <em>OR</em> of 4.18 falls to 0.85, 95% CI [0.56, 1.30], <em>p</em> = .458 — an estimate that spans 1 with no signal. The crude association is a pure age artefact: married patients in this cohort are simply older, and the effect disappears once age is controlled. This is precisely the judgment that age adjustment exists to make.</p>
+<p><strong>Joint model.</strong> With age and all five predictors entered simultaneously (AIC = 1,604.03, pseudo-<em>R</em>² = .201), elevated glucose retains significance (<em>OR</em> = 1.74, 95% CI [1.30, 2.34], <em>p</em> &lt; .001) and hypertension retains significance at α = .05 (<em>OR</em> = 1.47, 95% CI [1.07, 2.03], <em>p</em> = .018). Heart disease attenuates to marginal significance (<em>OR</em> = 1.38, 95% CI [0.96, 2.00], <em>p</em> = .085) alongside the other predictors. Ever-married status (<em>OR</em> = 0.84, <em>p</em> = .412) and obesity (<em>OR</em> = 0.90, <em>p</em> = .462) contribute nothing. Age remains the bedrock covariate in every specification (<em>OR</em> per year ≈ 1.072 in the joint model).</p>
+<div class="column-page-inset">
+<p><strong>Table 6</strong></p>
+<p><em>Sequential Logistic Regression Models: Age-Adjusted Odds Ratios (N = 5,110)</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 18%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Model</th>
+<th style="text-align: left;">Predictor of interest</th>
+<th style="text-align: right;">Age-adjusted <em>OR</em></th>
+<th style="text-align: center;">95% CI</th>
+<th style="text-align: right;"><em>p</em></th>
+<th style="text-align: right;">AIC</th>
+<th style="text-align: right;">Pseudo-<em>R</em>²</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1. Age only</td>
+<td style="text-align: left;">age (per year)</td>
+<td style="text-align: right;">1.078</td>
+<td style="text-align: center;">[1.067, 1.088]</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: right;">1,620.26</td>
+<td style="text-align: right;">.188</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2. Age + hypertension</td>
+<td style="text-align: left;">hypertension</td>
+<td style="text-align: right;">1.60</td>
+<td style="text-align: center;">[1.17, 2.18]</td>
+<td style="text-align: right;">.004</td>
+<td style="text-align: right;">1,614.18</td>
+<td style="text-align: right;">.192</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">3. Age + heart disease</td>
+<td style="text-align: left;">heart disease</td>
+<td style="text-align: right;">1.53</td>
+<td style="text-align: center;">[1.06, 2.20]</td>
+<td style="text-align: right;">.022</td>
+<td style="text-align: right;">1,617.31</td>
+<td style="text-align: right;">.190</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">4. Age + elevated glucose</td>
+<td style="text-align: left;">elevated glucose</td>
+<td style="text-align: right;">1.83</td>
+<td style="text-align: center;">[1.38, 2.42]</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: right;">1,605.57</td>
+<td style="text-align: right;">.196</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">5. Age + ever married</td>
+<td style="text-align: left;">ever married</td>
+<td style="text-align: right;">0.85</td>
+<td style="text-align: center;">[0.56, 1.30]</td>
+<td style="text-align: right;">.458</td>
+<td style="text-align: right;">1,621.72</td>
+<td style="text-align: right;">.188</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">6. Age + obesity</td>
+<td style="text-align: left;">obesity</td>
+<td style="text-align: right;">1.03</td>
+<td style="text-align: center;">[0.78, 1.34]</td>
+<td style="text-align: right;">.846</td>
+<td style="text-align: right;">1,622.22</td>
+<td style="text-align: right;">.188</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">7. Joint</td>
+<td style="text-align: left;">elevated glucose</td>
+<td style="text-align: right;">1.74</td>
+<td style="text-align: center;">[1.30, 2.34]</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: right;">1,604.03</td>
+<td style="text-align: right;">.201</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">7. Joint</td>
+<td style="text-align: left;">hypertension</td>
+<td style="text-align: right;">1.47</td>
+<td style="text-align: center;">[1.07, 2.03]</td>
+<td style="text-align: right;">.018</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">7. Joint</td>
+<td style="text-align: left;">heart disease</td>
+<td style="text-align: right;">1.38</td>
+<td style="text-align: center;">[0.96, 2.00]</td>
+<td style="text-align: right;">.085</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">7. Joint</td>
+<td style="text-align: left;">ever married</td>
+<td style="text-align: right;">0.84</td>
+<td style="text-align: center;">[0.54, 1.28]</td>
+<td style="text-align: right;">.412</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">7. Joint</td>
+<td style="text-align: left;">obesity</td>
+<td style="text-align: right;">0.90</td>
+<td style="text-align: center;">[0.68, 1.19]</td>
+<td style="text-align: right;">.462</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">7. Joint</td>
+<td style="text-align: left;">age (per year)</td>
+<td style="text-align: right;">1.072</td>
+<td style="text-align: center;">[1.061, 1.083]</td>
+<td style="text-align: right;">&lt; .001</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Every model includes age as a covariate. The age-only model’s AIC (1,620.26) is the reference; models 2–6 are each a two-term model. The joint model (Model 7) enters age and five predictors simultaneously; its AIC and pseudo-<em>R</em>² (1,604.03 and .201) are shown on its first row only. Smoking is excluded from all models (see Appendix A).</p>
+</div>
+</section>
+<section id="model-diagnostics" class="level3">
+<h3 class="anchored" data-anchor-id="model-diagnostics">Model diagnostics</h3>
+<p>The joint model was assessed from four angles (Table 7). <strong>Calibration:</strong> the Hosmer–Lemeshow test returns χ²(8) = 8.00, <em>p</em> = .433 — a clear failure to reject adequate calibration, and at <em>n</em> = 5,110 the test has substantial power to detect miscalibration. <strong>Classification at 0.50:</strong> true positives = 0, false positives = 0, true negatives = 4,861, false negatives = 249; sensitivity = 0.000, specificity = 1.000. The model classifies everyone as negative because no fitted probability reaches 0.50. This is not a model failure — it demonstrates why a fixed 0.50 cut-point is meaningless at a 4.87% base rate, and threshold selection belongs to the predictive-modelling stage. <strong>Discrimination:</strong> the ROC-AUC is 0.845 (Figure 4) — in 84.5% of random positive–negative pairs the model assigns the higher probability to the positive case. This is an in-sample, non-cross-validated figure and is not a deployment performance claim. <strong>Collinearity:</strong> all VIFs are below 2.2 (age 2.12, ever-married 1.90, all others below 1.2); no multicollinearity concern.</p>
+<p><strong>Table 7</strong></p>
+<p><em>Diagnostic Summary for the Joint Logistic Model</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Diagnostic</th>
+<th style="text-align: left;">Result</th>
+<th style="text-align: left;">Reading</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Hosmer–Lemeshow (10 deciles)</td>
+<td style="text-align: left;">χ²(8) = 8.00, <em>p</em> = .433</td>
+<td style="text-align: left;">Calibration adequate; null not rejected</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Classification at 0.50 cut-point</td>
+<td style="text-align: left;">Sens = 0.00, Spec = 1.00 (TP = 0, FN = 249)</td>
+<td style="text-align: left;">Cut-point inappropriate at a 4.87% base rate</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ROC-AUC (in-sample)</td>
+<td style="text-align: left;">0.845</td>
+<td style="text-align: left;">Strong rank discrimination for a 5-predictor descriptive model</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Variance inflation factors</td>
+<td style="text-align: left;">max = 2.12 (age); all others &lt; 1.9</td>
+<td style="text-align: left;">No multicollinearity concern (flag is VIF &gt; 5)</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Sens = sensitivity; Spec = specificity; TP = true positives; FN = false negatives. The classification row is reported for completeness only. All figures are in-sample.</p>
+<p><strong>Figure 4</strong></p>
+<p><em>Receiver Operating Characteristic Curve for the Joint Logistic Model</em></p>
+<p><img src="assets/fig4_roc.png" class="img-fluid" alt="ROC curve rising steeply from the origin, reaching about 0.8 sensitivity at 0.2 false-positive rate, well above the diagonal chance line. Area under the curve is 0.845."></p>
+<p><em>Note.</em> The diagonal is the chance line (<em>AUC</em> = 0.50). The curve is computed in-sample on the fitting cohort without cross-validation; it indicates whether the descriptive model recovers the outcome gradient, which it does.</p>
+</section>
+<section id="subgroup-analyses-and-effect-modification" class="level3">
+<h3 class="anchored" data-anchor-id="subgroup-analyses-and-effect-modification">Subgroup analyses and effect modification</h3>
+<p>Three stratified analyses (Table 8) test whether the key associations are constant across subgroups. In every case the Breslow–Day test fails to reject homogeneity, so the Mantel–Haenszel pooled odds ratio is the defensible summary.</p>
+<p><strong>Hypertension by age band.</strong> Stratum-specific <em>OR</em>s descend with age (mature 1.96, senior 1.62; the young stratum’s <em>OR</em> of 34.1 rests on a near-empty cell and carries no weight), but Breslow–Day does not reject homogeneity (stat = 0.61, <em>p</em> = .894). The pooled <em>OR</em> is 1.70, 95% CI [1.25, 2.31] — well below the crude 3.70, confirming substantial age confounding in the crude estimate.</p>
+<p><strong>Elevated glucose by age band.</strong> Stratum <em>OR</em>s (mature 2.42, senior 1.73) are homogeneous (Breslow–Day stat = 1.40, <em>p</em> = .705); the pooled <em>OR</em> is 1.85, 95% CI [1.40, 2.44]. The glucose–stroke association persists across age bands, consistent with its independent effect in the joint model.</p>
+<p><strong>Hypertension by gender.</strong> Female <em>OR</em> = 4.22 and male <em>OR</em> = 3.10 are homogeneous (Breslow–Day stat = 1.01, <em>p</em> = .314); the pooled <em>OR</em> is 3.68, 95% CI [2.73, 4.96] — essentially the crude value, as expected when gender is not a confounder of this relationship. No effect modification was detected at this level of stratification.</p>
+<p><strong>Table 8</strong></p>
+<p><em>Mantel–Haenszel Stratified Analyses and Breslow–Day Tests of Homogeneity</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 21%">
+<col style="width: 15%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Exposure / stratifier</th>
+<th style="text-align: left;">Stratum-specific <em>OR</em>s</th>
+<th style="text-align: right;">MH pooled <em>OR</em></th>
+<th style="text-align: center;">95% CI</th>
+<th style="text-align: left;">Breslow–Day</th>
+<th style="text-align: right;">Crude <em>OR</em></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Hypertension / age band</td>
+<td style="text-align: left;">young 34.1 · mid 3.14 · mature 1.96 · senior 1.62</td>
+<td style="text-align: right;">1.70</td>
+<td style="text-align: center;">[1.25, 2.31]</td>
+<td style="text-align: left;">stat = 0.61, <em>p</em> = .894</td>
+<td style="text-align: right;">3.70</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Elevated glucose / age band</td>
+<td style="text-align: left;">young 3.77 · mid 1.30 · mature 2.42 · senior 1.73</td>
+<td style="text-align: right;">1.85</td>
+<td style="text-align: center;">[1.40, 2.44]</td>
+<td style="text-align: left;">stat = 1.40, <em>p</em> = .705</td>
+<td style="text-align: right;">3.38</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Hypertension / gender</td>
+<td style="text-align: left;">female 4.22 · male 3.10</td>
+<td style="text-align: right;">3.68</td>
+<td style="text-align: center;">[2.73, 4.96]</td>
+<td style="text-align: left;">stat = 1.01, <em>p</em> = .314</td>
+<td style="text-align: right;">3.70</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> MH = Mantel–Haenszel. A non-significant Breslow–Day test indicates the stratum-specific odds ratios are homogeneous and the pooled estimate is an adequate summary. The young-stratum hypertension <em>OR</em> (34.1, 11 exposed) is an artefact of a near-empty cell.</p>
+</section>
+<section id="a-descriptive-risk-score" class="level3">
+<h3 class="anchored" data-anchor-id="a-descriptive-risk-score">A descriptive risk score</h3>
+<p>The joint model’s significant coefficients (<em>p</em> &lt; .05) were rescaled to integer point weights by dividing each by the smallest significant coefficient (age): elevated glucose contributes 8 points, hypertension 6 points, and age 1 point per year (applied continuously). Heart disease, ever-married status, and obesity did not meet the threshold and contribute nothing. Applied across the cohort, the score ranges from 0.08 to 96.00 (<em>M</em> = 45.10, <em>Mdn</em> = 46.00), reflecting the dominant continuous age contribution.</p>
+<p>The score recovers the outcome gradient cleanly (Figure 5). The lowest-score decile (decile 0, <em>n</em> = 529) has an observed stroke rate of 0.19%; the highest decile (decile 9, <em>n</em> = 477) has an observed rate of 21.17% — a 111-fold difference across the score range. The score distribution for stroke patients is shifted substantially toward higher values.</p>
+<p>This is a communication device derived from a descriptive model. It has not been externally validated and must not be used for individual patient risk stratification without independent validation.</p>
+<p><strong>Table 9</strong></p>
+<p><em>Observed Stroke Rate by Descriptive Risk-Score Decile</em></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Score decile</th>
+<th style="text-align: right;"><em>n</em></th>
+<th style="text-align: right;">Observed stroke rate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">0 (lowest)</td>
+<td style="text-align: right;">529</td>
+<td style="text-align: right;">0.19%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">1</td>
+<td style="text-align: right;">515</td>
+<td style="text-align: right;">0.19%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2</td>
+<td style="text-align: right;">489</td>
+<td style="text-align: right;">0.00%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">3</td>
+<td style="text-align: right;">562</td>
+<td style="text-align: right;">0.89%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">4</td>
+<td style="text-align: right;">497</td>
+<td style="text-align: right;">1.01%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">5</td>
+<td style="text-align: right;">496</td>
+<td style="text-align: right;">2.22%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">6</td>
+<td style="text-align: right;">518</td>
+<td style="text-align: right;">5.60%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">7</td>
+<td style="text-align: right;">501</td>
+<td style="text-align: right;">6.39%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">8</td>
+<td style="text-align: right;">526</td>
+<td style="text-align: right;">12.17%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">9 (highest)</td>
+<td style="text-align: right;">477</td>
+<td style="text-align: right;">21.17%</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Point weights, derived by dividing each significant joint-model coefficient by the age coefficient and rounding, are 8 for elevated glucose, 6 for hypertension, and 1 per year of age. The decile column bins the computed score into ten equal-size groups.</p>
+<p><strong>Figure 5</strong></p>
+<p><em>Descriptive Risk Score: Distribution by Outcome and Observed Stroke Rate by Decile</em></p>
+<p><img src="assets/fig5_risk_score.png" class="img-fluid" alt="Left panel: two overlaid density histograms of the risk score; the stroke distribution is shifted toward higher scores than the no-stroke distribution. Right panel: bar chart of observed stroke rate by score decile, rising monotonically from near zero to about 21 percent in the top decile."></p>
+<p><em>Note.</em> Left: score density for stroke vs.&nbsp;no-stroke patients. Right: observed stroke rate within each score decile (0 = lowest risk). The monotonic rise confirms the score captures the outcome gradient within this cohort.</p>
+</section>
+<section id="consolidated-findings" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="consolidated-findings">Consolidated findings</h3>
+<p>Table 10 consolidates the headline estimates. Three predictors carry independent age-adjusted signal and survive Bonferroni correction: elevated glucose (age-adjusted <em>OR</em> = 1.83, <em>p</em> &lt; .001), hypertension (1.60, <em>p</em> = .004), and heart disease (1.53, <em>p</em> = .022). Ever-married status is the clearest case of age confounding — crude <em>OR</em> 4.18 collapsing to 0.85. Obesity is a consistent null across every analytic lens. One scope limitation carries forward: the joint hypertension–glucose indicator was not fitted in a separate age-adjusted model, so only its crude estimate and PAF are available.</p>
+<div class="column-page-inset">
+<p><strong>Table 10</strong></p>
+<p><em>Consolidated Risk-Factor Findings</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 21%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Predictor</th>
+<th style="text-align: left;">Crude <em>OR</em> [95% CI]</th>
+<th style="text-align: left;">Age-adjusted <em>OR</em> [95% CI]</th>
+<th style="text-align: right;">PAF</th>
+<th style="text-align: center;">Bonferroni</th>
+<th style="text-align: left;">Note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Elevated glucose (&gt; 140 mg/dL)</td>
+<td style="text-align: left;">3.38 [2.59, 4.43]</td>
+<td style="text-align: left;">1.83 [1.38, 2.42]</td>
+<td style="text-align: right;">27.7%</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: left;">Strongest independent predictor</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hypertension</td>
+<td style="text-align: left;">3.70 [2.74, 4.98]</td>
+<td style="text-align: left;">1.60 [1.17, 2.18]</td>
+<td style="text-align: right;">20.8%</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: left;">Retained after adjustment</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Heart disease</td>
+<td style="text-align: left;">4.71 [3.34, 6.64]</td>
+<td style="text-align: left;">1.53 [1.06, 2.20]</td>
+<td style="text-align: right;">16.7%</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: left;">Small exposed group (<em>n</em> = 276); marginal in joint model</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hypertension × high glucose</td>
+<td style="text-align: left;">4.36 [2.88, 6.61]</td>
+<td style="text-align: left;">not fitted</td>
+<td style="text-align: right;">10.5%</td>
+<td style="text-align: center;">✓ (crude)</td>
+<td style="text-align: left;"><em>n</em> = 178 exposed; no separate adjusted model</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ever married</td>
+<td style="text-align: left;">4.18 [2.83, 6.19]</td>
+<td style="text-align: left;">0.85 [0.56, 1.30]</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: center;">✓ (crude)</td>
+<td style="text-align: left;">Crude effect is an age artefact</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Obesity (BMI ≥ 30)</td>
+<td style="text-align: left;">1.22 [0.95, 1.58]</td>
+<td style="text-align: left;">1.03 [0.78, 1.34]</td>
+<td style="text-align: right;">8.1%</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: left;">Null across every analysis; 201 imputed BMI values</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> <em>OR</em> = odds ratio; CI = confidence interval; PAF = population attributable fraction. Age-adjusted <em>OR</em>s are from the individual two-term models (Table 6). Smoking is reported separately in Appendix A.</p>
+</div>
+</section>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<section id="principal-findings" class="level3">
+<h3 class="anchored" data-anchor-id="principal-findings">Principal findings</h3>
+<p>Age is the dominant predictor and confounder in this cohort. The crude senior-versus-young odds ratio reaches 114.58, and age alone accounts for nearly 19% of the maximum log-likelihood improvement over a null model before any other predictor is added. Its odds ratio per year (1.072–1.078 across specifications) is stable and highly significant. Three modifiable or clinical predictors carry independent age-adjusted signal — elevated glucose, hypertension, and heart disease — while two crude associations (marital status and obesity) do not survive scrutiny.</p>
+</section>
+<section id="confounding-by-age-the-marital-status-result" class="level3">
+<h3 class="anchored" data-anchor-id="confounding-by-age-the-marital-status-result">Confounding by age: the marital-status result</h3>
+<p>The most instructive single result is the collapse of the ever-married odds ratio from a crude 4.18 to an adjusted 0.85. In isolation, a crude <em>OR</em> of 4 would read as a clinically meaningful association. It is entirely an artefact of the older age structure of married patients in this cohort. The staged adjustment makes this visible, and the Mantel–Haenszel analysis corroborates the same mechanism for hypertension, whose crude <em>OR</em> of 3.70 falls to a pooled 1.70 once age strata are held constant. The lesson generalises: in a cohort with a strong age gradient, no crude association involving an age-correlated exposure can be interpreted before adjustment.</p>
+</section>
+<section id="the-obesity-null-result" class="level3">
+<h3 class="anchored" data-anchor-id="the-obesity-null-result">The obesity null result</h3>
+<p>Obesity, as operationalised by the BMI ≥ 30 threshold, is null on every measure applied: a non-significant chi-square test (<em>p</em> = .126, <em>V</em> = .016), a non-significant crude odds ratio (1.22, <em>p</em> = .127), and non-significant adjusted odds ratios in both the individual (1.03) and joint (0.90) models. The 201 imputed BMI values (3.93%) are noted, but the null is robust enough across independent tests that imputation is an unlikely explanation. This is a substantive finding for this dataset, not a measurement failure: obesity does not carry independent stroke signal here beyond what the other predictors capture.</p>
+</section>
+<section id="strengths-and-limitations" class="level3">
+<h3 class="anchored" data-anchor-id="strengths-and-limitations">Strengths and limitations</h3>
+<p>The analysis is transparent and internally consistent: every estimate is reproducible from the analytical table, effect sizes accompany every significance test, multiple-comparison correction is applied throughout, and the central adjustment is staged so the confounding structure is visible rather than assumed. The joint model is well calibrated and discriminates strongly in-sample.</p>
+<p>The limitations are those of the design and the data. First, the study is observational and cross-sectional: exposures and outcome are measured contemporaneously, so temporality cannot be established and no estimate supports a causal claim — the population attributable fractions in particular are burden-ranking devices computed under an assumption the data cannot test. Second, all model-fit and discrimination figures are in-sample and non-cross-validated; the ROC-AUC of 0.845 is not a deployment estimate. Third, several exposed groups are small (heart disease <em>n</em> = 276; the joint hypertension–glucose group <em>n</em> = 178), producing wide intervals and, in the never-worked and young strata, undefined or unstable odds ratios. Fourth, exposure indicators were coded inconsistently across source columns and required label-aware handling; this was resolved for every reported estimate, but it is a data-quality signal. Fifth, smoking status had 30.22% of values imputed and is therefore confined to the exploratory appendix. Sixth, the descriptive risk score is a communication artefact, not a validated instrument.</p>
+</section>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
+<p>In this 5,110-patient cohort, elevated glucose and hypertension are the risk factors with the most credible independent, age-adjusted associations with stroke, and they are the leading modifiable contributors to cohort stroke burden. The apparent effect of marital status is a confounding artefact of age, and obesity carries no independent signal. A companion predictive-modelling study inherits this evidence base: age, elevated glucose, hypertension, and heart disease are the credentialled predictors for a downstream classification pipeline, while marital status and obesity are excluded on the strength of the analysis reported here.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Bergsma, W. (2013). A bias-correction for Cramér’s V and Tschuprow’s T. <em>Journal of the Korean Statistical Society, 42</em>(3), 323–328. https://doi.org/10.1016/j.jkss.2012.10.002</p>
+<p>Breslow, N. E., &amp; Day, N. E. (1980). <em>Statistical methods in cancer research: Volume 1 — The analysis of case-control studies</em> (IARC Scientific Publications No.&nbsp;32). International Agency for Research on Cancer.</p>
+<p>fedesoriano. (2021). <em>Stroke prediction dataset</em> [Data set]. Kaggle. https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset</p>
+<p>Fisher, R. A. (1922). On the interpretation of χ² from contingency tables, and the calculation of P. <em>Journal of the Royal Statistical Society, 85</em>(1), 87–94. https://doi.org/10.2307/2340521</p>
+<p>Harris, C. R., Millman, K. J., van der Walt, S. J., Gommers, R., Virtanen, P., Cournapeau, D., Wieser, E., Taylor, J., Berg, S., Smith, N. J., Kern, R., Picus, M., Hoyer, S., van Kerkwijk, M. H., Brett, M., Haldane, A., del Río, J. F., Wiebe, M., Peterson, P., … Oliphant, T. E. (2020). Array programming with NumPy. <em>Nature, 585</em>, 357–362. https://doi.org/10.1038/s41586-020-2649-2</p>
+<p>Hosmer, D. W., &amp; Lemeshow, S. (2000). <em>Applied logistic regression</em> (2nd ed.). Wiley. https://doi.org/10.1002/0471722146</p>
+<p>Hunter, J. D. (2007). Matplotlib: A 2D graphics environment. <em>Computing in Science &amp; Engineering, 9</em>(3), 90–95. https://doi.org/10.1109/MCSE.2007.55</p>
+<p>Levin, M. L. (1953). The occurrence of lung cancer in man. <em>Acta Unio Internationalis Contra Cancrum, 9</em>(3), 531–541.</p>
+<p>Mantel, N., &amp; Haenszel, W. (1959). Statistical aspects of the analysis of data from retrospective studies of disease. <em>Journal of the National Cancer Institute, 22</em>(4), 719–748. https://doi.org/10.1093/jnci/22.4.719</p>
+<p>McFadden, D. (1974). Conditional logit analysis of qualitative choice behavior. In P. Zarembka (Ed.), <em>Frontiers in econometrics</em> (pp.&nbsp;105–142). Academic Press.</p>
+<p>Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., &amp; Duchesnay, É. (2011). Scikit-learn: Machine learning in Python. <em>Journal of Machine Learning Research, 12</em>, 2825–2830.</p>
+<p>Seabold, S., &amp; Perktold, J. (2010). statsmodels: Econometric and statistical modeling with Python. <em>Proceedings of the 9th Python in Science Conference</em>, 92–96. https://doi.org/10.25080/Majora-92bf1922-011</p>
+<p>The pandas development team. (2020). <em>pandas-dev/pandas: Pandas</em> (Version latest) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.3509134</p>
+<p>Virtanen, P., Gommers, R., Oliphant, T. E., Haberland, M., Reddy, T., Cournapeau, D., Burovski, E., Peterson, P., Weckesser, W., Bright, J., van der Walt, S. J., Brett, M., Wilson, J., Millman, K. J., Mayorov, N., Nelson, A. R. J., Jones, E., Kern, R., Larson, E., … SciPy 1.0 Contributors. (2020). SciPy 1.0: Fundamental algorithms for scientific computing in Python. <em>Nature Methods, 17</em>, 261–272. https://doi.org/10.1038/s41592-019-0686-2</p>
+<p>Wilson, E. B. (1927). Probable inference, the law of succession, and statistical inference. <em>Journal of the American Statistical Association, 22</em>(158), 209–212. https://doi.org/10.2307/2276774</p>
+</section>
+<section id="appendix-a-exploratory-smoking-analyses" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-a-exploratory-smoking-analyses">Appendix A: Exploratory smoking analyses</h2>
+<blockquote class="blockquote">
+<p><strong>Exploratory only.</strong> Every analysis in this appendix uses smoking status, of which 30.22% of values were imputed during data preparation. Results are hypothesis-generating and are not cited as findings anywhere in the main text.</p>
+</blockquote>
+<p><strong>Crude odds ratio for current-or-former smoking.</strong> The binary smoker indicator (formerly or currently smokes = 1; never smoked = 0) has a crude <em>OR</em> of 1.86, 95% CI [1.44, 2.40], Fisher <em>p</em> &lt; .001. The association is statistically detectable, but its credibility is conditional on the imputed assignments being approximately correct.</p>
+<p><strong>Smoking status by level.</strong> Against a never-smoked reference, formerly-smoked carries the larger crude <em>OR</em> (2.18, 95% CI [1.64, 2.91], <em>p</em> &lt; .001, <em>n</em> = 1,122); currently-smokes is smaller but still significant (1.46, 95% CI [1.03, 2.07], <em>p</em> = .042, <em>n</em> = 884). Former smokers carrying higher crude risk than current smokers is counterintuitive but common in observational stroke data, and likely reflects survivorship bias and cessation-after-diagnosis rather than a protective effect of current smoking.</p>
+<p><strong>Age-adjusted smoker odds ratio.</strong> After adjustment for age, the smoker association attenuates to <em>OR</em> = 1.39, 95% CI [1.06, 1.81], <em>p</em> = .017 (AIC = 1,616.50, pseudo-<em>R</em>² = .191 — a negligible improvement over the age-only model at AIC 1,620.26). Whether this residual signal is genuine or an artefact of imputation cannot be determined from these data.</p>
+<p><strong>Table A1</strong></p>
+<p><em>Exploratory Smoking Associations With Stroke</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 18%">
+<col style="width: 18%">
+<col style="width: 18%">
+<col style="width: 25%">
+<col style="width: 18%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Analysis</th>
+<th style="text-align: right;"><em>n</em></th>
+<th style="text-align: right;"><em>OR</em></th>
+<th style="text-align: center;">95% CI</th>
+<th style="text-align: right;"><em>p</em></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Crude: current-or-former smoker (vs.&nbsp;never)</td>
+<td style="text-align: right;">5,110</td>
+<td style="text-align: right;">1.86</td>
+<td style="text-align: center;">[1.44, 2.40]</td>
+<td style="text-align: right;">&lt; .001</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Crude: formerly smoked (vs.&nbsp;never)</td>
+<td style="text-align: right;">1,122</td>
+<td style="text-align: right;">2.18</td>
+<td style="text-align: center;">[1.64, 2.91]</td>
+<td style="text-align: right;">&lt; .001</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Crude: currently smokes (vs.&nbsp;never)</td>
+<td style="text-align: right;">884</td>
+<td style="text-align: right;">1.46</td>
+<td style="text-align: center;">[1.03, 2.07]</td>
+<td style="text-align: right;">.042</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Age-adjusted: current-or-former smoker</td>
+<td style="text-align: right;">5,110</td>
+<td style="text-align: right;">1.39</td>
+<td style="text-align: center;">[1.06, 1.81]</td>
+<td style="text-align: right;">.017</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> All estimates are exploratory because 30.22% of smoking-status values were imputed. <em>OR</em> = odds ratio; CI = confidence interval.</p>
+<hr>
+<p><em>Analytical workflow and figures by the author. This is a descriptive epidemiological study; no estimate reported here supports a causal claim.</em></p>
+
+
+<div id="contact" class="connect-section" style="text-align: center; padding: 50px 20px; background: #f9f9f9; border-radius: 15px; border: 1px solid #eaeaea; margin-top: 40px;">
+<h3 style="color: #2c3e50; font-weight: 700; margin-bottom: 15px; border: none;" class="anchored">Let's Collaborate</h3>
+<p style="color: #666; max-width: 650px; margin: 0 auto 30px auto; font-size: 1.05rem; line-height: 1.6;">Available for high-impact <strong>Business Intelligence, Power BI Engineering, and Advanced Data Analytics</strong> projects. Connect with me or hire me directly through the platforms below.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
+<a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-linkedin"></i> LinkedIn</a>
+<a href="https://github.com/mkhanmuneer" class="btn btn-dark" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-github"></i> GitHub</a>
+<a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" target="_blank" rel="noopener" style="color: white; padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-graph-up"></i> Kaggle</a>
+<a href="https://www.upwork.com/freelancers/~018de8553286a1d00c" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-briefcase"></i> Upwork</a>
+<a href="https://www.fiverr.com/neuronvision" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-lightning-charge"></i> Fiverr</a>
+</div>
+</div>
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/mkhanmuneer\.github\.io\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 Muhammad Khan Muneer</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.upwork.com/freelancers/~018de8553286a1d00c">
+<p>Hire on Upwork</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.fiverr.com/neuronvision">
+<p>Hire on Fiverr</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Muhammad Khan Muneer">
+<meta name="keywords" content="conditional average treatment effect, CATE, uplift modelling, meta-learners, doubly robust learner, causal forest, Qini curve, policy value, propensity overlap, positivity, E-value, negative result, Starbucks capstone, Python, scikit-learn">
+<meta name="description" content="A pre-registered conditional-average-treatment-effect (CATE) and uplift analysis that returns a disciplined negative result — and is more valuable for it. The substrate problem: the focal discount is viewed by 97% of recipients, leaving 167 control customers (50 in the test set) and a propensity distribution where every recipient has P(view | X) > 0.80. Five estimators: T/S/X-learners and an honest random forest produce coherent but mutually inconsistent CATE distributions (means USD 11–33); the doubly-robust learner blows up (SD USD 1,317, range −22,585 to +17,877, correlation with every other estimator below 0.06). The decision rule fails all three gates: the argmax-CATE policy improves DR policy value over send-to-all by +USD 0.20 (95% CI [−2.81, +3.29]), the DR pseudo-outcome out-of-fold R² is −0.25, and the E-value is 1.04 against a 1.25 threshold. An unresolved tension: a model-free empirical lift of +USD 149 in the top predicted decile (CI excludes zero) that the DR estimator scores as null — resolvable only by a prospective randomised holdout (~45 customers per arm). A counter-example: a naive “no-offer” control (n = 5) produces an illusory +USD 277 policy uplift — the failure this pipeline is built to catch.">
+
+<title>A CATE-Targeting Policy That Does Not Beat Send-to-All: Five Uplift Estimators, a Three-Gate Decision Rule, and the Diagnostics That Say No – Muhammad Khan Muneer</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-4d9afe2b8d18ee9fa5d0d57b5ed4214d.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-ca0cfe78a00f84493d894d8af57a3a20.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-5af9b5ab1fa0c387551d40c1aacb317e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": true,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="../../styles/custom.css">
+<meta property="og:title" content="Muhammad Khan Muneer — Data Science &amp; BI Portfolio">
+<meta property="og:description" content="Engineering ML-driven analytics and automated decision systems.">
+<meta property="og:image" content="https://mkhanmuneer.github.io/projects/starbucks-cate-uplift-modelling-negative-result-under-propensity-overlap-limits/assets/fig1_propensity_overlap.png">
+<meta property="og:site_name" content="M. Khan Muneer Portfolio">
+<meta property="og:image:alt" content="Overlaid density histograms of the estimated propensity to view the offer, for the treated arm (n = 3,763) and control arm (n = 117). Both distributions pile up against the right edge between 0.90 and 1.00; the control arm has a thin scatter down to about 0.80. No customer sits below 0.80. A shaded band marks common support from 0.80 to 0.99.">
+<meta property="og:image:height" content="848">
+<meta property="og:image:width" content="1687">
+<meta name="twitter:title" content="A CATE-Targeting Policy That Does Not Beat Send-to-All: Five Uplift Estimators, a Three-Gate Decision Rule, and the Diagnostics That Say No – Muhammad Khan Muneer">
+<meta name="twitter:description" content="A pre-registered conditional-average-treatment-effect (CATE) and uplift analysis that returns a disciplined negative result — and is more valuable for it. The substrate problem: the focal discount is viewed by 97% of recipients, leaving 167 control customers (50 in the test set) and a propensity distribution where every recipient has P(view | X) > 0.80. Five estimators: T/S/X-learners and an honest random forest produce coherent but mutually inconsistent CATE distributions (means USD 11–33); the doubly-robust learner blows up (SD USD 1,317, range −22,585 to +17,877, correlation with every other estimator below 0.06). The decision rule fails all three gates: the argmax-CATE policy improves DR policy value over send-to-all by +USD 0.20 (95% CI [−2.81, +3.29]), the DR pseudo-outcome out-of-fold R² is −0.25, and the E-value is 1.04 against a 1.25 threshold. An unresolved tension: a model-free empirical lift of +USD 149 in the top predicted decile (CI excludes zero) that the DR estimator scores as null — resolvable only by a prospective randomised holdout (~45 customers per arm). A counter-example: a naive “no-offer” control (n = 5) produces an illusory +USD 277 policy uplift — the failure this pipeline is built to catch.">
+<meta name="twitter:image" content="https://mkhanmuneer.github.io/projects/starbucks-cate-uplift-modelling-negative-result-under-propensity-overlap-limits/assets/fig1_propensity_overlap.png">
+<meta name="twitter:creator" content="@iMKhanMuneer">
+<meta name="twitter:site" content="@iMKhanMuneer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Overlaid density histograms of the estimated propensity to view the offer, for the treated arm (n = 3,763) and control arm (n = 117). Both distributions pile up against the right edge between 0.90 and 1.00; the control arm has a thin scatter down to about 0.80. No customer sits below 0.80. A shaded band marks common support from 0.80 to 0.99.">
+<meta name="twitter:image-height" content="848">
+<meta name="twitter:image-width" content="1687">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#featured-projects"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/iMKhanMuneer"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.kaggle.com/muhammadkhanmuneer"> <i class="bi bi-graph-up" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html#contact"> 
+<span class="menu-text">Contact</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#method" id="toc-method" class="nav-link" data-scroll-target="#method">Method</a>
+  <ul class="collapse">
+  <li><a href="#data-and-identification-frame" id="toc-data-and-identification-frame" class="nav-link" data-scroll-target="#data-and-identification-frame">Data and identification frame</a></li>
+  <li><a href="#pre-registered-estimands-and-decision-rule" id="toc-pre-registered-estimands-and-decision-rule" class="nav-link" data-scroll-target="#pre-registered-estimands-and-decision-rule">Pre-registered estimands and decision rule</a></li>
+  <li><a href="#cate-estimators" id="toc-cate-estimators" class="nav-link" data-scroll-target="#cate-estimators">CATE estimators</a></li>
+  <li><a href="#policy-value-estimation" id="toc-policy-value-estimation" class="nav-link" data-scroll-target="#policy-value-estimation">Policy-value estimation</a></li>
+  <li><a href="#sensitivity" id="toc-sensitivity" class="nav-link" data-scroll-target="#sensitivity">Sensitivity</a></li>
+  <li><a href="#software" id="toc-software" class="nav-link" data-scroll-target="#software">Software</a></li>
+  </ul></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
+  <ul class="collapse">
+  <li><a href="#propensity-overlap-is-degenerate" id="toc-propensity-overlap-is-degenerate" class="nav-link" data-scroll-target="#propensity-overlap-is-degenerate">Propensity overlap is degenerate</a></li>
+  <li><a href="#the-five-estimators-disagree-and-one-blows-up" id="toc-the-five-estimators-disagree-and-one-blows-up" class="nav-link" data-scroll-target="#the-five-estimators-disagree-and-one-blows-up">The five estimators disagree, and one blows up</a></li>
+  <li><a href="#qini-and-uplift-deciles-skill-only-at-the-extreme-top" id="toc-qini-and-uplift-deciles-skill-only-at-the-extreme-top" class="nav-link" data-scroll-target="#qini-and-uplift-deciles-skill-only-at-the-extreme-top">Qini and uplift deciles: skill only at the extreme top</a></li>
+  <li><a href="#the-targeting-policy-does-not-beat-send-to-all" id="toc-the-targeting-policy-does-not-beat-send-to-all" class="nav-link" data-scroll-target="#the-targeting-policy-does-not-beat-send-to-all">The targeting policy does not beat send-to-all</a></li>
+  <li><a href="#against-the-three-gates" id="toc-against-the-three-gates" class="nav-link" data-scroll-target="#against-the-three-gates">Against the three gates</a></li>
+  <li><a href="#one-tension-the-analysis-cannot-resolve" id="toc-one-tension-the-analysis-cannot-resolve" class="nav-link" data-scroll-target="#one-tension-the-analysis-cannot-resolve">One tension the analysis cannot resolve</a></li>
+  <li><a href="#sensitivity-is-uniformly-null" id="toc-sensitivity-is-uniformly-null" class="nav-link" data-scroll-target="#sensitivity-is-uniformly-null">Sensitivity is uniformly null</a></li>
+  <li><a href="#the-counter-example-preserved" id="toc-the-counter-example-preserved" class="nav-link" data-scroll-target="#the-counter-example-preserved">The counter-example, preserved</a></li>
+  </ul></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a>
+  <ul class="collapse">
+  <li><a href="#the-value-of-the-negative-result" id="toc-the-value-of-the-negative-result" class="nav-link" data-scroll-target="#the-value-of-the-negative-result">The value of the negative result</a></li>
+  <li><a href="#why-the-substrate-defeats-the-method" id="toc-why-the-substrate-defeats-the-method" class="nav-link" data-scroll-target="#why-the-substrate-defeats-the-method">Why the substrate defeats the method</a></li>
+  <li><a href="#what-would-resolve-the-top-decile-tension" id="toc-what-would-resolve-the-top-decile-tension" class="nav-link" data-scroll-target="#what-would-resolve-the-top-decile-tension">What would resolve the top-decile tension</a></li>
+  <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations">Limitations</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">A CATE-Targeting Policy That Does Not Beat Send-to-All: Five Uplift Estimators, a Three-Gate Decision Rule, and the Diagnostics That Say No</h1>
+<p class="subtitle lead">The focal offer’s 97% view rate leaves 167 control customers and a propensity distribution with no customer below 0.80 — so the doubly-robust learner blows up (SD USD 1,317), the pseudo-outcome R² is −0.25, the policy-value improvement over send-to-all is +USD 0.20 [−2.81, +3.29], and the E-value is 1.04. All three pre-registered gates fail; the recommendation is a prospective randomised holdout on the top decile.</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">Causal Inference</div>
+    <div class="quarto-category">Uplift Modelling</div>
+    <div class="quarto-category">Heterogeneous Treatment Effects</div>
+    <div class="quarto-category">Machine Learning</div>
+    <div class="quarto-category">Policy Evaluation</div>
+    <div class="quarto-category">Sensitivity Analysis</div>
+    <div class="quarto-category">Negative Result</div>
+    <div class="quarto-category">Marketing Analytics</div>
+    <div class="quarto-category">Python</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>A pre-registered conditional-average-treatment-effect (CATE) and uplift analysis that returns a disciplined <strong>negative</strong> result — and is more valuable for it. <strong>The substrate problem:</strong> the focal discount is viewed by 97% of recipients, leaving 167 control customers (50 in the test set) and a propensity distribution where every recipient has P(view | X) &gt; 0.80. <strong>Five estimators:</strong> T/S/X-learners and an honest random forest produce coherent but mutually inconsistent CATE distributions (means USD 11–33); the doubly-robust learner blows up (SD USD 1,317, range −22,585 to +17,877, correlation with every other estimator below 0.06). <strong>The decision rule fails all three gates:</strong> the argmax-CATE policy improves DR policy value over send-to-all by <strong>+USD 0.20</strong> (95% CI [−2.81, +3.29]), the DR pseudo-outcome out-of-fold R² is <strong>−0.25</strong>, and the E-value is <strong>1.04</strong> against a 1.25 threshold. <strong>An unresolved tension:</strong> a model-free empirical lift of <strong>+USD 149</strong> in the top predicted decile (CI excludes zero) that the DR estimator scores as null — resolvable only by a prospective randomised holdout (~45 customers per arm). <strong>A counter-example:</strong> a naive “no-offer” control (n = 5) produces an illusory +USD 277 policy uplift — the failure this pipeline is built to catch.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Muhammad Khan Muneer </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+<div>
+  <div class="keywords">
+    <div class="block-title">Keywords</div>
+    <p>conditional average treatment effect, CATE, uplift modelling, meta-learners, doubly robust learner, causal forest, Qini curve, policy value, propensity overlap, positivity, E-value, negative result, Starbucks capstone, Python, scikit-learn</p>
+  </div>
+</div>
+
+</header>
+
+
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+<p>This study asks whether a per-customer targeting policy, built from an estimated conditional average treatment effect (CATE), can beat a send-to-all baseline on the focal discount offer from the project’s promotions rollout — and returns a pre-registered <strong>negative</strong> answer. The identification frame is inherited from the quasi-experimental study: treatment is <em>viewing</em> the offer, control is <em>receiving without viewing</em>, and the outcome is customer-level 30-day spend. The problem is the substrate: the offer’s 97% view rate leaves only 167 control customers (50 in the held-out test set), and the estimated propensity to view has no customer below 0.80 and a median of 0.98 — a violation of the overlap condition that CATE estimation depends on. Five estimators are fitted side by side. The T-, S-, and X-learners and an honest random forest produce coherent CATE distributions with positive means (USD 10.89–32.98) but standard deviations that disagree by a factor of four; the cross-fitted doubly-robust learner blows up (mean −USD 44, SD USD 1,317, range −22,585 to +17,877) and correlates with every other estimator below 0.06 — the predictable failure of inverse-propensity weighting when overlap is inadequate. A pre-registered three-gate decision rule fails on all three gates: the argmax-CATE policy improves DR policy value over send-to-all by <strong>+USD 0.20</strong> (95% CI [−2.81, +3.29]), the DR pseudo-outcome out-of-fold R² is <strong>−0.25</strong> (the CATE surface fits worse than its own mean), and the E-value on the policy-value improvement is <strong>1.04</strong> against a moderate-robustness threshold of 1.25. Sensitivity across propensity trimming, seven treatment-window definitions, and all 10 catalogue offers is uniformly null; two offers show the targeting policy <em>significantly underperforming</em> send-to-all. One tension remains: a model-free empirical lift of <strong>+USD 149</strong> among the top predicted decile (CI [+75, +223]) that the DR estimator scores as null — a disagreement between a conditional and a marginal estimand that only a prospective randomised holdout (~45 customers per arm) can resolve. A preserved counter-example — defining control as customers who received no offers at all (n = 5) — produces an illusory +USD 277 policy uplift, which is the identification failure this pipeline is built to catch.</p>
+<p><em>Keywords:</em> conditional average treatment effect, uplift modelling, meta-learners, doubly robust learner, Qini curve, policy value, propensity overlap, positivity, E-value, negative result</p>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>The previous study recovered per-offer differential effects and a compliance-weighted local effect of viewing. This one asks the higher-value question — <em>for whom</em> does the offer work best — and whether that heterogeneity supports a targeting policy that sends the offer only where it pays. If a CATE surface can rank customers by treatment response, a policy that treats the high responders and spares the rest should beat treating everyone.</p>
+<p>The honest answer on this offer is no, and the reason is worth stating plainly before any model is fitted. CATE estimation needs <em>overlap</em>: for the covariate values where a policy might withhold treatment, there must be both treated and untreated customers to compare. The focal offer is viewed by 97% of the customers who receive it, so the untreated group is tiny (167 customers) and — as the propensity diagnostic will show — it is not a distinct population but the thin tail of a near-deterministic viewing process. Every downstream estimate inherits that scarcity.</p>
+<p>The analysis is pre-registered: the estimands, the four candidate policies, and a three-gate decision rule for recommending rollout are fixed in advance (Table 1). The finding is that the decision rule fails cleanly on every gate. The value of the piece is the discipline that produces a defensible “no” rather than a confounded “yes” — and a preserved counter-example, kept verbatim, showing exactly what the confounded “yes” looks like.</p>
+</section>
+<section id="method" class="level2">
+<h2 class="anchored" data-anchor-id="method">Method</h2>
+<section id="data-and-identification-frame" class="level3">
+<h3 class="anchored" data-anchor-id="data-and-identification-frame">Data and identification frame</h3>
+<p>The analysis frame is one row per customer who received the focal offer and has complete demographics: <strong>5,544 customers</strong>, of whom <strong>5,377 (97.0%) viewed</strong> at least one instance (treated) and <strong>167 (3.0%) did not</strong> (control). The outcome is customer-level 30-day total spend (mean USD 127.26, SD USD 138.21) — deliberately <em>total</em> spend rather than offer-attributed spend, because attributed spend is zero by construction when the offer was not viewed, which would make any CATE-argmax policy mechanically prefer viewing-prone customers. Covariates: age, income, membership tenure, gender (one-hot), and the pre-period engagement segment from the segmentation study (one-hot, including an explicit stratum for unsegmented customers). A 70/30 train/test split stratified on treatment gives 117 control customers in training and <strong>50 in the test set</strong> — the binding constraint on every interval that follows.</p>
+</section>
+<section id="pre-registered-estimands-and-decision-rule" class="level3">
+<h3 class="anchored" data-anchor-id="pre-registered-estimands-and-decision-rule">Pre-registered estimands and decision rule</h3>
+<p><strong>Table 1</strong></p>
+<p><em>Pre-Registered Estimands, Policies, and the Three-Gate Decision Rule</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Element</th>
+<th style="text-align: left;">Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Primary estimand</td>
+<td style="text-align: left;">Per-customer CATE, τ(X) = E[Y(1) − Y(0) | X], under selection-on-observables</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Secondary estimand</td>
+<td style="text-align: left;">Targeting-policy value V(π) = E[Y(π(X))], estimated by IPW and doubly-robust (DR)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Candidate policies</td>
+<td style="text-align: left;">Send-to-all · send-to-none · argmax-CATE (CATE &gt; USD 2 reward cost) · segment-level</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Gate (a)</td>
+<td style="text-align: left;">DR ΔV for argmax-CATE exceeds the bootstrap 95% CI width on the difference</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Gate (b)</td>
+<td style="text-align: left;">The best-Qini estimator’s out-of-fold pseudo-outcome R² &gt; 0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Gate (c)</td>
+<td style="text-align: left;">E-value on the policy-value improvement &gt; 1.25 (moderate robustness)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Recommend rollout</td>
+<td style="text-align: left;">Only if gates (a), (b), and (c) all hold</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Guardrail</td>
+<td style="text-align: left;">Association between the policy’s targeting decision and each customer’s prior most-viewed offer type (χ²)</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> All three gates must pass jointly. The E-value re-uses the VanderWeele–Ding continuous-outcome approximation, applied here to the policy-value difference rather than a point ATE.</p>
+</section>
+<section id="cate-estimators" class="level3">
+<h3 class="anchored" data-anchor-id="cate-estimators">CATE estimators</h3>
+<p>Five, fitted on the same training split and predicted on the same test set: a <strong>T-learner</strong> (two gradient-boosted outcome models, difference of predictions), an <strong>S-learner</strong> (one model over <code>[X, T]</code>), an <strong>X-learner</strong> (cross-imputed effects blended by propensity), an <strong>honest random-forest</strong> approximation (double-sample split, averaged T-learners), and a <strong>cross-fitted doubly-robust (DR) learner</strong> (5-fold AIPW pseudo-outcomes, final regression on the pooled pseudo-outcomes). The DR-learner is the theoretically preferred choice; it is included partly to demonstrate what it does when its inverse-propensity term meets a degenerate propensity distribution.</p>
+</section>
+<section id="policy-value-estimation" class="level3">
+<h3 class="anchored" data-anchor-id="policy-value-estimation">Policy-value estimation</h3>
+<p>Each policy’s value is estimated by an inverse-propensity-weighted (IPW) estimator and a doubly-robust estimator, with nuisance models refit on the full training split. Confidence intervals on the <em>difference</em> between each policy and send-to-all come from a 500-sample paired bootstrap of the test set — the paired difference, not two overlapping absolute intervals, is what makes a null readable.</p>
+</section>
+<section id="sensitivity" class="level3">
+<h3 class="anchored" data-anchor-id="sensitivity">Sensitivity</h3>
+<p>Three probes: a VanderWeele–Ding E-value on the DR policy-value improvement; a propensity-trimming sweep (symmetric trims from 0% to 20%); and a treatment-window sweep across seven definitions of “viewed” (view-latency cutoffs from 24 h to 240 h, plus a stricter viewed-then-completed criterion). A cross-offer sweep runs the whole pipeline against all 10 catalogue offers.</p>
+</section>
+<section id="software" class="level3">
+<h3 class="anchored" data-anchor-id="software">Software</h3>
+<p>Python 3.10 with <code>scikit-learn</code> (<code>GradientBoostingRegressor</code>, <code>RandomForestRegressor</code>, <code>LogisticRegression</code>, <code>KFold</code>), <code>numpy</code>, and <code>matplotlib</code>. Estimator training is seeded; the DR-learner’s noise-dominated diagnostics (its mean, SD, Qini, and R²) vary at the ±5% level across runs because the cross-fitted pseudo-outcome has an SD near USD 2,000 — which is itself part of the finding.</p>
+</section>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<section id="propensity-overlap-is-degenerate" class="level3">
+<h3 class="anchored" data-anchor-id="propensity-overlap-is-degenerate">Propensity overlap is degenerate</h3>
+<p>The logistic propensity model estimates P(view | X) with a <strong>median of 0.977</strong> on training and 0.978 on test. The treated arm’s 5th percentile is 0.937; the control arm’s 95th percentile is 0.988. The common-support band is [0.80, 0.99], nominally covering 94% of rows — but the entire band sits in the top fifth of the probability scale, and no customer has a viewing propensity below about 0.80 (Figure 1). The observed control arm is not a separate population; it is the tail of a near-deterministic viewing process. Any estimator that leans on the propensity score — the X-learner’s blending step, the DR-learner’s inverse-propensity correction — is extrapolating from a narrow strip, not interpolating across a well-overlapped joint distribution.</p>
+<p><strong>Figure 1</strong></p>
+<p><em>Estimated Viewing Propensity by Arm — Training Set</em></p>
+<p><img src="assets/fig1_propensity_overlap.png" class="img-fluid" alt="Overlaid density histograms of the estimated propensity to view the offer, for the treated arm (n = 3,763) and control arm (n = 117). Both distributions pile up against the right edge between 0.90 and 1.00; the control arm has a thin scatter down to about 0.80. No customer sits below 0.80. A shaded band marks common support from 0.80 to 0.99."></p>
+<p><em>Note.</em> Positivity (overlap) is a necessary condition for CATE identification. Here it is technically satisfied over a narrow band and substantively degenerate.</p>
+</section>
+<section id="the-five-estimators-disagree-and-one-blows-up" class="level3">
+<h3 class="anchored" data-anchor-id="the-five-estimators-disagree-and-one-blows-up">The five estimators disagree, and one blows up</h3>
+<p>The T-, S-, and X-learners and the honest random forest all return coherent CATE distributions with positive means — USD 10.89 (S), USD 15.91 (X), USD 16.62 (T), USD 32.98 (RF) — but standard deviations from USD 18 to USD 67, a fourfold disagreement about how much heterogeneity exists (Figure 2, Table 2). The S-learner’s narrow spread is its known shrinkage behaviour on small-effect problems; the others are freer to disagree with the pooled mean and extend into negative CATE territory.</p>
+<p>The DR-learner is the outlier, in a way that is diagnostic rather than incidental. Its mean CATE is <strong>−USD 44</strong>, its standard deviation is <strong>USD 1,317</strong>, and its range spans <strong>−22,585 to +17,877</strong>. With control propensities in [0.93, 0.99], the inverse-propensity weights on control rows — 1/(1 − <em>e</em>) — run from 15 to 100, so a single control customer with an outlier outcome contributes thousands of dollars to its fold’s pseudo-outcome. Cross-fitting distributes the problem rather than fixing it. The cross-estimator correlation matrix confirms the diagnosis: the DR-learner correlates with every other surface below <strong>0.06</strong> in absolute value, while the T/S/X block correlates 0.55–0.76 internally (Figure 3). A five-model ensemble in which one model is uncorrelated with the rest is a four-model ensemble plus a warning light.</p>
+<p><strong>Figure 2</strong></p>
+<p><em>Predicted CATE Distributions — Five Estimators, Test Set</em></p>
+<p><img src="assets/fig2_cate_estimators.png" class="img-fluid" alt="Left: horizontal violin plots for the S-, X-, T-learner and honest random forest, all with positive means (USD 11 to 33) but spreads ranging from tight (S-learner, SD 18) to wide (random forest, SD 67). Right: a histogram of the DR-learner's predicted CATE, a tall spike at zero with a thin scatter of extreme values; annotation notes mean −USD 44, SD USD 1,317, range −22,585 to +17,877."></p>
+<p><em>Note.</em> Left panel clipped to [−200, 300] for display; right panel clipped to ±3,000. The DR-learner is shown as a diagnostic, not an estimate.</p>
+<p><strong>Figure 3</strong></p>
+<p><em>Cross-Estimator Correlation of Predicted CATE</em></p>
+<p><img src="assets/fig3_estimator_correlation.png" class="img-fluid" alt="A 5-by-5 correlation heatmap of the five CATE estimators. The T-, S-, and X-learner block shows correlations from 0.55 to 0.76; the honest random forest correlates 0.26 to 0.59 with them; the DR-learner row and column are all near zero (0.05, 0.01, 0.04, −0.15)."></p>
+<p><em>Note.</em> Moderate mutual correlation among the four coherent estimators; the DR-learner is uncorrelated with all of them.</p>
+<p><strong>Table 2</strong></p>
+<p><em>CATE Summary and Qini Coefficient by Estimator (test set, n = 1,664)</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Estimator</th>
+<th style="text-align: right;">Mean</th>
+<th style="text-align: right;">SD</th>
+<th style="text-align: right;">p5</th>
+<th style="text-align: right;">p50</th>
+<th style="text-align: right;">p95</th>
+<th style="text-align: right;">Qini coefficient</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">S-learner</td>
+<td style="text-align: right;">USD 10.89</td>
+<td style="text-align: right;">18.0</td>
+<td style="text-align: right;">−13.4</td>
+<td style="text-align: right;">6.9</td>
+<td style="text-align: right;">45.8</td>
+<td style="text-align: right;">−6,683</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">X-learner</td>
+<td style="text-align: right;">USD 15.91</td>
+<td style="text-align: right;">44.1</td>
+<td style="text-align: right;">−40.2</td>
+<td style="text-align: right;">7.8</td>
+<td style="text-align: right;">102.3</td>
+<td style="text-align: right;">−2,172</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">T-learner</td>
+<td style="text-align: right;">USD 16.62</td>
+<td style="text-align: right;">58.2</td>
+<td style="text-align: right;">−57.8</td>
+<td style="text-align: right;">10.0</td>
+<td style="text-align: right;">116.2</td>
+<td style="text-align: right;">−8,679</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Honest random forest</td>
+<td style="text-align: right;">USD 32.98</td>
+<td style="text-align: right;">67.3</td>
+<td style="text-align: right;">−67.3</td>
+<td style="text-align: right;">38.7</td>
+<td style="text-align: right;">120.3</td>
+<td style="text-align: right;"><strong>+4,637</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">DR-learner</td>
+<td style="text-align: right;">−USD 44</td>
+<td style="text-align: right;">1,317</td>
+<td style="text-align: right;">−264</td>
+<td style="text-align: right;">14.3</td>
+<td style="text-align: right;">274</td>
+<td style="text-align: right;">−9,565</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> Qini coefficient = area between the model’s Qini curve and the random-targeting diagonal; positive means the ranking concentrates incremental spend at the top. Only the honest random forest is positive.</p>
+</section>
+<section id="qini-and-uplift-deciles-skill-only-at-the-extreme-top" class="level3">
+<h3 class="anchored" data-anchor-id="qini-and-uplift-deciles-skill-only-at-the-extreme-top">Qini and uplift deciles: skill only at the extreme top</h3>
+<p>On a Qini benchmark, four of the five estimators sit <em>below</em> the random-targeting diagonal — their rankings place high-scoring customers where the model should place low-scoring ones (Figure 4). Only the honest random forest is meaningfully above it, with a Qini coefficient of +4,637; its curve rises sharply in the first 10% of the population, then plateaus with little ordering information through the middle. The curves are visibly jagged because each of the 50 test-set control customers moves the Qini numerator by a large amount.</p>
+<p>Bucketing the test set into deciles by the random forest’s predicted CATE, the model orders its own predictions monotonically from −USD 67 (decile 0) to +USD 147 (decile 9) — trivially, by construction. The empirical within-decile lift (treated mean minus control mean) is estimable only where a decile has at least five control customers, and where it is estimable it is noise through deciles 0–6 (−USD 15, −USD 33, −USD 11 in the observable middle deciles) and only tracks the prediction in the top two: <strong>+USD 70</strong> in decile 8 and <strong>+USD 149</strong> in decile 9, closely matching predictions of +USD 99 and +USD 147 (Figure 5). Whatever skill the model has is concentrated in the top fifth of its predicted distribution.</p>
+<p><strong>Figure 4</strong></p>
+<p><em>Qini Curves — Five CATE Estimators vs Random Targeting</em></p>
+<p><img src="assets/fig4_qini_curves.png" class="img-fluid" alt="Qini curves for the five estimators. The honest random forest rises steeply in the first 10 percent of targeted population and plateaus well above the dashed random-targeting diagonal; the X-, S-, T-learner and DR-learner curves are jagged and mostly track or fall below the diagonal. Legend gives Qini coefficients: random forest +4,637, all others negative."></p>
+<p><em>Note.</em> Jaggedness is an artefact of the 50-customer test-set control arm.</p>
+<p><strong>Figure 5</strong></p>
+<p><em>Predicted vs Empirical Within-Decile Lift — Honest Random Forest</em></p>
+<p><img src="assets/fig5_uplift_deciles.png" class="img-fluid" alt="A line chart over ten predicted-uplift deciles. The predicted-CATE line rises monotonically from about −USD 67 to +USD 147. The empirical within-decile lift is plotted only for deciles with at least five controls: it is near zero or negative for deciles 0 to 6, then jumps to +USD 70 at decile 8 and +USD 149 at decile 9. Deciles 3, 4, and 7 are marked 'no controls'."></p>
+<p><em>Note.</em> Deciles 3, 4, 7 have four, two, and zero control customers and cannot produce an empirical estimate.</p>
+</section>
+<section id="the-targeting-policy-does-not-beat-send-to-all" class="level3">
+<h3 class="anchored" data-anchor-id="the-targeting-policy-does-not-beat-send-to-all">The targeting policy does not beat send-to-all</h3>
+<p>The argmax-CATE policy (random forest CATE above the USD 2 reward cost) targets 67.8% of the test set; the segment-level policy targets 67.3% (segments 0, 1, 4, whose training-set mean CATE exceeded USD 2). Every non-trivial policy lands in the USD 126–129 range on DR policy value against a level of USD 128 (Table 3). The paired-bootstrap difference is where the decision rule resolves: <strong>argmax-CATE improves DR policy value over send-to-all by +USD 0.20, with a 95% CI of [−2.81, +3.29]</strong> — an interval more than 30 times the width of the point estimate. The segment policy is −USD 1.56 [−5.34, +2.22]. IPW and DR agree on the null (Figure 6).</p>
+<p><strong>Figure 6</strong></p>
+<p><em>DR Policy Value vs Send-to-All, with 95% Bootstrap CIs</em></p>
+<p><img src="assets/fig6_policy_value_forest.png" class="img-fluid" alt="A forest plot of three policies' DR policy value relative to send-to-all. Argmax-CATE: +USD 0.20 with CI [−2.9, +3.1]. Segment-level: −USD 1.56 with CI [−5.3, +2.1]. Send-to-none: +USD 4.91 with a very wide CI [−25.5, +41.8]. A dashed line at zero marks the decision gate; all three intervals cross it."></p>
+<p><em>Note.</em> The send-to-none interval is wide because its value leans entirely on the outcome model μ₀, trained on 117 control customers.</p>
+<p><strong>Table 3</strong></p>
+<p><em>Policy Value (IPW and DR) and Difference vs Send-to-All</em></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Policy</th>
+<th style="text-align: right;">Coverage</th>
+<th style="text-align: right;">V (IPW)</th>
+<th style="text-align: right;">V (DR)</th>
+<th style="text-align: right;">ΔV (DR) vs send-to-all</th>
+<th style="text-align: left;">95% CI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Send-to-all</td>
+<td style="text-align: right;">100%</td>
+<td style="text-align: right;">128.59</td>
+<td style="text-align: right;">128.18</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: left;">—</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Argmax-CATE</td>
+<td style="text-align: right;">67.8%</td>
+<td style="text-align: right;">128.14</td>
+<td style="text-align: right;">128.38</td>
+<td style="text-align: right;"><strong>+0.20</strong></td>
+<td style="text-align: left;">[−2.81, +3.29]</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Segment-level</td>
+<td style="text-align: right;">67.3%</td>
+<td style="text-align: right;">126.73</td>
+<td style="text-align: right;">126.62</td>
+<td style="text-align: right;">−1.56</td>
+<td style="text-align: left;">[−5.34, +2.22]</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Send-to-none</td>
+<td style="text-align: right;">0%</td>
+<td style="text-align: right;">156.91</td>
+<td style="text-align: right;">133.09</td>
+<td style="text-align: right;">+4.91</td>
+<td style="text-align: left;">[−27.67, +38.86]</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note.</em> All values in USD per customer. No policy’s ΔV interval excludes zero.</p>
+</section>
+<section id="against-the-three-gates" class="level3">
+<h3 class="anchored" data-anchor-id="against-the-three-gates">Against the three gates</h3>
+<p>All three pre-registered gates fail (Table 1). <strong>Gate (a):</strong> the argmax-CATE ΔV of +USD 0.20 does not exceed the bootstrap CI width of USD 6.10 — it is smaller by more than an order of magnitude. <strong>Gate (b):</strong> the DR-learner’s out-of-fold pseudo-outcome R² is <strong>−0.25</strong> — the CATE surface fits the cross-fitted pseudo-outcomes <em>worse</em> than their unconditional mean, so it has not learned recoverable heterogeneity. <strong>Gate (c):</strong> the E-value on the +USD 0.20 improvement is <strong>1.04</strong> (the CI-low maps to the null floor of 1.00), against a 1.25 threshold — an unmeasured confounder with a 1.04× association with both viewing and spending would erase the apparent advantage. The recommendation is to <strong>continue send-to-all</strong> for the focal offer.</p>
+</section>
+<section id="one-tension-the-analysis-cannot-resolve" class="level3">
+<h3 class="anchored" data-anchor-id="one-tension-the-analysis-cannot-resolve">One tension the analysis cannot resolve</h3>
+<p>A top-K% policy family — treat only the highest-scoring K% — surfaces a signal the argmax-at-threshold policy dilutes. The <strong>model-free empirical within-targeted lift</strong> (treated minus control spend, among the customers each policy selects) is <strong>+USD 149</strong> at top-10% (95% CI [+75, +223]), <strong>+USD 110</strong> at top-20% ([+58, +162]), and <strong>+USD 77</strong> at top-30% ([+27, +127]) — all with intervals excluding zero, and the top-10% figure reproducing decile 9’s number exactly. The <strong>DR policy-value difference</strong> for the same policies is null everywhere: <strong>−USD 0.03</strong> at top-10%, +USD 10.23 at top-20%, +USD 14.37 at top-30%, all CIs straddling zero (Figure 7).</p>
+<p>The two estimators answer different questions. The empirical lift is <em>conditional</em> — “given that the policy selects this customer, what is the treated-minus-control gap?” — and is vulnerable to selection on observables: the customers the model ranks highest may have high baseline spend regardless of viewing. The DR policy value is <em>marginal</em> — “if the policy ran on the whole population, what would average spend be?” — and defaults toward the send-to-all reference when its outcome models cannot fit the top-decile tail. Both mechanisms are operating, and the top-10% empirical interval rests on <strong>five</strong> control customers, too few to distinguish them. The analysis names the ambiguity rather than resolving it.</p>
+<p><strong>Figure 7</strong></p>
+<p><em>The Unresolved Disagreement — Empirical Conditional Lift vs DR Marginal Policy Value</em></p>
+<p><img src="assets/fig7_topdecile_tension.png" class="img-fluid" alt="A point-and-interval plot for top-10%, top-20%, top-30% policies. The model-free empirical within-targeted lift (red) is +USD 149, +USD 110, +USD 77, with intervals well above zero. The DR policy value vs send-to-all (blue) is near zero at all three, with intervals straddling zero."></p>
+<p><em>Note.</em> A conditional estimand that excludes zero and a marginal estimand that includes it, on the same policy and the same data.</p>
+</section>
+<section id="sensitivity-is-uniformly-null" class="level3">
+<h3 class="anchored" data-anchor-id="sensitivity-is-uniformly-null">Sensitivity is uniformly null</h3>
+<p>The E-value is at the null floor (1.04 point, 1.00 at the CI-low). The propensity-trimming sweep holds ΔV_DR flat between −USD 1.42 and +USD 0.59 across trims from 0% to 20%, every interval crossing zero — the null is not an artefact of any particular overlap region. The seven-variant treatment-window sweep produces a negative pseudo-outcome R² under every definition tested (from −0.13 at a 24-hour view cutoff to −0.64 at 168 hours), including the two variants that achieve genuinely balanced arms and adequate overlap — so the null is not an artefact of the 10-day window or the thin control arm either. And the cross-offer sweep across all 10 catalogue offers finds <strong>no offer with a positive ΔV_DR whose CI excludes zero</strong>; two offers show the argmax-CATE policy <em>significantly underperforming</em> send-to-all (Figure 8). The focal offer and one sibling discount are sample-constrained (fewer than 200 control customers) at their 96–97% view rates and cannot produce a point estimate at all.</p>
+<p><strong>Figure 8</strong></p>
+<p><em>Cross-Offer Applicability Sweep — DR Policy Value vs Send-to-All</em></p>
+<p><img src="assets/fig8_cross_offer_sweep.png" class="img-fluid" alt="A forest plot of eight catalogue offers' DR policy value relative to send-to-all under an argmax-CATE policy. Six have intervals that include zero; two (a reward-2 7-day discount at −USD 4.85 and a 4-day informational offer at −USD 6.49) have intervals entirely below zero and are marked red. No offer's interval is entirely above zero."></p>
+<p><em>Note.</em> Green = adequate overlap; gold = overlap-constrained; red = interval excludes zero (the policy loses). Two offers are omitted as sample-constrained.</p>
+</section>
+<section id="the-counter-example-preserved" class="level3">
+<h3 class="anchored" data-anchor-id="the-counter-example-preserved">The counter-example, preserved</h3>
+<p>An earlier draft of this analysis defined control as customers who received <em>no offers at all</em> — the naive reading of “untreated”. That group has <strong>five</strong> customers (three after the training split). On that substrate the same pipeline reports an argmax-CATE policy uplift of <strong>+USD 277 (+0.2%)</strong> over send-to-all — a number a business would read as a modest positive. It is an identification artefact: with three control customers, the outcome model μ₀ is a near-constant, so the CATE surface is a spend-ranking model that assigns almost every customer a positive score, and the “uplift” is the mechanical consequence. The disciplined analysis and the naive one differ by a control-arm definition; the difference between a defensible null and a confounded positive is entirely in that choice.</p>
+</section>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<section id="the-value-of-the-negative-result" class="level3">
+<h3 class="anchored" data-anchor-id="the-value-of-the-negative-result">The value of the negative result</h3>
+<p>The pipeline did its job: it produced a pre-registered “no” backed by five estimators, a Qini comparison, a three-gate decision rule, and sensitivity across trimming, treatment definitions, and the whole catalogue — and it exposed the confounded “yes” that a naive control arm would have delivered. False positives in targeting scale linearly in cost across a catalogue of decisions; a single catch of a confounded positive is worth more than a single true positive. The revenue number this study produces is zero, but the deliverable is the discipline for knowing when a CATE-driven policy is ready for a substrate and when it is not.</p>
+</section>
+<section id="why-the-substrate-defeats-the-method" class="level3">
+<h3 class="anchored" data-anchor-id="why-the-substrate-defeats-the-method">Why the substrate defeats the method</h3>
+<p>CATE estimation and policy learning both require overlap — treated and untreated customers at the same covariate values — and the focal offer does not supply it. The 97% view rate is a <em>success</em> of the delivery channel and a <em>failure</em> for causal identification: there is almost no one who received the offer and plausibly could have gone either way on viewing it. Every symptom downstream — the DR-learner’s variance explosion, the negative pseudo-R², the null policy value, the wide bootstrap intervals — traces to that single fact, and the treatment-window sweep confirms it is not fixable by redefining “viewed”.</p>
+</section>
+<section id="what-would-resolve-the-top-decile-tension" class="level3">
+<h3 class="anchored" data-anchor-id="what-would-resolve-the-top-decile-tension">What would resolve the top-decile tension</h3>
+<p>The +USD 149 empirical top-decile lift and the DR null are not contradictory; they are a conditional and a marginal estimand disagreeing, with selection-on-observables and outcome-model smoothing both plausible explanations and neither testable at <em>n</em> = 5 controls. A <strong>prospective randomised holdout within the top decile</strong> resolves it by construction: score a future rollout with the random forest, rank customers, and within the top 10% randomise a small fraction to a no-offer control. Randomisation inside the slice removes the selection interpretation and gives an unbiased estimate the current estimators cannot. At a conservative target effect of +USD 75 (the empirical CI lower bound) against an outcome SD near USD 140, the design needs roughly <strong>45 customers per arm</strong> at α = 0.05 one-sided, 80% power — feasible within one observation window.</p>
+</section>
+<section id="limitations" class="level3">
+<h3 class="anchored" data-anchor-id="limitations">Limitations</h3>
+<p>The CATE identification assumption — that age, income, tenure, and pre-period segment block all confounding between viewing and spending — is untestable and, given the overlap diagnostic, weakly supported. The 50-customer test-set control arm makes every interval wide, and the DR-learner’s noise-dominated diagnostics vary at the ±5% level across runs. The segment used for stratification was fit on the full 30-day window; it is leakage-free here only because its features are not post-treatment. The 30-day horizon measures short-run lift per exposure, not lifetime value. And the analysis is single-offer: the cross-offer sweep shows the null generalises across the catalogue’s argmax-at-threshold policies, but the top-decile refinement is specific to the focal offer and would need its own validation.</p>
+</section>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
+<p>On the pre-registered decision rule, the CATE targeting policy for the focal offer fails all three gates and the recommendation is to continue send-to-all. The catalogue-wide sweep, the trimming sweep, and the treatment-window sweep all confirm the null. The one live question — whether the top-decile empirical lift is real — cannot be answered observationally at this sample size and is handed forward as a specific, small, feasible randomised test. The infrastructure investments that would lift these constraints are named: a randomised-holdout convention on a fraction of every rollout, and a pre-period capture that would enable variance reduction. The pipeline is the deliverable; the dollar figure is the next study.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Athey, S., &amp; Wager, S. (2021). Policy learning with observational data. <em>Econometrica, 89</em>(1), 133–161. https://doi.org/10.3982/ECTA15732</p>
+<p>Chernozhukov, V., Chetverikov, D., Demirer, M., Duflo, E., Hansen, C., Newey, W., &amp; Robins, J. (2018). Double/debiased machine learning for treatment and structural parameters. <em>The Econometrics Journal, 21</em>(1), C1–C68. https://doi.org/10.1111/ectj.12097</p>
+<p>Künzel, S. R., Sekhon, J. S., Bickel, P. J., &amp; Yu, B. (2019). Metalearners for estimating heterogeneous treatment effects using machine learning. <em>Proceedings of the National Academy of Sciences, 116</em>(10), 4156–4165. https://doi.org/10.1073/pnas.1804597116</p>
+<p>Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., &amp; Duchesnay, É. (2011). Scikit-learn: Machine learning in Python. <em>Journal of Machine Learning Research, 12</em>, 2825–2830.</p>
+<p>Radcliffe, N. J. (2007). Using control groups to target on predicted lift: Building and assessing uplift models. <em>Direct Marketing Analytics Journal</em>, 14–21.</p>
+<p>Rosenbaum, P. R., &amp; Rubin, D. B. (1983). The central role of the propensity score in observational studies for causal effects. <em>Biometrika, 70</em>(1), 41–55. https://doi.org/10.1093/biomet/70.1.41</p>
+<p>VanderWeele, T. J., &amp; Ding, P. (2017). Sensitivity analysis in observational research: Introducing the E-value. <em>Annals of Internal Medicine, 167</em>(4), 268–274. https://doi.org/10.7326/M16-2607</p>
+<p>Wager, S., &amp; Athey, S. (2018). Estimation and inference of heterogeneous treatment effects using random forests. <em>Journal of the American Statistical Association, 113</em>(523), 1228–1242. https://doi.org/10.1080/01621459.2017.1319839</p>
+<p>Starbucks, &amp; Udacity. (2018). <em>Starbucks Capstone Challenge simulated offers dataset</em> [Data set]. Retrieved from Kaggle (I. Muliar, mirror). https://www.kaggle.com/datasets/ihormuliar/starbucks-customer-data</p>
+<hr>
+<p><em>Observational CATE study, pre-registered, returning a negative result. The targeting policy fails all three decision gates; the reported empirical top-decile lift rests on five control customers and is not causally confirmed. Estimator training is seeded; the DR-learner’s noise-dominated diagnostics vary modestly across runs, which is part of the finding. Every figure and number was regenerated from the Gold tables.</em></p>
+
+
+<div id="contact" class="connect-section" style="text-align: center; padding: 50px 20px; background: #f9f9f9; border-radius: 15px; border: 1px solid #eaeaea; margin-top: 40px;">
+<h3 style="color: #2c3e50; font-weight: 700; margin-bottom: 15px; border: none;" class="anchored">Let's Collaborate</h3>
+<p style="color: #666; max-width: 650px; margin: 0 auto 30px auto; font-size: 1.05rem; line-height: 1.6;">Available for high-impact <strong>Business Intelligence, Power BI Engineering, and Advanced Data Analytics</strong> projects. Connect with me or hire me directly through the platforms below.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;">
+<a href="https://www.linkedin.com/in/mkmuneer" class="btn btn-primary" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-linkedin"></i> LinkedIn</a>
+<a href="https://github.com/mkhanmuneer" class="btn btn-dark" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-github"></i> GitHub</a>
+<a href="https://www.kaggle.com/muhammadkhanmuneer" class="btn btn-info" target="_blank" rel="noopener" style="color: white; padding: 12px 25px; min-width: 150px; text-decoration: none;"><i class="bi bi-graph-up"></i> Kaggle</a>
+<a href="https://www.upwork.com/freelancers/~018de8553286a1d00c" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-briefcase"></i> Upwork</a>
+<a href="https://www.fiverr.com/neuronvision" class="btn btn-outline-success" target="_blank" rel="noopener" style="padding: 12px 25px; min-width: 150px; border-width: 2px; font-weight: 600; text-decoration: none;"><i class="bi bi-lightning-charge"></i> Fiverr</a>
+</div>
+</div>
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/mkhanmuneer\.github\.io\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 Muhammad Khan Muneer</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.upwork.com/freelancers/~018de8553286a1d00c">
+<p>Hire on Upwork</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.fiverr.com/neuronvision">
+<p>Hire on Fiverr</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/mkhanmuneer">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/mkmuneer">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
